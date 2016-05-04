@@ -31,6 +31,7 @@ CFLAGS     = $(ADD_CFLAGS) $(PKG_CFLAGS) \
              -DPREFIX=\"$(PREFIX)\" -DDESTDIR=\"$(DESTDIR)\" \
              -mcpu=cortex-m0plus -mfloat-abi=soft \
              -DARDUINO_OS -fno-builtin \
+             -I../common \
              -fomit-frame-pointer -falign-functions=16 -nostdlib -Os
 LFLAGS     = $(ADD_LFLAGS) $(PKG_LFLAGS) -mfloat-abi=soft -mcpu=cortex-m0plus \
              -Wl,--defsym=__main_stack_size__=$(ISR_STACKSIZE) \
