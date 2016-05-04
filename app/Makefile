@@ -5,8 +5,6 @@ VERSION    = v1.0
 ADD_CFLAGS =
 ADD_LFLAGS =
 EXTRA_DIST =
-ISR_STACKSIZE  = 512
-MAIN_STACKSIZE = 512
 
 CC         = $(shell which cc)
 CXX        = $(shell which c++)
@@ -31,13 +29,14 @@ CFLAGS     = $(ADD_CFLAGS) $(PKG_CFLAGS) \
              -DPREFIX=\"$(PREFIX)\" -DDESTDIR=\"$(DESTDIR)\" \
              -I../common \
              -mcpu=cortex-m0plus -mfloat-abi=soft \
-             -DARDUINO_OS -fno-builtin \
+             -DARDUINO_APP -fno-builtin \
+             -ffunction-sections -fdata-sections -fno-common \
              -fomit-frame-pointer -falign-functions=16 -nostdlib -Os
 LFLAGS     = $(ADD_LFLAGS) $(PKG_LFLAGS) -mfloat-abi=soft -mcpu=cortex-m0plus \
              -ffunction-sections -fdata-sections -fno-common \
              -fomit-frame-pointer -falign-functions=16 -nostdlib -Os \
              -nostartfiles \
-             -Wl,-Map=$(PROJECT).map,--cref,--no-warn-mismatch,--script=$(LDSCRIPT)
+             -Wl,-Map=$(PROJECT).map,--gc-sections,--cref,--no-warn-mismatch,--script=$(LDSCRIPT)
 
 OBJ_DIR    = .obj/
 DIST_FILES = Makefile .version version.sh install.sh \
