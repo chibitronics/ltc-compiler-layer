@@ -27,4 +27,5 @@ struct app_header app_header = {
   .bss_start        = &_bss_start,
   .bss_end          = &_bss_end,
   .entry            = Esplanade_Main,
+  .magic            = APP_MAGIC,
 };
