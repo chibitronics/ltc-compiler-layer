@@ -34,8 +34,6 @@ CFLAGS     = $(ADD_CFLAGS) $(PKG_CFLAGS) \
              -DARDUINO_OS -fno-builtin \
              -fomit-frame-pointer -falign-functions=16 -nostdlib -Os
 LFLAGS     = $(ADD_LFLAGS) $(PKG_LFLAGS) -mfloat-abi=soft -mcpu=cortex-m0plus \
-             -Wl,--defsym=__main_stack_size__=$(ISR_STACKSIZE) \
-             -Wl,--defsym=__process_stack_size__=$(MAIN_STACKSIZE) \
              -ffunction-sections -fdata-sections -fno-common \
              -fomit-frame-pointer -falign-functions=16 -nostdlib -Os \
              -nostartfiles \

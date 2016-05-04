@@ -6,7 +6,16 @@ extern uint32_t _edata;
 extern uint32_t _bss_start;
 extern uint32_t _bss_end;
 
+int nonzero = 5;
+int zero = 0;
+
 void Esplanade_Main(void) {
+  nonzero++;
+  zero++;
+
+  while (nonzero != zero)
+    zero++;
+
   return;
 }
 
