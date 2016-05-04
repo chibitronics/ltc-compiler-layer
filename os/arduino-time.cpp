@@ -4,7 +4,9 @@
 unsigned long millis(void);
 unsigned long micros(void);
 void delay(unsigned long msecs) {
-  return 0;
+  int i;
+  for (i = 0; i < 1000000; i++)
+    asm("nop");
 }
 void delayMicroseconds(unsigned int usecs);
 
