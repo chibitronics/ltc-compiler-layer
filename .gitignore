@@ -4,4 +4,5 @@
 .map
 .obj/
 
-esplanade
+/os/os
+/app/app
