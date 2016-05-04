@@ -25,8 +25,8 @@ ENTRY(Esplanade_Main)
 
 MEMORY
 {
-  flashcfg :  org = 0x00005900,  len = 32
-  flash    :  org = 0x00005920,  len = 32k - 0x5920
+  flashcfg :  org = 0x00005900,  len = 0x30
+  flash    :  org = 0x00005930,  len = 32k - 0x5930
   ram      :  org = 0x1FFFFC00,  len = 4k
 }
 
@@ -63,8 +63,7 @@ SECTIONS
 
   .text : ALIGN(4) SUBALIGN(4)
   {
-    *(.text)
-    *(.text.*)
+    *(.text .stub .text.* .gnu.linkonce.t.*)
     KEEP(*(SORT(.chibi_list*)));
     *(.rodata)
     *(.rodata.*)
@@ -107,9 +106,7 @@ SECTIONS
   {
     . = ALIGN(4);
     PROVIDE(_data = .);
-    *(.data)
-    . = ALIGN(4);
-    *(.data.*)
+    *(.data .data.* .gnu.linkonce.d.*)
     . = ALIGN(4);
     *(.ramtext)
     . = ALIGN(4);
@@ -122,9 +119,7 @@ SECTIONS
   {
     . = ALIGN(4);
     PROVIDE(_bss_start = .);
-    *(.bss)
-    . = ALIGN(4);
-    *(.bss.*)
+    *(.bss .bss.* .gnu.linkonce.b.*)
     . = ALIGN(4);
     *(COMMON)
     . = ALIGN(4);
