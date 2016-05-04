@@ -1,7 +1,6 @@
 #include <stdint.h>
 #include "Arduino.h"
 extern "C" {
-    extern uint32_t __aeabi_atexit;
     extern uint32_t __aeabi_memcpy8;
     extern uint32_t __aeabi_memcpy4;
     extern uint32_t __aeabi_memcpy;
@@ -59,7 +58,6 @@ extern long map(long value, long fromLow, long fromHigh, long toLow, long toHigh
 extern long random(long min, long max);
 extern long randomSeed(unsigned long seed);
 uint32_t *SysCall_Table[] = {
-    (uint32_t *)&__aeabi_atexit,
     (uint32_t *)&__aeabi_memcpy8,
     (uint32_t *)&__aeabi_memcpy4,
     (uint32_t *)&__aeabi_memcpy,

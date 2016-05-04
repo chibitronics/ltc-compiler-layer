@@ -1,4 +1,3 @@
-__aeabi_atexit
 __aeabi_memcpy8
 __aeabi_memcpy4
 __aeabi_memcpy
