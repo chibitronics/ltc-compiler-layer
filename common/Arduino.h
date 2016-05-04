@@ -105,22 +105,80 @@ double tan(double rad);
 double sin(double rad);
 
 /* Characters */
-bool isAlphaNumeric(int c);
-bool isAlpha(int c);
-bool isAscii(int c);
-bool isWhitespace(int c);
-bool isControl(int c);
-bool isDigit(int c);
-bool isGraph(int c);
-bool isLowerCase(int c);
-bool isPrintable(int c);
-bool isPunct(int c);
-bool isSpace(int c);
-bool isUppercase(int c);
-bool isHexadecimalDigit(int c);
-int toAscii(int c);
-int toLowerCase(int c);
-int toUpperCase(int c);
+static inline int isSpace(int c) {
+	return (c == ' '
+		|| c == '\f'
+		|| c == '\n'
+		|| c == '\r'
+		|| c == '\t'
+		|| c == '\v');
+}
+
+static inline bool isDigit(int c) {
+	return (c >= '0' && c <= '9');
+}
+
+static inline bool isHexadecimalDigit(int c) {
+	return ((c >= '0' && c <= '9') ||
+		(c >= 'a' && c <= 'f') ||
+		(c >= 'A' && c <= 'F'));
+}
+
+static inline bool isUpperCase(int c) {
+	return (c >= 'A' && c <= 'Z');
+}
+
+static inline bool isLowerCase(int c) {
+	return (c >= 'a' && c <= 'z');
+}
+
+static inline bool isAlpha(int c) {
+	return isUpperCase(c) || isLowerCase(c);
+}
+
+static inline bool isAlphaNumeric(int c) {
+	return isAlpha(c) || isDigit(c);
+}
+
+static inline int toUpperCase(int c) {
+	if (!isLowerCase(c))
+		return c;
+	return c - ('a' - 'A');
+}
+
+static inline int toLowerCase(int c) {
+	if (!isUpperCase(c))
+		return c;
+	return c + ('a' - 'A');
+}
+
+static inline bool isAscii(int c) {
+  return !(c & 0x80);
+}
+
+static inline bool isWhitespace(int c) {
+  return (c == ' ') || (c == '\t');
+}
+
+static inline bool isControl(int c) {
+  return (c >= 0) && (c <= 0xd);
+}
+
+static inline bool isPrintable(int c) {
+  return ((c >= 0xe) && (c <= 0xff)) || (c == 0xb);
+}
+
+static inline bool isGraph(int c) {
+  return !isPrintable(c);
+}
+
+static inline bool isPunct(int c) {
+  return (c >= 0x21) && (c <= 0x7f) && !isAlphaNumeric(c);
+}
+
+static inline int toAscii(int c) {
+  return c & 0x7f;
+}
 
 /* So Random */
 long random(long min, long max);
