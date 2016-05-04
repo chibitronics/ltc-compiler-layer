@@ -29,9 +29,15 @@ enum pin_mode {
 
 /* Program lifetime */
 #if !defined(ARDUINO_OS) /* These are not syscalls */
+#ifdef __cplusplus
+extern "C" {
+#endif
 void init(void);
 void loop(void);
 void setup(void);
+#ifdef __cplusplus
+};
+#endif
 #endif /* !ARDUINO_OS */
 
 /* Generic IO */
@@ -52,7 +58,7 @@ void detachInterrupt(int irq);
 
 /* Tone production */
 void tone(int pin, unsigned int frequency, unsigned long duration
-#if !defined(ARDUINO_OS)
+#if !defined(ARDUINO_OS) && defined(__cplusplus)
     = 0
 #endif /* !ARDUINO_OS */
 );
@@ -62,12 +68,12 @@ void noTone(int pin);
 void shiftOut(int dataPin, int clockPin, int bitOrder, uint8_t val);
 uint8_t shiftIn(int dataPin, int clockPin, int bitOrder);
 unsigned long pulseIn(int pin, uint8_t state, unsigned long timeout
-#if !defined(ARDUINO_OS)
+#if !defined(ARDUINO_OS) && defined(__cplusplus)
     = 1000000
 #endif /* !ARDUINO_OS */
 );
 unsigned long pulseInLong(int pin, uint8_t state, unsigned long timeout
-#if !defined(ARDUINO_OS)
+#if !defined(ARDUINO_OS) && defined(__cplusplus)
     = 1000000
 #endif /* !ARDUINO_OS */
 );
@@ -118,7 +124,7 @@ int toUpperCase(int c);
 
 /* So Random */
 long random(long min, long max);
-#if !defined(ARDUINO_OS)
+#if !defined(ARDUINO_OS) && defined(__cplusplus)
 /* Non OS-version uses overloaded version */
 static inline long random(long max) {
   return random(0, max);
