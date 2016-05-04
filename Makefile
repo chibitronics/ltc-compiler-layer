@@ -9,6 +9,7 @@ ISR_STACKSIZE  = 512
 MAIN_STACKSIZE = 512
 
 CC         = $(shell which cc)
+CXX        = $(shell which c++)
 PKG        = $(shell which pkg-config)
 
 ifneq ($(strip $(LIBS)),)
@@ -29,6 +30,7 @@ CFLAGS     = $(ADD_CFLAGS) $(PKG_CFLAGS) \
              -DVERSION=\"$(VERSION)\" -DPACKAGE=\"$(PACKAGE)\" \
              -DPREFIX=\"$(PREFIX)\" -DDESTDIR=\"$(DESTDIR)\" \
              -mcpu=cortex-m0plus -mfloat-abi=soft \
+             -DARDUINO_OS -fno-builtin \
              -fomit-frame-pointer -falign-functions=16 -nostdlib -Os
 LFLAGS     = $(ADD_LFLAGS) $(PKG_LFLAGS) -mfloat-abi=soft -mcpu=cortex-m0plus \
              -Wl,--defsym=__main_stack_size__=$(ISR_STACKSIZE) \
@@ -44,8 +46,11 @@ DIST_FILES = Makefile .version version.sh install.sh \
              $(wildcard *.c) $(wildcard *.h) $(EXTRA_DIST)
 
 CSOURCES   = $(wildcard *.c)
+CPPSOURCES = $(wildcard *.cpp)
 ASOURCES   = $(wildcard *.s)
-OBJECTS    = $(addprefix $(OBJ_DIR)/, $(CSOURCES:.c=.o) $(ASOURCES:.s=.o))
+OBJECTS    = $(addprefix $(OBJ_DIR)/, $(CSOURCES:.c=.o) \
+                                      $(CPPSOURCES:.cpp=.o) \
+                                      $(ASOURCES:.s=.o))
 
 QUIET      = @
 
@@ -78,6 +83,11 @@ $(OBJ_DIR)/%.o: %.c
 	$(QUIET) mkdir -p $(OBJ_DIR)
 	$(QUIET) echo "  CC	$<	$(notdir $@)"
 	$(QUIET) $(CC) -c $< $(CFLAGS) -o $@ -MMD
+
+$(OBJ_DIR)/%.o: %.cpp
+	$(QUIET) mkdir -p $(OBJ_DIR)
+	$(QUIET) echo "  CXX	$<	$(notdir $@)"
+	$(QUIET) $(CXX) -c $< $(CFLAGS) -o $@ -MMD
 
 $(OBJ_DIR)/%.o: %.s
 	$(QUIET) mkdir -p $(OBJ_DIR)
