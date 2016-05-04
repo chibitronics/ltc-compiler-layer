@@ -1,22 +1,21 @@
 #include "app.h"
+#include "Arduino.h"
 
+/* Variables provided by the linker */
 extern uint32_t _textdata;
 extern uint32_t _data;
 extern uint32_t _edata;
 extern uint32_t _bss_start;
 extern uint32_t _bss_end;
-
-int nonzero = 5;
-int zero = 0;
+extern uint32_t __init_array_start;
+extern uint32_t __init_array_end;
 
 void Esplanade_Main(void) {
-  nonzero++;
-  zero++;
 
-  while (nonzero != zero)
-    zero++;
+  setup();
 
-  return;
+  while (1)
+    loop();
 }
 
 __attribute__ ((used, section(".progheader")))
@@ -28,4 +27,6 @@ struct app_header app_header = {
   .bss_end          = &_bss_end,
   .entry            = Esplanade_Main,
   .magic            = APP_MAGIC,
+  .const_start      = &__init_array_start,
+  .const_end        = &__init_array_end,
 };
