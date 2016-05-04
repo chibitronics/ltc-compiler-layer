@@ -10,6 +10,7 @@ extern uint32_t _bss_end;
 extern uint32_t __init_array_start;
 extern uint32_t __init_array_end;
 
+__attribute__((naked, noreturn))
 void Esplanade_Main(void) {
 
   setup();
@@ -27,6 +28,7 @@ struct app_header app_header = {
   .bss_end          = &_bss_end,
   .entry            = Esplanade_Main,
   .magic            = APP_MAGIC,
+  .version          = APP_VERSION,
   .const_start      = &__init_array_start,
   .const_end        = &__init_array_end,
 };
