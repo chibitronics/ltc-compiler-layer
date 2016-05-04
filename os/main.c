@@ -3,6 +3,7 @@
 #include "Arduino.h"
 #include "kl02.h"
 #include "memio.h"
+#include "app.h"
 
 void early_init(void)
 {
@@ -25,31 +26,14 @@ void early_init(void)
   return;
 }
 
-void setup(void) {
-  pinMode(32 + 6, OUTPUT);
-  pinMode(32 + 7, OUTPUT);
-  pinMode(32 + 10, OUTPUT);
-}
-
-void loop(void) {
-  static int loop = 0;
-
-  loop++;
-
-  digitalWrite(32 + 10, loop & 1);
-  digitalWrite(32 + 7, loop & 2);
-  digitalWrite(32 + 6, loop & 4);
-
-  delay(500);
-}
+__attribute__((noreturn)) void Run_App(struct app_header *app);
 
 int main(void)
 {
-  double a = 2;
-  double b = 3.0;
-  setup();
-  while (1) {
-    b += a;
-    loop();
-  }
+  struct app_header *app = (struct app_header *)0x5900;
+
+  if (app->magic == APP_MAGIC)
+    Run_App(app);
+  asm("bkpt #0");
+  while(1);
 }
