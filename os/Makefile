@@ -27,19 +27,26 @@ LDSCRIPT = KL02Z32.ld
 DBG_CFLAGS = -ggdb -g -DDEBUG -Wall
 DBG_LFLAGS = -ggdb -g -Wall
 CFLAGS     = $(ADD_CFLAGS) $(PKG_CFLAGS) \
+             -mcpu=cortex-m0plus -mthumb -mfloat-abi=soft -msoft-float \
              -DVERSION=\"$(VERSION)\" -DPACKAGE=\"$(PACKAGE)\" \
              -DPREFIX=\"$(PREFIX)\" -DDESTDIR=\"$(DESTDIR)\" \
-             -mcpu=cortex-m0plus -mfloat-abi=soft \
              -DARDUINO_OS -fno-builtin \
              -I../common \
+             -ffunction-sections -fdata-sections -fno-common \
+             -fsingle-precision-constant \
              -fomit-frame-pointer -falign-functions=16 -nostdlib -Os
-LFLAGS     = $(ADD_LFLAGS) $(PKG_LFLAGS) -mfloat-abi=soft -mcpu=cortex-m0plus \
+LFLAGS     = $(ADD_LFLAGS) $(PKG_LFLAGS) \
+             -mcpu=cortex-m0plus \
+              -mfloat-abi=soft -msoft-float \
+             -fomit-frame-pointer -falign-functions=16 -nostdlib -Os \
+             -nostartfiles \
              -Wl,--defsym=__main_stack_size__=$(ISR_STACKSIZE) \
              -Wl,--defsym=__process_stack_size__=$(MAIN_STACKSIZE) \
              -ffunction-sections -fdata-sections -fno-common \
-             -fomit-frame-pointer -falign-functions=16 -nostdlib -Os \
-             -nostartfiles \
-             -Wl,-Map=$(PROJECT).map,--cref,--no-warn-mismatch,--script=$(LDSCRIPT)
+             -Wl,-Map=$(PROJECT).map,--gc-sections,--cref,--no-warn-mismatch,--script=$(LDSCRIPT) \
+             libc-nano-armv6-m.a \
+             libgcc-armv6-m.a \
+             libm-armv6-m.a
 
 OBJ_DIR    = .obj/
 DIST_FILES = Makefile .version version.sh install.sh \

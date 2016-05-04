@@ -87,3 +87,28 @@ int analogRead(int pin) {
   return 0;
 }
 
+
+void tone(int pin, unsigned int frequency, unsigned long duration) {
+  return;
+}
+
+void noTone(int pin) {
+  return;
+}
+
+/* Simple communication protocols */
+void shiftOut(int dataPin, int clockPin, int bitOrder, uint8_t val) {
+  return;
+}
+
+uint8_t shiftIn(int dataPin, int clockPin, int bitOrder) {
+  return 0;
+}
+
+unsigned long pulseIn(int pin, uint8_t state, unsigned long timeout) {
+  return 0;
+}
+
+unsigned long pulseInLong(int pin, uint8_t state, unsigned long timeout) {
+  return 0;
+}
