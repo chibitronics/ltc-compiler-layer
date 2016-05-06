@@ -67,10 +67,6 @@ SECTIONS
     KEEP(*(SORT(.chibi_list*)));
     *(.rodata)
     *(.rodata.*)
-    *(.glue_7t)
-    *(.glue_7)
-    *(.gcc*)
-    *(.interp)
   } > flash
 
   .ARM.extab :
@@ -134,6 +130,10 @@ SECTIONS
     *(.gnu_debuglink)
     *(.note.gnu.build-id)
     *(.note.gnu.build-id.*);
+    *(.glue_7t)
+    *(.glue_7)
+    *(.gcc*)
+    *(.interp)
   }
 
   /* ld.bfd will segfault without these */
