@@ -70,6 +70,8 @@ $(ALL): $(TARGET)
 $(TARGET): $(OBJECTS)
 	$(QUIET) echo "  LD	$@"
 	$(QUIET) $(CC) $^ $(LFLAGS) -o $@
+	$(QUIET) echo "  OBJCOPY	$@.bin"
+	$(QUIET) objcopy -O binary $@ $@.bin
 
 $(DEBUG): CFLAGS += $(DBG_CFLAGS)
 $(DEBUG): LFLAGS += $(DBG_LFLAGS)
