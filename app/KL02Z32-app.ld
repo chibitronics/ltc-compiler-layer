@@ -129,28 +129,22 @@ SECTIONS
   PROVIDE(end = .);
   _end            = .;
 
-  .note.gnu.build-id :
-  {
-    . = ALIGN(4);
-    PROVIDE( _note = .);
+  /DISCARD/ : {
+    *(.note.GNU-stack)
+    *(.gnu_debuglink)
     *(.note.gnu.build-id)
-    . = ALIGN(4);
     *(.note.gnu.build-id.*);
-    . = ALIGN(4);
-    PROVIDE( _enote = .);
-  }  > flash
+  }
 
   /* ld.bfd will segfault without these */
   .rel.plt :
   {
     . = ALIGN(4);
-    PROVIDE( _note = .);
-  } > flash
+  }
   .got.plt :
   {
     . = ALIGN(4);
-    PROVIDE( _note = .);
-  } > flash
+  }
 }
 
 /* RAM region to be used for Main stack. This stack accommodates the processing

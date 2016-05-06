@@ -36,7 +36,7 @@ LFLAGS     = $(ADD_LFLAGS) $(PKG_LFLAGS) -mfloat-abi=soft -mcpu=cortex-m0plus \
              -ffunction-sections -fdata-sections -fno-common \
              -fomit-frame-pointer -falign-functions=16 -nostdlib -Os \
              -nostartfiles \
-             -Wl,-Map=$(PROJECT).map,--gc-sections,--cref,--no-warn-mismatch,--script=$(LDSCRIPT)
+             -Wl,-Map=$(PROJECT).map,--gc-sections,--cref,--no-warn-mismatch,--script=$(LDSCRIPT),--build-id=none
 
 OBJ_DIR    = .obj/
 DIST_FILES = Makefile .version version.sh install.sh \
