@@ -1,0 +1,122 @@
+# Database of syscalls.
+# Lines beginning with a # are ignored.
+# Fields are | delimited
+# fields:
+# Valid types:
+#    c - Standard C function
+#    x - Standard C++ function
+#    C - C++ constructor
+#    D - C++ destructor
+#    m - C++ member function
+#
+# c fields (standard C function):
+# type | name
+#
+# x fields (standard C++ function):
+# type | name | return type | arguments | names
+# e.g. int digitalRead(int pin) -> "x | digitalRead | int | int pin | pin"
+#
+# The following types are kept around for historical reasons, but due to
+# the uniquely awful nature of C++, they cannot be used.
+#
+# C fields (C++ constructor):
+# type | class | arguments (with variable names) | comma list of variable names
+# e.g.  Print::Print(int a, int b); -> "C | Print | int a, int b | a, b"
+#
+# D fields (C++ destructor):
+# type | class | arguments (with variable names) | comma list of variable names
+# e.g.  Print::~Print(int a, int b); -> "D | Print | int a, int b | a, b"
+#
+# m fields (C++ member function):
+# type | class | method | return type | arguments | names
+c | __aeabi_memcpy8
+c | __aeabi_memcpy4
+c | __aeabi_memcpy
+c | __aeabi_memmove8
+c | __aeabi_memmove4
+c | __aeabi_memmove
+c | __aeabi_memset8
+c | __aeabi_memset4
+c | __aeabi_memset
+c | __aeabi_memclr8
+c | __aeabi_memclr4
+c | __aeabi_memclr
+c | __eqdf2
+c | __gedf2
+c | __gtdf2
+c | __ledf2
+c | __ltdf2
+c | __nedf2
+c | __popcount_tab
+c | __popcountsi2
+c | __aeabi_cdcmpeq
+c | __aeabi_cdcmple
+c | __aeabi_cdrcmple
+c | __muldi3
+c | __aeabi_uidiv
+c | __aeabi_uidivmod
+c | __aeabi_uldivmod
+c | __aeabi_idiv
+c | __aeabi_idivmod
+c | __aeabi_lasr
+c | __aeabi_ldivmod
+c | __aeabi_llsl
+c | __aeabi_llsr
+c | __aeabi_lmul
+c | strcpy
+c | strlen
+c | realloc
+c | __dso_handle
+c | __aeabi_atexit
+c | free
+c | memset
+c | ltoa
+c | utoa
+c | ultoa
+c | itoa
+c | ledShow
+x | pinMode | void | int pin, enum pin_mode mode | pin, mode
+x | digitalWrite | void | int pin, int value | pin, value
+x | digitalRead | int | int pin | pin
+x | analogWrite | void | int pin, int value | pin, value
+x | analogReference | void | enum analog_reference_type type | type
+x | analogRead | int | int pin | pin
+x | attachInterrupt | void | int irq, void (*func)(void), enum irq_mode mode | irq, func, mode
+x | detachInterrupt | void | int irq | irq
+x | tone | void | int pin, unsigned int frequency, unsigned long duration | pin, frequency, duration
+x | noTone | void | int pin | pin
+x | shiftOut | void | int dataPin, int clockPin, int bitOrder, uint8_t val | dataPin, clockPin, bitOrder, val
+x | shiftIn | uint8_t | int dataPin, int clockPin, int bitOrder | dataPin, clockPin, bitOrder
+x | pulseIn | unsigned long | int pin, uint8_t state, unsigned long timeout | pin, state, timeout
+x | pulseInLong | unsigned long | int pin, uint8_t state, unsigned long timeout | pin, state, timeout
+x | millis | unsigned long | void |
+x | micros | unsigned long | void |
+x | delay | void | unsigned long msecs | msecs
+x | delayMicroseconds | void | unsigned int usecs | usecs
+x | map | long | long value, long fromLow, long fromHigh, long toLow, long toHigh | value, fromLow, fromHigh, toLow, toHigh
+x | random | long | long min, long max | min, max
+x | randomSeed | long | unsigned long seed | seed
+C | Print | void |
+m | Print | print | size_t | const __FlashStringHelper *helper | helper
+m | Print | print | size_t | const String &s | s
+m | Print | print | size_t | const char str[] | str
+m | Print | print | size_t | char c | c
+m | Print | print | size_t | unsigned char b, int base | b, base
+m | Print | print | size_t | int n, int base | n, base
+m | Print | print | size_t | unsigned int n, int base | n, base
+m | Print | print | size_t | long n, int base | n, base
+m | Print | print | size_t | unsigned long n, int base | n, base
+m | Print | print | size_t | double n, int base | n, base
+m | Print | print | size_t | const Printable& x | x
+m | Print | println | size_t | const __FlashStringHelper *helper | helper
+m | Print | println | size_t | const String &s | s
+m | Print | println | size_t | const char str[] | str
+m | Print | println | size_t | char c | c
+m | Print | println | size_t | unsigned char b, int base | b, base
+m | Print | println | size_t | int n, int base | n, base
+m | Print | println | size_t | unsigned int n, int base | n, base
+m | Print | println | size_t | long n, int base | n, base
+m | Print | println | size_t | unsigned long n, int base | n, base
+m | Print | println | size_t | double n, int base | n, base
+m | Print | println | size_t | const Printable& x | x
+m | Print | println | size_t | void |
