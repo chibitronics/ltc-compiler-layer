@@ -46,7 +46,10 @@ LFLAGS     = $(ADD_LFLAGS) $(PKG_LFLAGS) \
              -Wl,-Map=$(PROJECT).map,--gc-sections,--cref,--no-warn-mismatch,--script=$(LDSCRIPT) \
              libc-nano-armv6-m.a \
              libgcc-armv6-m.a \
-             libm-armv6-m.a
+             libm-armv6-m.a \
+             libstdc++-armv6-m.a \
+             libcrtbegin.a
+CXXFLAGS   = -fno-rtti -fno-exceptions
 
 OBJ_DIR    = .obj/
 DIST_FILES = Makefile .version version.sh install.sh \
@@ -95,7 +98,7 @@ $(OBJ_DIR)/%.o: %.c
 $(OBJ_DIR)/%.o: %.cpp
 	$(QUIET) mkdir -p $(OBJ_DIR)
 	$(QUIET) echo "  CXX	$<	$(notdir $@)"
-	$(QUIET) $(CXX) -c $< $(CFLAGS) -o $@ -MMD
+	$(QUIET) $(CXX) -c $< $(CFLAGS) $(CXXFLAGS) -o $@ -MMD
 
 $(OBJ_DIR)/%.o: %.s
 	$(QUIET) mkdir -p $(OBJ_DIR)
