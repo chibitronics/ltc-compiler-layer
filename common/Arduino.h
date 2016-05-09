@@ -4,6 +4,18 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#ifndef boolean
+#define boolean bool
+#endif
+
+#ifndef byte
+#define byte uint8_t
+#endif
+
+#ifndef NULL
+#define NULL 0
+#endif
+
 enum analog_reference_type {
   DEFAULT = 0,
   INTERNAL = 1,
@@ -89,7 +101,13 @@ void delayMicroseconds(unsigned int usecs);
 #define RAD_TO_DEG 57.295779513082320876798154814105
 #define min(a,b) ((a)<(b)?(a):(b))
 #define max(a,b) ((a)>(b)?(a):(b))
-#define abs(x) ((x)>0?(x):-(x))
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern int abs(int x);
+#ifdef __cplusplus
+};
+#endif
 #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 #define round(x)     ((x)>=0?(long)((x)+0.5):(long)((x)-0.5))
 #define radians(deg) ((deg)*DEG_TO_RAD)
