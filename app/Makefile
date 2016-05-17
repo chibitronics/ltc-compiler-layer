@@ -27,17 +27,16 @@ DBG_LFLAGS = -ggdb -g -Wall
 CFLAGS     = $(ADD_CFLAGS) $(PKG_CFLAGS) \
              -DVERSION=\"$(VERSION)\" -DPACKAGE=\"$(PACKAGE)\" \
              -DPREFIX=\"$(PREFIX)\" -DDESTDIR=\"$(DESTDIR)\" -DARDUINO=160 \
-             -I../common \
+             -I../common -fsingle-precision-constant \
              -mcpu=cortex-m0plus -mfloat-abi=soft \
              -DARDUINO_APP -fno-builtin \
              -ffunction-sections -fdata-sections -fno-common \
              -fomit-frame-pointer -falign-functions=16 -nostdlib -Os
-LFLAGS     = $(ADD_LFLAGS) $(PKG_LFLAGS) -mfloat-abi=soft -mcpu=cortex-m0plus \
-             -ffunction-sections -fdata-sections -fno-common \
-             -fomit-frame-pointer -falign-functions=16 -nostdlib -Os \
-             -nostartfiles -static \
-             -Wl,-Map=$(PROJECT).map,--gc-sections,--cref,--no-warn-mismatch,--script=$(LDSCRIPT),--build-id=none
-CXXFLAGS   = -fno-rtti -fno-exceptions
+CXXFLAGS   = $(CFLAGS) -fno-rtti -fno-exceptions
+LFLAGS     = $(ADD_LFLAGS) $(PKG_LFLAGS) $(CFLAGS) \
+             -nostartfiles \
+             -Wl,-Map=$(PROJECT).map,--gc-sections \
+             -Wl,--cref,--no-warn-mismatch,--script=$(LDSCRIPT),--build-id=none
 
 OBJ_DIR    = .obj/
 DIST_FILES = Makefile .version version.sh install.sh \
@@ -68,9 +67,9 @@ INIT       = init
 
 $(ALL): $(TARGET)
 
-$(TARGET): $(OBJECTS)
+$(TARGET): $(OBJECTS) $(LDSCRIPT)
 	$(QUIET) echo "  LD	$@"
-	$(QUIET) $(CXX) $^ $(LFLAGS) -o $@
+	$(QUIET) $(CXX) $(OBJECTS) $(LFLAGS) -o $@
 	$(QUIET) echo "  OBJCOPY	$@.bin"
 	$(QUIET) objcopy -O binary $@ $@.bin
 
@@ -88,7 +87,7 @@ $(OBJ_DIR)/%.o: %.c
 $(OBJ_DIR)/%.o: %.cpp
 	$(QUIET) mkdir -p $(OBJ_DIR)
 	$(QUIET) echo "  CXX	$<	$(notdir $@)"
-	$(QUIET) $(CXX) -c $< $(CFLAGS) $(CXXFLAGS) -o $@ -MMD
+	$(QUIET) $(CXX) -c $< $(CXXFLAGS) -o $@ -MMD
 
 $(OBJ_DIR)/%.o: %.s
 	$(QUIET) mkdir -p $(OBJ_DIR)
