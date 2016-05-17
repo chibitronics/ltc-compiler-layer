@@ -27,7 +27,8 @@ MEMORY
 {
   flashcfg :  org = 0x00005900,  len = 0x30
   flash    :  org = 0x00005930,  len = 32k - 0x5930
-  ram      :  org = 0x1FFFFC00,  len = 4k
+  osram    :  org = 0x1FFFFC00,  len = 1024
+  ram      :  org = 0x1FFFFC00 + LENGTH(osram),  len = 4k - LENGTH(osram)
 }
 
 __ram_start__           = ORIGIN(ram);
