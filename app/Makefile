@@ -21,18 +21,19 @@ endif
 DESTDIR ?= /usr
 PREFIX ?= $(DESTDIR)
 
-LDSCRIPT = KL02Z32-app.ld
+LDSCRIPT = ../common/KL02Z32-app.ld
 DBG_CFLAGS = -ggdb -g -DDEBUG -Wall
 DBG_LFLAGS = -ggdb -g -Wall
 CFLAGS     = $(ADD_CFLAGS) $(PKG_CFLAGS) \
              -DVERSION=\"$(VERSION)\" -DPACKAGE=\"$(PACKAGE)\" \
              -DPREFIX=\"$(PREFIX)\" -DDESTDIR=\"$(DESTDIR)\" -DARDUINO=160 \
-             -I../common -fsingle-precision-constant \
+             -I. -I../common -Iash -Iash/internals \
+             -fsingle-precision-constant \
              -mcpu=cortex-m0plus -mfloat-abi=soft \
              -DARDUINO_APP -fno-builtin \
              -ffunction-sections -fdata-sections -fno-common \
              -fomit-frame-pointer -falign-functions=16 -nostdlib -Os
-CXXFLAGS   = $(CFLAGS) -fno-rtti -fno-exceptions
+CXXFLAGS   = $(CFLAGS) -std=c++11 -fno-rtti -fno-exceptions
 LFLAGS     = $(ADD_LFLAGS) $(PKG_LFLAGS) $(CFLAGS) \
              -nostartfiles \
              -Wl,-Map=$(PROJECT).map,--gc-sections \
@@ -43,17 +44,19 @@ DIST_FILES = Makefile .version version.sh install.sh \
              README.md AUTHORS COPYING ChangeLog.txt \
              $(wildcard *.c) $(wildcard *.h) $(EXTRA_DIST)
 
-CSOURCES   = $(wildcard *.c)
-CPPSOURCES = $(wildcard *.cpp)
-ASOURCES   = $(wildcard *.s)
-OBJECTS    = $(addprefix $(OBJ_DIR)/, $(CSOURCES:.c=.o) \
-                                      $(CPPSOURCES:.cpp=.o) \
-                                      $(ASOURCES:.s=.o))
+CSOURCES   = $(wildcard *.c) $(wildcard ../common/*.c)
+CPPSOURCES = $(wildcard *.cpp ../common/*.cpp)
+ASOURCES   = $(wildcard *.s ../common/*.s)
+COBJS      = $(addprefix $(OBJ_DIR)/, $(notdir $(CSOURCES:.c=.o)))
+CXXOBJS    = $(addprefix $(OBJ_DIR)/, $(notdir $(CPPSOURCES:.cpp=.o)))
+AOBJS      = $(addprefix $(OBJ_DIR)/, $(notdir $(ASOURCES:.s=.o)))
+OBJECTS    = $(COBJS) $(CXXOBJS) $(AOBJS)
+VPATH = . ../common
 
 QUIET      = @
 
 ALL        = all
-TARGET     = $(PACKAGE)
+TARGET     = $(PACKAGE).elf
 DEBUG      = debug
 REBUILD    = rebuild
 DREBUILD   = drebuild
@@ -67,11 +70,13 @@ INIT       = init
 
 $(ALL): $(TARGET)
 
+$(OBJECTS): | $(OBJ_DIR)
+
 $(TARGET): $(OBJECTS) $(LDSCRIPT)
 	$(QUIET) echo "  LD	$@"
 	$(QUIET) $(CXX) $(OBJECTS) $(LFLAGS) -o $@
-	$(QUIET) echo "  OBJCOPY	$@.bin"
-	$(QUIET) objcopy -O binary $@ $@.bin
+	$(QUIET) echo "  OBJCOPY	$(PACKAGE).bin"
+	$(QUIET) objcopy -O binary $@ $(PACKAGE).bin
 
 $(DEBUG): CFLAGS += $(DBG_CFLAGS)
 $(DEBUG): LFLAGS += $(DBG_LFLAGS)
@@ -79,18 +84,18 @@ CFLAGS += $(DBG_CFLAGS)
 LFLAGS += $(DBG_LFLAGS)
 $(DEBUG): $(TARGET)
 
-$(OBJ_DIR)/%.o: %.c
+$(OBJ_DIR):
 	$(QUIET) mkdir -p $(OBJ_DIR)
+
+$(COBJS) : $(OBJ_DIR)/%.o : %.c Makefile
 	$(QUIET) echo "  CC	$<	$(notdir $@)"
 	$(QUIET) $(CC) -c $< $(CFLAGS) -o $@ -MMD
 
 $(OBJ_DIR)/%.o: %.cpp
-	$(QUIET) mkdir -p $(OBJ_DIR)
 	$(QUIET) echo "  CXX	$<	$(notdir $@)"
 	$(QUIET) $(CXX) -c $< $(CXXFLAGS) -o $@ -MMD
 
 $(OBJ_DIR)/%.o: %.s
-	$(QUIET) mkdir -p $(OBJ_DIR)
 	$(QUIET) echo "  AS	$<	$(notdir $@)"
 	$(QUIET) $(CC) -x assembler-with-cpp -c $< $(CFLAGS) -o $@ -MMD
 
@@ -100,7 +105,7 @@ $(OBJ_DIR)/%.o: %.s
 $(CLEAN):
 	$(QUIET) rm -f $(wildcard $(OBJ_DIR)/*.d)
 	$(QUIET) rm -f $(wildcard $(OBJ_DIR)/*.o)
-	$(QUIET) rm -f $(TARGET)
+	$(QUIET) rm -f $(TARGET) $(PACKAGE).bin
 
 $(DISTCLEAN): $(CLEAN)
 	$(QUIET) rm -rf $(OBJ_DIR) $(wildcard $(TARGET)-*.tar.gz)

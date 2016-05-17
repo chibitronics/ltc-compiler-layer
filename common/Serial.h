@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include "Stream.h"
 
+#ifdef __cplusplus
 class HardwareSerial : public Stream
 {
   protected:
@@ -25,6 +26,7 @@ class HardwareSerial : public Stream
     using Print::write; // pull in write(str) and write(buf, size) from Print
     operator bool() { return true; }
 };
-
 extern HardwareSerial Serial;
+#endif /* defined(__cplusplus) */
+
 #endif /* __HARDWARE_SERIAL_H__ */

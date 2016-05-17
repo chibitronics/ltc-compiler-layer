@@ -19,6 +19,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#include "Arduino.h"
 #include "WString.h"
 
 /*********************************************/
@@ -688,9 +689,9 @@ void String::trim(void)
 {
 	if (!buffer || len == 0) return;
 	char *begin = buffer;
-	while (isspace(*begin)) begin++;
+	while (isWhitespace(*begin)) begin++;
 	char *end = buffer + len - 1;
-	while (isspace(*end) && end >= begin) end--;
+	while (isWhitespace(*end) && end >= begin) end--;
 	len = end + 1 - begin;
 	if (begin > buffer) memcpy(buffer, begin, len);
 	buffer[len] = 0;

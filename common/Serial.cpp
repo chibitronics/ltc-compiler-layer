@@ -1,3 +1,4 @@
+#include "Arduino.h"
 #include "Serial.h"
 
 HardwareSerial Serial;
@@ -14,25 +15,31 @@ void HardwareSerial::end(void) {
 }
 
 int HardwareSerial::available(void) {
-  return 0;
+
+  return cangetchar();
 }
 
 int HardwareSerial::peek(void) {
+
+#warning "Implement peek"
   return 0;
 }
 
 int HardwareSerial::read(void) {
-  return 0;
+
+  return getchar();
 }
 
 int HardwareSerial::availableForWrite(void) {
-  return 0;
+
+  return 1;
 }
 
 void HardwareSerial::flush(void) {
   return;
 }
 
-size_t HardwareSerial::write(uint8_t) {
-  return 0;
+size_t HardwareSerial::write(uint8_t c) {
+
+  return putchar(c);
 }
