@@ -56,7 +56,7 @@ VPATH = . ../common
 QUIET      = @
 
 ALL        = all
-TARGET     = $(PACKAGE)
+TARGET     = $(PACKAGE).elf
 DEBUG      = debug
 REBUILD    = rebuild
 DREBUILD   = drebuild
@@ -75,8 +75,8 @@ $(OBJECTS): | $(OBJ_DIR)
 $(TARGET): $(OBJECTS) $(LDSCRIPT)
 	$(QUIET) echo "  LD	$@"
 	$(QUIET) $(CXX) $(OBJECTS) $(LFLAGS) -o $@
-	$(QUIET) echo "  OBJCOPY	$@.bin"
-	$(QUIET) objcopy -O binary $@ $@.bin
+	$(QUIET) echo "  OBJCOPY	$(PACKAGE).bin"
+	$(QUIET) objcopy -O binary $@ $(PACKAGE).bin
 
 $(DEBUG): CFLAGS += $(DBG_CFLAGS)
 $(DEBUG): LFLAGS += $(DBG_LFLAGS)
@@ -105,7 +105,7 @@ $(OBJ_DIR)/%.o: %.s
 $(CLEAN):
 	$(QUIET) rm -f $(wildcard $(OBJ_DIR)/*.d)
 	$(QUIET) rm -f $(wildcard $(OBJ_DIR)/*.o)
-	$(QUIET) rm -f $(TARGET)
+	$(QUIET) rm -f $(TARGET) $(PACKAGE).bin
 
 $(DISTCLEAN): $(CLEAN)
 	$(QUIET) rm -rf $(OBJ_DIR) $(wildcard $(TARGET)-*.tar.gz)
