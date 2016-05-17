@@ -3,7 +3,8 @@
 
 #include "Adafruit_NeoPixel.h"
 
-#define PIN 6
+#if 0
+#define PIN (32 + 3)
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
@@ -117,7 +118,20 @@ void setup() {
   strip.show(); // Initialize all pixels to 'off'
 }
 
+extern "C" double sin(double f);
+#define double float
+double test_d = 4.3L;
+int test_thingy(int start) {
+  static int val = start;
+
+  test_d += sin(start);
+  return ++val;
+}
+
 void loop() {
+  printf("Hello, world!\r\n");
+
+  test_thingy(micros());
   // Some example procedures showing how to display to the pixels:
   colorWipe(strip.Color(255, 0, 0), 50); // Red
   colorWipe(strip.Color(0, 255, 0), 50); // Green
@@ -132,3 +146,21 @@ void loop() {
   rainbowCycle(20);
   theaterChaseRainbow(50);
 }
+#else
+
+#define PIN (32 + 10)
+
+void setup(void) {
+  printf("Setting up pin %d\r\n", PIN);
+  pinMode(PIN, OUTPUT);
+  digitalWrite(PIN, LOW);
+}
+
+void loop(void) {
+  printf("Read from pin: %d\r\n", analogRead(PIN));
+  digitalWrite(PIN, LOW);
+  delay(100);
+  digitalWrite(PIN, HIGH);
+  delayMicroseconds(500000);
+}
+#endif
