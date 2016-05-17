@@ -66,7 +66,7 @@ OBJECTS    = $(addprefix $(OBJ_DIR)/, $(CSOURCES:.c=.o) \
 QUIET      = @
 
 ALL        = all
-TARGET     = $(PACKAGE)
+TARGET     = $(PACKAGE).elf
 DEBUG      = debug
 REBUILD    = rebuild
 DREBUILD   = drebuild
