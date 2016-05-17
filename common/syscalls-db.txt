@@ -10,7 +10,8 @@
 #    m - C++ member function
 #
 # c fields (standard C function):
-# type | name
+# type | osname | [aliases]
+# One or more aliases can be specified.  Comma-delimited.
 #
 # x fields (standard C++ function):
 # type | name | return type | arguments | names
@@ -29,51 +30,115 @@
 #
 # m fields (C++ member function):
 # type | class | method | return type | arguments | names
-c | __aeabi_memcpy8
-c | __aeabi_memcpy4
-c | __aeabi_memcpy
-c | __aeabi_memmove8
-c | __aeabi_memmove4
-c | __aeabi_memmove
-c | __aeabi_memset8
-c | __aeabi_memset4
-c | __aeabi_memset
-c | __aeabi_memclr8
-c | __aeabi_memclr4
-c | __aeabi_memclr
-c | __eqdf2
-c | __gedf2
-c | __gtdf2
-c | __ledf2
-c | __ltdf2
-c | __nedf2
-c | __popcount_tab
-c | __popcountsi2
-c | __aeabi_cdcmpeq
-c | __aeabi_cdcmple
-c | __aeabi_cdrcmple
-c | __muldi3
-c | __aeabi_uidiv
-c | __aeabi_uidivmod
-c | __aeabi_uldivmod
+c | do_nothing | __aeabi_atexit,__cxa_atexit,atexit,_atexit,__cxa_finalize,__aeabi_d2f,__aeabi_f2d,__aeabi_h2f,__aeabi_h2f_alt,__aeabi_f2h,__aeabi_f2h_alt,__aeabi_d2h,__aeabi_d2h_alt
+#
+# Memory copying, clearing, and setting
+c | memcpy | memcpy,__aeabi_memcpy8,__aeabi_memcpy4,__aeabi_memcpy
+c | memmove | memmove,__aeabi_memmove8,__aeabi_memmove4,__aeabi_memmove
+c | memset | memset,__aeabi_memset8,__aeabi_memset4,__aeabi_memset
+c | memclr | memclr,__aeabi_memclr8,__aeabi_memclr4,__aeabi_memclr
+#
+# Unaligned memory access
+c | __aeabi_uread4
+c | __aeabi_uwrite4
+c | __aeabi_uread8
+#c | __aeabu_uwrite8
+#
+# Intiger (32/32 -> 32) division functions
 c | __aeabi_idiv
+c | __aeabi_uidiv
 c | __aeabi_idivmod
-c | __aeabi_lasr
+c | __aeabi_uidivmod
+#
+# Long long helper functions
+c | __aeabi_lmul
 c | __aeabi_ldivmod
+c | __aeabi_uldivmod
 c | __aeabi_llsl
 c | __aeabi_llsr
-c | __aeabi_lmul
+c | __aeabi_lasr
+c | __aeabi_lcmp
+c | __aeabi_ulcmp
+#
+# Integer to floating-point conversions
+c | qfp_int2float | __aeabi_i2f,__aeabi_l2f
+c | qfp_int2double | __aeabi_i2d,__aeabi_l2d
+c | qfp_uint2float | __aeabi_ui2f,__aeabi_ul2f
+c | qfp_uint2double | __aeabi_ui2d,__aeabi_ul2d
+#
+# Standard floating-point to integer conversions
+c | qfp_float2int | __aeabi_f2iz,__aeabi_f2lz
+c | qfp_double2int | __aeabi_d2iz,__aeabi_d2lz
+c | qfp_float2uint | __aeabi_f2uiz,__aeabi_f2ulz
+c | qfp_double2uint | __aeabi_d2uiz,__aeabi_d2ulz
+#
+# Standard floating-point comparison helper functions
+c | qfp_cfcmpeq | __aeabi_cfcmpeq
+c | qfp_cdcmpeq | __aeabi_cdcmpeq
+c | qfp_cfcmple | __aeabi_cfcmple
+c | qfp_cdcmple | __aeabi_cdcmple
+c | qfp_cfrcmple | __aeabi_cfrcmple
+c | qfp_cdrcmple | __aeabi_cdcrmple
+c | qfp_cmpeq | __aeabi_fcmpeq
+c | qfp_cmpeqd | __aeabi_dcmpeq
+c | qfp_cmplt | __aeabi_fcmplt
+c | qfp_cmpltd | __aeabi_dcmplt
+c | qfp_cmple | __aeabi_fcmple
+c | qfp_cmpled | __aeabi_dcmple
+c | qfp_cmpge | __aeabi_fcmpge
+c | qfp_cmpged | __aeabi_dcmpge
+c | qfp_cmpgt | __aeabi_fcmpgt
+c | qfp_cmpgtd | __aeabi_dcmpgt
+c | qfp_cmpun | __aeabi_fcmpun
+c | qfp_cmpund | __aeabi_dcmpun
+#
+# Standard floating-point arithmetic
+c | qfp_fadd | __aeabi_fadd
+c | qfp_dadd | __aeabi_dadd
+c | qfp_fdiv_fast | __aeabi_fdiv
+c | qfp_ddiv_fast | __adabi_ddiv
+c | qfp_fmul | __aeabi_fmul
+c | qfp_dmul | __aeabi_dmul
+c | qfp_frsub | __aeabi_frsub
+c | qfp_drsub | __aeabi_drsub
+c | qfp_fsub | __aeabi_fsub
+c | qfp_dsub | __aeabi_dsub
+#
+# Trig functions
+c | qfp_fcos | cos,cosf
+c | qfp_fsin | sin,sinf
+c | qfp_ftan | tan,tanf
+c | qfp_fatan2 | atan2,atan2f
+c | qfp_fexp | exp,fexp
+c | qfp_fln | log2,log2f
+c | qfp_fsqrt_fast | sqrt,sqrtf
+#
+# String processing
+c | strncpy
 c | strcpy
+c | strcmp
+c | strncmp
+c | strchr
 c | strlen
-c | realloc
-c | __dso_handle
-c | __aeabi_atexit
-c | free
-c | memset
+c | chsnprintf | snprintf
 c | ltoa
 c | utoa
 c | ultoa
 c | itoa
+c | simple_strtol | strtol
+c | simple_strtoul | strtoul
+#
+# Serial I/O
+c | printf | printf,tfp_printf
+c | putchar
+c | getchar
+c | cangetchar
+#
+# Heap management
+c | free
+c | malloc
+c | realloc
+c | __dso_handle
 c | ledShow
 x | pinMode | void | int pin, enum pin_mode mode | pin, mode
 x | digitalWrite | void | int pin, int value | pin, value

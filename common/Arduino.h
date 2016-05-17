@@ -1,43 +1,9 @@
 #ifndef __ARDUINO_KOSAGI_H__
 #define __ARDUINO_KOSAGI_H__
 
-#include <stdint.h>
-#include <stdbool.h>
-
-#ifndef boolean
-#define boolean bool
-#endif
-
-#ifndef byte
-#define byte uint8_t
-#endif
-
-#ifndef NULL
-#define NULL 0
-#endif
-
-enum analog_reference_type {
-  DEFAULT = 0,
-  INTERNAL = 1,
-  INTERNAL1V1 = 2,
-  INTERNAL2V56 = 3,
-  EXTERNAL = 4,
-};
-
-enum irq_mode {
-  LOW = 0,
-  CHANGE = 1,
-  RISING = 2,
-  FALLING = 3,
-  HIGH = 4,
-};
-
-enum pin_mode {
-  INPUT = 0,
-  OUTPUT = 1,
-  INPUT_PULLUP = 2,
-  INPUT_PULLDOWN = 3,
-};
+#include "Arduino-types.h"
+#include "WString.h"
+#include "Serial.h"
 
 /* Program lifetime */
 #if !defined(ARDUINO_OS) /* These are not syscalls */
@@ -105,6 +71,18 @@ void delayMicroseconds(unsigned int usecs);
 extern "C" {
 #endif
 extern int abs(int x);
+
+int cangetchar(void);
+int getchar(void);
+int putchar(int c);
+
+/* Trig */
+double cos(double rad);
+double tan(double rad);
+double sin(double rad);
+long map(long value, long fromLow, long fromHigh, long toLow, long toHigh);
+double pow(double base, double exponent);
+double sqrt(double x);
 #ifdef __cplusplus
 };
 #endif
@@ -113,14 +91,6 @@ extern int abs(int x);
 #define radians(deg) ((deg)*DEG_TO_RAD)
 #define degrees(rad) ((rad)*RAD_TO_DEG)
 #define sq(x) ((x)*(x))
-long map(long value, long fromLow, long fromHigh, long toLow, long toHigh);
-double pow(double base, double exponent);
-double sqrt(double x);
-
-/* Trig */
-double cos(double rad);
-double tan(double rad);
-double sin(double rad);
 
 /* Characters */
 static inline int isSpace(int c) {
