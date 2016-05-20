@@ -1,6 +1,6 @@
 DIRNAME    = $(shell basename $(shell pwd))
 PACKAGE    = $(firstword $(subst -, , $(DIRNAME)))
-LIBS       = 
+LIBS       =
 VERSION    = v1.0
 ADD_CFLAGS =
 ADD_LFLAGS =
@@ -29,13 +29,13 @@ CFLAGS     = $(ADD_CFLAGS) $(PKG_CFLAGS) \
              -DPREFIX=\"$(PREFIX)\" -DDESTDIR=\"$(DESTDIR)\" -DARDUINO=160 \
              -I. -I../common -Iash -Iash/internals \
              -fsingle-precision-constant \
-             -mcpu=cortex-m0plus -mfloat-abi=soft \
+             -mcpu=cortex-m0plus -mfloat-abi=soft -mthumb \
              -DARDUINO_APP -fno-builtin \
              -ffunction-sections -fdata-sections -fno-common \
              -fomit-frame-pointer -falign-functions=16 -nostdlib -Os
 CXXFLAGS   = $(CFLAGS) -std=c++11 -fno-rtti -fno-exceptions
 LFLAGS     = $(ADD_LFLAGS) $(PKG_LFLAGS) $(CFLAGS) \
-             -nostartfiles \
+             -nostartfiles -nostdlib -nodefaultlibs \
              -Wl,-Map=$(PROJECT).map,--gc-sections \
              -Wl,--cref,--no-warn-mismatch,--script=$(LDSCRIPT),--build-id=none
 
@@ -76,7 +76,7 @@ $(TARGET): $(OBJECTS) $(LDSCRIPT)
 	$(QUIET) echo "  LD	$@"
 	$(QUIET) $(CXX) $(OBJECTS) $(LFLAGS) -o $@
 	$(QUIET) echo "  OBJCOPY	$(PACKAGE).bin"
-	$(QUIET) objcopy -O binary $@ $(PACKAGE).bin
+	$(QUIET) $(OBJCOPY) -O binary $@ $(PACKAGE).bin
 
 $(DEBUG): CFLAGS += $(DBG_CFLAGS)
 $(DEBUG): LFLAGS += $(DBG_LFLAGS)
