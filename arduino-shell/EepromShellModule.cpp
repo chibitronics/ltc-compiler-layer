@@ -1,17 +1,17 @@
 /*
     Arduino Shell
     Copyright (c) 2015 Max Vilimpoc
-    
+
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
     in the Software without restriction, including without limitation the rights
     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
     copies of the Software, and to permit persons to whom the Software is
     furnished to do so, subject to the following conditions:
-    
+
     The above copyright notice and this permission notice shall be included in
     all copies or substantial portions of the Software.
-    
+
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,7 +24,7 @@
 #include "CommandAndParams.h"
 #include "EepromShellModule.h"
 
-//#include <EEPROM.h>
+#include <EEPROM.h>
 
 #if ENABLE_UNIT_TESTS
 #include <assert.h>
@@ -44,7 +44,7 @@ EepromShellModule::EepromShellModule(Stream& serialOut) :
 void EepromShellModule::setup()
 {
     serialOut.print(F("Size of EEPROM: "));
-//    serialOut.print(EEPROM.length());
+    serialOut.print(EEPROM.length());
     serialOut.println(F(" bytes."));
 }
 
@@ -73,16 +73,15 @@ static bool is_ascii(char c)
 
 /**
  * Prints the contents of EEPROM from startAddress to startAddress + length.
- * 
+ *
  * Works best with multiples of EEPROM_ROW_LENGTH (16) byte-sized blocks.
- * 
+ *
  * Will not print less than EEPROM_ROW_LENGTH bytes, and will round down
  * to the next-lower block size.
  */
 void EepromShellModule::printContents(uint32_t startAddress, uint32_t length)
 {
     // Quick check that range is valid.
-#if 0
     if (startAddress >= EEPROM.length())
     {
         char output[OUTPUT_ROW_LENGTH] = {'\0'};
@@ -93,7 +92,7 @@ void EepromShellModule::printContents(uint32_t startAddress, uint32_t length)
 
     // Round to nearest row.
     startAddress &= 0xFFF0;
-    
+
     uint16_t  rows = length / EEPROM_ROW_LENGTH;
     uint8_t   mod  = length % EEPROM_ROW_LENGTH; // How many bytes in the last row?
 
@@ -110,7 +109,7 @@ void EepromShellModule::printContents(uint32_t startAddress, uint32_t length)
         EEPROM.get(address, eepromRow);
 
         memset(outputRow, 0x20, (OUTPUT_ROW_LENGTH - 1));
-        
+
         outputRow[0] = HEXVAL[(address & 0xF000) >> 12];
         outputRow[1] = HEXVAL[(address & 0x0F00) >>  8];
         outputRow[2] = HEXVAL[(address & 0x00F0) >>  4];
@@ -137,17 +136,15 @@ void EepromShellModule::printContents(uint32_t startAddress, uint32_t length)
 
         for (int column = 0; column < EEPROM_ROW_LENGTH; ++column)
         {
-            outputRow[ASCII_START + column] = is_ascii(eepromRow.data[column]) ? eepromRow.data[column] : '.'; 
+            outputRow[ASCII_START + column] = is_ascii(eepromRow.data[column]) ? eepromRow.data[column] : '.';
         }
 
         serialOut.println(outputRow);
     }
-#endif
 }
 
 void EepromShellModule::run(String rawCommand)
 {
-#if 0
     // Parse it.
     CommandAndParams cp(rawCommand, serialOut);
     // cp.print();
@@ -192,7 +189,7 @@ void EepromShellModule::run(String rawCommand)
     else
     if (cp.command.equals("wb") && cp.paramCount == 2)
     {
-        // Example: wb 0x0010 0x41 
+        // Example: wb 0x0010 0x41
         // Writes the specified byte to the specified location.
 
         // Convert to long.
@@ -212,7 +209,6 @@ void EepromShellModule::run(String rawCommand)
     if (cp.command.equals(F("clear-eeprom")) == 0)
     {
     }
-#endif
 }
 
 } // namespace ArduinoShell

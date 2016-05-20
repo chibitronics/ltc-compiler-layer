@@ -1,17 +1,17 @@
 /*
     Arduino Shell
     Copyright (c) 2015 Max Vilimpoc
-    
+
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
     in the Software without restriction, including without limitation the rights
     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
     copies of the Software, and to permit persons to whom the Software is
     furnished to do so, subject to the following conditions:
-    
+
     The above copyright notice and this permission notice shall be included in
     all copies or substantial portions of the Software.
-    
+
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,19 +24,19 @@
 #include "ConfigBlock.h"
 #include "Crc.h"
 
-//#include <EEPROM.h>
+#include <EEPROM.h>
 #include <string.h>
 
 namespace ArduinoShell
 {
 
-ConfigBlock::ConfigBlock(uint32_t configBase) : 
+ConfigBlock::ConfigBlock(uint32_t configBase) :
     configBase(configBase)
 {
     Data eepromConfigData;
-    
+
     // Read in the configuration from EEPROM.
-    //EEPROM.get(configBase, eepromConfigData);
+    EEPROM.get(configBase, eepromConfigData);
 
     // Check the stored module ID and see if it is correct.
     if (MODULE_ID != eepromConfigData.moduleId)
@@ -65,7 +65,7 @@ bool ConfigBlock::save()
 
     data.crc = crc;
 
-    //EEPROM.put(configBase, data);
+    EEPROM.put(configBase, data);
 }
 
 void ConfigBlock::setPinType(uint8_t pin, PinType pinType)
