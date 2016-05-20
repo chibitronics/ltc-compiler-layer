@@ -112,7 +112,7 @@ SECTIONS
 
   . = ALIGN(4);
 
-  .flasheeprom : ALIGN(1024)
+  .flasheeprom (NOLOAD) : ALIGN(1024)
   {
     *(.flasheeprom)
   } > flash
