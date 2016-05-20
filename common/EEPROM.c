@@ -9,6 +9,7 @@ static virtual_timer_t my_timer;
 __attribute__((section(".flasheeprom")))
 static const uint8_t *flash_area;
 
+__attribute__((aligned(4)))
 static uint8_t flash_backing[E2END];
 
 static enum {
