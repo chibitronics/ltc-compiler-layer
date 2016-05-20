@@ -102,6 +102,11 @@ c | qfp_fsub | __aeabi_fsub
 c | qfp_dsub | __aeabi_dsub
 
 
+# Floating point string processing
+c | qfp_float2str | float2str
+c | qfp_str2float | str2float
+
+
 # Trig functions
 c | qfp_fcos | cos,cosf
 c | qfp_fsin | sin,sinf
@@ -139,6 +144,7 @@ c | cangetchar | serialCanGetChar
 c | free
 c | malloc
 c | realloc
+
 
 # WS2812b (or whatever we have on the board)
 c | ledShow
@@ -203,6 +209,7 @@ c | unlockSystem
 c | unlockSystemFromISR
 c | setTimer
 c | resetTimer
+
 
 # Flash management
 c | flashErase
