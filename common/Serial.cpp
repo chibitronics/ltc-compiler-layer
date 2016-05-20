@@ -16,7 +16,7 @@ void HardwareSerial::end(void) {
 
 int HardwareSerial::available(void) {
 
-  return cangetchar();
+  return serialCanGetChar();
 }
 
 int HardwareSerial::peek(void) {
@@ -27,7 +27,7 @@ int HardwareSerial::peek(void) {
 
 int HardwareSerial::read(void) {
 
-  return getchar();
+  return serialGetChar();
 }
 
 int HardwareSerial::availableForWrite(void) {
@@ -41,5 +41,5 @@ void HardwareSerial::flush(void) {
 
 size_t HardwareSerial::write(uint8_t c) {
 
-  return putchar(c);
+  return serialPutChar(c);
 }
