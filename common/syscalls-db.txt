@@ -188,6 +188,13 @@ c | usbDetach
 # ChibiOS wrapper calls
 c | createThread
 c | exitThread
+c | suspendThread
+c | suspendThreadTimeout
+c | resumeThread
+c | yieldThread
+c | threadSleep
+c | threadSleepUntil
+c | waitThread
 c | lockSystem
 c | lockSystemFromISR
 c | unlockSystem
