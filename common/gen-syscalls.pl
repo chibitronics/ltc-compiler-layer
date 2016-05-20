@@ -46,26 +46,23 @@ sub generate_files {
     push (@cxx_destructors, $call) if ($call->[1] eq "D");
   }
 
-  print $os_fh "#include <stdint.h>\n";
   print $app_fh "#include <stdint.h>\n";
-  print $os_fh "#include \"Arduino.h\"\n";
   print $app_fh "#include \"Arduino-types.h\"\n";
 
-  print $os_fh "\n";
-  print $os_fh "extern \"C\" {\n";
-  # Pre-declare this, so it ends up in .rodata section.
-  print $os_fh "  extern const uint32_t * const SysCall_Table[];\n";
+#  if (@c_syscalls) {
+#    open(my $test_fh, '>', "eabi-lookup.c");
+#    for my $c_syscall(@c_syscalls) {
+#      my ($idx, $code, $sysname, $name) = @$c_syscall;
+#      next unless $sysname =~ /qfp_/;
+#      print $test_fh "extern float $sysname(void);\n";
+#      print $test_fh "float $name(void) { return $sysname(); }\n";
+#    }
+#    close($test_fh);
+#  }
 
-  if (@c_syscalls) {
-    open(my $test_fh, '>', "eabi-lookup.c");
-    for my $c_syscall(@c_syscalls) {
-      my ($idx, $code, $sysname, $name) = @$c_syscall;
-      next unless $sysname =~ /qfp_/;
-      print $test_fh "extern float $sysname(void);\n";
-      print $test_fh "float $name(void) { return $sysname(); }\n";
-    }
-    close($test_fh);
-  }
+  print $os_fh ".section .rodata\n";
+  print $os_fh ".global SysCall_Table\n";
+  print $os_fh "SysCall_Table:\n";
 
   if (@c_syscalls) {
     my %seen_c_syscalls;
@@ -76,21 +73,17 @@ sub generate_files {
 
       $table[$idx] = $c_syscall;
 
-      if (!exists($seen_c_syscalls{$sysname})) {
-        print $os_fh "  extern uint32_t $sysname;\n";
-        $seen_c_syscalls{$sysname} = 1;
-      }
+#      if (!exists($seen_c_syscalls{$sysname})) {
+#        print $os_fh "extern uint32_t $sysname;\n";
+#        $seen_c_syscalls{$sysname} = 1;
+#      }
       print $app_fh "    __attribute__((naked))\n";
       print $app_fh "    void $name(void) {\n";
       print $app_fh "      asm(\"svc #$idx\");\n";
-      print $app_fh "      asm(\"bx lr\");\n";
       print $app_fh "    }\n";
     }
     print $app_fh "};\n";
   }
-
-  print $os_fh "};\n";
-  print $os_fh "\n";
 
   for my $cxx_method(@cxx_methods) {
     my ($idx, $code, $name, $rettype, $args, $names) = @$cxx_method;
@@ -99,45 +92,49 @@ sub generate_files {
       $names = "";
     }
     $table[$idx] = $cxx_method;
-    print $os_fh "extern $rettype $name($args);\n";
+#    print $os_fh "extern uint32_t $name;\n";
 
     print $app_fh "  __attribute__((naked))\n";
     print $app_fh "  $rettype $name($args) {\n";
     print $app_fh "    asm(\"svc #$idx\");\n";
-    print $app_fh "    asm(\"bx lr\");\n";
     print $app_fh "  }\n";
   }
   print $os_fh "\n";
 
   # Generate the syscall table
   # TODO: Remove this __attribute__
-  print $os_fh "__attribute__((section(\".rodata\")))\n";
-  print $os_fh "const uint32_t * const SysCall_Table[] = {\n";
+#  print $os_fh "__attribute__((section(\".rodata\")))\n";
+#  print $os_fh "const uint32_t * const SysCall_Table[] = {\n";
 
   for my $i (0 .. @table-1) {
     my $syscall = $table[$i];
     if (!defined($syscall)) {
-      print $os_fh "    (const uint32_t *)0,\n";
+      print $os_fh ".short 0\n";
+#      print $os_fh "    (const uint32_t *)0,\n";
     }
     elsif ($syscall->[1] eq "c") {
       my ($idx, $code, $sysname, $name) = @$syscall;
       $sysname = $name if (!defined($sysname));
-      print $os_fh "    (const uint32_t *)&$sysname,\n";
+      print $os_fh ".short $sysname\n";
+#      print $os_fh "    (const uint32_t *)&$sysname,\n";
     }
     elsif ($syscall->[1] eq "x") {
       my ($idx, $code, $name, $rettype, $args, $names) = @$syscall;
-      print $os_fh "    (const uint32_t *)static_cast<$rettype (*)($args)>(&$name),\n";
+      print $os_fh ".short $name\n";
+#      print $os_fh "    (const uint32_t *)&$name\n";
     }
     else {
-      print $os_fh "    (const uint32_t *)0,\n";
+      print $os_fh ".short 0\n";
+#      print $os_fh "    (const uint32_t *)0,\n";
     }
   }
-  print $os_fh "};\n";
+  print $os_fh ".size SysCall_Table, .-SysCall_Table\n";
+#  print $os_fh "};\n";
 }
 
 my @syscalls;
 
-open(my $os_syscalls_fh, '>', "syscalls-os.cpp") or die("Couldn't open syscalls-os.cpp: $!");
+open(my $os_syscalls_fh, '>', "syscalls-os.s") or die("Couldn't open syscalls-os.s: $!");
 open(my $app_syscalls_fh, '>', "syscalls-app.cpp") or die("Couldn't open syscalls-app.cpp: $!");
 
 # Read in the syscalls DB
@@ -145,7 +142,8 @@ open(my $input_fh, '<', "syscalls-db.txt")
     or die("Couldn't open syscalls-db.txt: $!");
 while (my $line = <$input_fh>) {
   chomp $line;
-  next if ($line =~ /^^\s*\#/);
+  next if ($line =~ /^\s*\#/);
+  next if ($line =~ /^\s*$/);
 
   my @fields = split(/\s*\|\s*/, $line);
   push(@syscalls, \@fields);
