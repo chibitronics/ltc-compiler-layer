@@ -154,6 +154,8 @@ void lockSystemFromISR(void);
 void unlockSystem();
 void unlockSystemFromISR(void);
 
+void getSyscallABI(void);
+
 #ifdef __cplusplus
 };
 #endif
