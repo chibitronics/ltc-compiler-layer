@@ -7,8 +7,6 @@ extern "C" void __cxa_pure_virtual()
   asm("bkpt #0");
 }
 
-extern "C" uint32_t __dso_handle = 0;
-
 namespace __cxxabiv1
 {
   /* guard variables */
