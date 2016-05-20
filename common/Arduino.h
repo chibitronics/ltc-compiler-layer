@@ -72,9 +72,9 @@ extern "C" {
 #endif
 extern int abs(int x);
 
-int cangetchar(void);
-int getchar(void);
-int putchar(int c);
+int serialCanGetChar(void);
+int serialGetChar(void);
+int serialPutChar(int c);
 
 /* Trig */
 double cos(double rad);
