@@ -1,12 +1,15 @@
 #include <stddef.h>
 #include <stdlib.h>
- 
+#include <stdint.h>
+
 extern "C" void __cxa_pure_virtual()
 {
   asm("bkpt #0");
 }
 
-namespace __cxxabiv1 
+extern "C" uint32_t __dso_handle = 0;
+
+namespace __cxxabiv1
 {
   /* guard variables */
 
@@ -35,17 +38,17 @@ void *operator new(size_t size)
 {
   return malloc(size);
 }
- 
+
 void *operator new[](size_t size)
 {
   return malloc(size);
 }
- 
+
 void operator delete(void *p)
 {
   free(p);
 }
- 
+
 void operator delete[](void *p)
 {
   free(p);
