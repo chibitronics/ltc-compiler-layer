@@ -3,6 +3,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define CH_CFG_ST_FREQUENCY     100 /* Our SysTick timer is set to 100 Hz */
 
 /**
@@ -149,5 +153,9 @@ void lockSystemFromISR(void);
 
 void unlockSystem();
 void unlockSystemFromISR(void);
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* __CHIBI_OS_H__ */
