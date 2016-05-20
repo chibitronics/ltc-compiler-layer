@@ -23,18 +23,31 @@
 
 #include <stdint.h>
 
+#if !defined(E2END)
+/* This defines the size of the emulated eeprom (in bytes).
+ * If you increase this size, you will require more RAM to
+ * hold the cache backing.
+ *
+ * Maximum value is 1023.
+ */
+#define E2END 511
+#endif /* !defined(E2END) */
+
 #if defined(__cplusplus)
 extern "C" {
 #endif /* defined(__cplusplus) */
+
+  /* AVR-compatible wrappers */
   extern uint8_t eeprom_read_byte(uint8_t *index);
   extern uint8_t eeprom_write_byte(uint8_t *index, uint8_t val);
+
+  /* Esplanade Syscalls */
+  extern int8_t flashErase(uint32_t sectorOffset, uint16_t sectorCount);
+  extern int8_t flashWrite(uint8_t *src, const uint8_t *dst, uint32_t count);
+
 #if defined(__cplusplus)
 };
 #endif /* defined(__cplusplus) */
-
-#if !defined(E2END)
-#define E2END 511
-#endif /* !defined(E2END) */
 
 #if defined(__cplusplus)
 
