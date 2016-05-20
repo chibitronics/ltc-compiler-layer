@@ -534,36 +534,64 @@ extern "C" {
       asm("svc #113");
     }
     __attribute__((naked))
-    void lockSystem(void) {
+    void suspendThread(void) {
       asm("svc #114");
     }
     __attribute__((naked))
-    void lockSystemFromISR(void) {
+    void suspendThreadTimeout(void) {
       asm("svc #115");
     }
     __attribute__((naked))
-    void unlockSystem(void) {
+    void resumeThread(void) {
       asm("svc #116");
     }
     __attribute__((naked))
-    void unlockSystemFromISR(void) {
+    void yieldThread(void) {
       asm("svc #117");
     }
     __attribute__((naked))
-    void setTimer(void) {
+    void threadSleep(void) {
       asm("svc #118");
     }
     __attribute__((naked))
-    void resetTimer(void) {
+    void threadSleepUntil(void) {
       asm("svc #119");
     }
     __attribute__((naked))
-    void flashErase(void) {
+    void waitThread(void) {
       asm("svc #120");
     }
     __attribute__((naked))
-    void flashWrite(void) {
+    void lockSystem(void) {
       asm("svc #121");
+    }
+    __attribute__((naked))
+    void lockSystemFromISR(void) {
+      asm("svc #122");
+    }
+    __attribute__((naked))
+    void unlockSystem(void) {
+      asm("svc #123");
+    }
+    __attribute__((naked))
+    void unlockSystemFromISR(void) {
+      asm("svc #124");
+    }
+    __attribute__((naked))
+    void setTimer(void) {
+      asm("svc #125");
+    }
+    __attribute__((naked))
+    void resetTimer(void) {
+      asm("svc #126");
+    }
+    __attribute__((naked))
+    void flashErase(void) {
+      asm("svc #127");
+    }
+    __attribute__((naked))
+    void flashWrite(void) {
+      asm("svc #128");
     }
 };
   __attribute__((naked))
