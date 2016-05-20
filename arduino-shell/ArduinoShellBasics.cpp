@@ -1,17 +1,17 @@
 /*
     Arduino Shell
     Copyright (c) 2015 Max Vilimpoc
-    
+
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
     in the Software without restriction, including without limitation the rights
     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
     copies of the Software, and to permit persons to whom the Software is
     furnished to do so, subject to the following conditions:
-    
+
     The above copyright notice and this permission notice shall be included in
     all copies or substantial portions of the Software.
-    
+
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -69,7 +69,7 @@ void help()
     serialPinShell.help();
 }
 
-void setup() 
+void setup()
 {
     serialPort.begin(57600);
 
@@ -77,16 +77,16 @@ void setup()
     serialPort.println(F("Copyright (c) 2015 Max Vilimpoc (https://github.com/nuket/arduino-shell), MIT licensed.\n"));
 
     digitalPinShell.setup();
-//    eepromShell.setup();
+    eepromShell.setup();
     serialPinShell.setup();
 
     help();
 }
 
-void loop() 
+void loop()
 {
     const char TERMINATOR = '\n';
-  
+
     static char     commandBuffer[MAX_COMMAND_LENGTH] = {0};
     static uint8_t  index = 0;
     static bool     newlineFound = false;
@@ -105,16 +105,16 @@ void loop()
             case 0x08:
                 // Also: http://www.ibb.net/~anne/keyboard.html
                 //
-                // If a backspace is pressed, you have to send 
+                // If a backspace is pressed, you have to send
                 // a VT100 erase character sequence as well, to clear the character.
                 if (index > 0)
                 {
                     serialPort.write(input);           // backspace
                     serialPort.print(F("\033\1331\120")); // erase this character
-                    
+
                     index--;
                 }
-                
+
                 commandBuffer[index] = 0;
                 break;
             case '\r':
@@ -130,7 +130,7 @@ void loop()
                 {
                     // Echo the bytes.
                     serialPort.write(input);
-                    
+
                     commandBuffer[index] = input;
                     index++;
                 }
