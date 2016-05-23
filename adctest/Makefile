@@ -9,6 +9,7 @@ EXTRA_DIST =
 CC         = $(shell which cc)
 CXX        = $(shell which c++)
 PKG        = $(shell which pkg-config)
+OBJCOPY    = $(shell which objcopy)
 
 ifneq ($(strip $(LIBS)),)
 PKG_CFLAGS = $(shell $(PKG) $(LIBS) --cflags)
@@ -77,6 +78,10 @@ $(TARGET): $(OBJECTS) $(LDSCRIPT)
 	$(QUIET) $(CXX) $(OBJECTS) $(LFLAGS) -o $@
 	$(QUIET) echo "  OBJCOPY	$(PACKAGE).bin"
 	$(QUIET) $(OBJCOPY) -O binary $@ $(PACKAGE).bin
+	$(QUIET) echo Creating $@
+	$(QUIET) $(OBJCOPY) --only-keep-debug $< $@.symbol 2> /dev/null
+
+
 
 $(DEBUG): CFLAGS += $(DBG_CFLAGS)
 $(DEBUG): LFLAGS += $(DBG_LFLAGS)
