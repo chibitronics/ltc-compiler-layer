@@ -10,9 +10,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-void init(void);
-void loop(void);
 void setup(void);
+void init(void);
+void runCallbacks(void);
+void loop(void);
 #ifdef __cplusplus
 };
 #endif
@@ -186,5 +187,20 @@ long randomSeed(unsigned long seed);
 #define bitClear(value, bit) ((value) &= ~(1UL << (bit)))
 #define bitWrite(value, bit, bitvalue) (bitvalue ? bitSet(value, bit) : bitClear(value, bit))
 #define bit(b) (1UL << (b))
+
+#define PTA(x) (x)
+#define PTB(x) (32 + x)
+
+#define A0 0x80
+#define A1 0x81
+#define A2 0x82
+#define A3 0x83
+#define A4 0x84
+#define A5 0x85 /* Temperature sensor */
+#define A6 0x86 /* Voltage sensor */
+#define A7 0x87 /* VDD voltage value */
+#define A8 0x88 /* VCC voltage value */
+
+#define RGB_PIN PTA(6)
 
 #endif /* __ARDUINO_KOSAGI_H__ */
