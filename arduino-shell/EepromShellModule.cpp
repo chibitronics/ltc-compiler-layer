@@ -59,7 +59,7 @@ const String& EepromShellModule::help()
 
 struct EepromRow
 {
-    uint8_t data[4/*EEPROM_ROW_LENGTH*/];
+    uint8_t data[EEPROM_ROW_LENGTH];
 };
 
 static bool is_ascii(char c)
@@ -199,7 +199,7 @@ void EepromShellModule::run(String rawCommand)
         if (!(0 <= address < EEPROM.length())) return;
 
         // Write the byte to the address.
-        long int data = strtol(cp.params[1].c_str(), NULL, 0) & 0xFF;
+        uint8_t data = strtol(cp.params[1].c_str(), NULL, 0) & 0xFF;
         // Serial.println(data);
 
         EEPROM.put(address, data);
