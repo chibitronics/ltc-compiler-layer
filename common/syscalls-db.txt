@@ -203,8 +203,6 @@ c | yieldThread
 c | threadSleep
 c | threadSleepUntil
 c | waitThread
-c | lockSystem
-c | unlockSystem
 c | setTimer
 c | resetTimer
 c | runCallbacks
