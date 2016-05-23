@@ -574,32 +574,24 @@ extern "C" {
       asm("svc #123");
     }
     __attribute__((naked))
-    void lockSystem(void) {
+    void setTimer(void) {
       asm("svc #124");
     }
     __attribute__((naked))
-    void unlockSystem(void) {
+    void resetTimer(void) {
       asm("svc #125");
     }
     __attribute__((naked))
-    void setTimer(void) {
+    void runCallbacks(void) {
       asm("svc #126");
     }
     __attribute__((naked))
-    void resetTimer(void) {
+    void flashErase(void) {
       asm("svc #127");
     }
     __attribute__((naked))
-    void runCallbacks(void) {
-      asm("svc #128");
-    }
-    __attribute__((naked))
-    void flashErase(void) {
-      asm("svc #129");
-    }
-    __attribute__((naked))
     void flashWrite(void) {
-      asm("svc #130");
+      asm("svc #128");
     }
 };
   __attribute__((naked))
