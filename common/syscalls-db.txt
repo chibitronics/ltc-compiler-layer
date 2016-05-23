@@ -204,11 +204,10 @@ c | threadSleep
 c | threadSleepUntil
 c | waitThread
 c | lockSystem
-c | lockSystemFromISR
 c | unlockSystem
-c | unlockSystemFromISR
 c | setTimer
 c | resetTimer
+c | runCallbacks
 
 
 # Flash management
