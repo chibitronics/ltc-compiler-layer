@@ -133,8 +133,8 @@ struct ch_virtual_timer {
                                                 parameter.                  */
 };
 
-void setTimer(virtual_timer_t *vtp, systime_t delay,
-              vtfunc_t vtfunc, void *par);
+int setTimer(virtual_timer_t *vtp, systime_t delay,
+             vtfunc_t vtfunc, void *par);
 void resetTimer(virtual_timer_t *vtp);
 
 thread_t *createThread(void *wsp, size_t size,
