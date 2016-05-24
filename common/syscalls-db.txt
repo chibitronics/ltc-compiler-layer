@@ -20,8 +20,14 @@
 # Functions we must implement, but shouldn't do anything.
 c | do_nothing | __aeabi_atexit,__cxa_atexit,atexit,_atexit,__cxa_finalize,__aeabi_d2f,__aeabi_f2d,__aeabi_h2f,__aeabi_h2f_alt,__aeabi_f2h,__aeabi_f2h_alt,__aeabi_d2h,__aeabi_d2h_alt
 
+
 # A useful function, for determining which ABI we're on
 c | getSyscallABI
+
+
+# Handy for performing calls that lock the system
+c | getSyscallAddr
+
 
 # Memory copying, clearing, and setting
 c | memcpy | memcpy,__aeabi_memcpy8,__aeabi_memcpy4,__aeabi_memcpy
@@ -206,6 +212,10 @@ c | waitThread
 c | setTimer
 c | resetTimer
 c | runCallbacks
+c | lockSystem
+c | unlockSystem
+c | lockSystemFromISR
+c | unlockSystemFromISR
 
 
 # Flash management
