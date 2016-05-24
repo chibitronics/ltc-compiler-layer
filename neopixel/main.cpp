@@ -3,8 +3,6 @@
 
 #include "Adafruit_NeoPixel.h"
 
-#define PIN (32 + 3)
-
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
 // Parameter 3 = pixel type flags, add together as needed:
@@ -13,7 +11,8 @@
 //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
 //   NEO_RGBW    Pixels are wired for RGBW bitstream (NeoPixel RGBW products)
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(60, PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(1, LED_BUILTIN_RGB,
+                                            NEO_GRB + NEO_KHZ800);
 
 // Input a value 0 to 255 to get a color value.
 // The colours are a transition r - g - b - back to r.
