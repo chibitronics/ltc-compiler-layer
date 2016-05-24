@@ -201,6 +201,13 @@ long randomSeed(unsigned long seed);
 #define A7 0x87 /* VDD voltage value */
 #define A8 0x88 /* VCC voltage value */
 
-#define RGB_PIN PTA(6)
+/* Digital pins */
+#define D0 0x00
+#define D1 0x00
+#define LED_BUILTIN_RGB PTA(6)
+#define LED_BUILTIN_RED PTA(5)
+#define LED_BUILTIN_GREEN PTB(6)
+#define MODE_BUTTON PTB(1)
+#define LED_BUILTIN LED_BUILTIN_GREEN
 
 #endif /* __ARDUINO_KOSAGI_H__ */
