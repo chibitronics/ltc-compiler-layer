@@ -514,104 +514,124 @@ extern "C" {
       asm("svc #87");
     }
     __attribute__((naked))
+    void attachFastInterrupt(void) {
+      asm("svc #95");
+    }
+    __attribute__((naked))
+    void detachFastInterrupt(void) {
+      asm("svc #97");
+    }
+    __attribute__((naked))
     void i2cTransceive(void) {
-      asm("svc #109");
-    }
-    __attribute__((naked))
-    void i2cSetupSlave(void) {
-      asm("svc #110");
-    }
-    __attribute__((naked))
-    void usbSetup(void) {
       asm("svc #111");
     }
     __attribute__((naked))
-    void usbSend(void) {
+    void i2cSetupSlave(void) {
       asm("svc #112");
     }
     __attribute__((naked))
-    void usbReceive(void) {
+    void usbSetup(void) {
       asm("svc #113");
     }
     __attribute__((naked))
-    void usbAttach(void) {
+    void usbSend(void) {
       asm("svc #114");
     }
     __attribute__((naked))
-    void usbDetach(void) {
+    void usbSendControl(void) {
       asm("svc #115");
     }
     __attribute__((naked))
-    void createThread(void) {
+    void usbReceive(void) {
       asm("svc #116");
     }
     __attribute__((naked))
-    void exitThread(void) {
+    void usbReceiveControl(void) {
       asm("svc #117");
     }
     __attribute__((naked))
-    void suspendThread(void) {
+    void usbAttach(void) {
       asm("svc #118");
     }
     __attribute__((naked))
-    void suspendThreadTimeout(void) {
+    void usbDetach(void) {
       asm("svc #119");
     }
     __attribute__((naked))
-    void resumeThread(void) {
+    void createThread(void) {
       asm("svc #120");
     }
     __attribute__((naked))
-    void yieldThread(void) {
+    void exitThread(void) {
       asm("svc #121");
     }
     __attribute__((naked))
-    void threadSleep(void) {
+    void suspendThread(void) {
       asm("svc #122");
     }
     __attribute__((naked))
-    void threadSleepUntil(void) {
+    void suspendThreadTimeout(void) {
       asm("svc #123");
     }
     __attribute__((naked))
-    void waitThread(void) {
+    void resumeThread(void) {
       asm("svc #124");
     }
     __attribute__((naked))
-    void setTimer(void) {
+    void yieldThread(void) {
       asm("svc #125");
     }
     __attribute__((naked))
-    void resetTimer(void) {
+    void threadSleep(void) {
       asm("svc #126");
     }
     __attribute__((naked))
-    void runCallbacks(void) {
+    void threadSleepUntil(void) {
       asm("svc #127");
     }
     __attribute__((naked))
-    void lockSystem(void) {
+    void waitThread(void) {
       asm("svc #128");
     }
     __attribute__((naked))
-    void unlockSystem(void) {
+    void setTimer(void) {
       asm("svc #129");
     }
     __attribute__((naked))
-    void lockSystemFromISR(void) {
+    void resetTimer(void) {
       asm("svc #130");
     }
     __attribute__((naked))
-    void unlockSystemFromISR(void) {
+    void runCallbacks(void) {
       asm("svc #131");
     }
     __attribute__((naked))
-    void flashErase(void) {
+    void lockSystem(void) {
       asm("svc #132");
     }
     __attribute__((naked))
-    void flashWrite(void) {
+    void unlockSystem(void) {
       asm("svc #133");
+    }
+    __attribute__((naked))
+    void lockSystemFromISR(void) {
+      asm("svc #134");
+    }
+    __attribute__((naked))
+    void unlockSystemFromISR(void) {
+      asm("svc #135");
+    }
+    __attribute__((naked))
+    void flashErase(void) {
+      asm("svc #136");
+    }
+    __attribute__((naked))
+    void flashWrite(void) {
+      asm("svc #137");
+    }
+    __attribute__((naked))
+    void doSudo(void) {
+      asm("svc #138");
     }
 };
   __attribute__((naked))
@@ -644,57 +664,57 @@ extern "C" {
   }
   __attribute__((naked))
   void detachInterrupt(int irq) {
-    asm("svc #95");
-  }
-  __attribute__((naked))
-  void tone(int pin, unsigned int frequency, unsigned long duration) {
     asm("svc #96");
   }
   __attribute__((naked))
-  void noTone(int pin) {
-    asm("svc #97");
-  }
-  __attribute__((naked))
-  void shiftOut(int dataPin, int clockPin, int bitOrder, uint8_t val) {
+  void tone(int pin, unsigned int frequency, unsigned long duration) {
     asm("svc #98");
   }
   __attribute__((naked))
-  uint8_t shiftIn(int dataPin, int clockPin, int bitOrder) {
+  void noTone(int pin) {
     asm("svc #99");
   }
   __attribute__((naked))
-  unsigned long pulseIn(int pin, uint8_t state, unsigned long timeout) {
+  void shiftOut(int dataPin, int clockPin, int bitOrder, uint8_t val) {
     asm("svc #100");
   }
   __attribute__((naked))
-  unsigned long pulseInLong(int pin, uint8_t state, unsigned long timeout) {
+  uint8_t shiftIn(int dataPin, int clockPin, int bitOrder) {
     asm("svc #101");
   }
   __attribute__((naked))
-  unsigned long millis(void) {
+  unsigned long pulseIn(int pin, uint8_t state, unsigned long timeout) {
     asm("svc #102");
   }
   __attribute__((naked))
-  unsigned long micros(void) {
+  unsigned long pulseInLong(int pin, uint8_t state, unsigned long timeout) {
     asm("svc #103");
   }
   __attribute__((naked))
-  void delay(unsigned long msecs) {
+  unsigned long millis(void) {
     asm("svc #104");
   }
   __attribute__((naked))
-  void delayMicroseconds(unsigned int usecs) {
+  unsigned long micros(void) {
     asm("svc #105");
   }
   __attribute__((naked))
-  long map(long value, long fromLow, long fromHigh, long toLow, long toHigh) {
+  void delay(unsigned long msecs) {
     asm("svc #106");
   }
   __attribute__((naked))
-  long random(long min, long max) {
+  void delayMicroseconds(unsigned int usecs) {
     asm("svc #107");
   }
   __attribute__((naked))
-  long randomSeed(unsigned long seed) {
+  long map(long value, long fromLow, long fromHigh, long toLow, long toHigh) {
     asm("svc #108");
+  }
+  __attribute__((naked))
+  long random(long min, long max) {
+    asm("svc #109");
+  }
+  __attribute__((naked))
+  long randomSeed(unsigned long seed) {
+    asm("svc #110");
   }
