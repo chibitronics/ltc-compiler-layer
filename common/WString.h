@@ -23,9 +23,6 @@
 #define String_class_h
 #ifdef __cplusplus
 
-//#include <stdlib.h>
-//#include <string.h>
-//#include <ctype.h>
 #include "Arduino.h"
 
 extern "C" {

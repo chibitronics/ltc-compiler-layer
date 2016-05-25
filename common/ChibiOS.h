@@ -98,6 +98,9 @@ typedef struct {
     uint8_t data[64];
 } thread_t;
 
+typedef long long int64_t;
+typedef unsigned long long uint64_t;
+
 typedef uint32_t systime_t;
 typedef uint32_t tprio_t;
 typedef uint64_t stkalign_t;
