@@ -522,6 +522,10 @@ extern "C" {
       asm("svc #97");
     }
     __attribute__((naked))
+    void map(void) {
+      asm("svc #108");
+    }
+    __attribute__((naked))
     void i2cTransceive(void) {
       asm("svc #111");
     }
@@ -709,10 +713,6 @@ extern "C" {
   __attribute__((naked))
   void delayMicroseconds(unsigned int usecs) {
     asm("svc #107");
-  }
-  __attribute__((naked))
-  long map(long value, long fromLow, long fromHigh, long toLow, long toHigh) {
-    asm("svc #108");
   }
   __attribute__((naked))
   long random(long min, long max) {
