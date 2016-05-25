@@ -183,7 +183,7 @@ x | delayMicroseconds | void | unsigned int usecs | usecs
 
 
 # Arduino math
-x | map | long | long value, long fromLow, long fromHigh, long toLow, long toHigh | value, fromLow, fromHigh, toLow, toHigh
+c | map
 x | random | long | long min, long max | min, max
 x | randomSeed | long | unsigned long seed | seed
 
