@@ -1,4 +1,3 @@
-#include <stdint.h>
 #include "Arduino-types.h"
 extern "C" {
     __attribute__((naked))
