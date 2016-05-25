@@ -68,7 +68,6 @@ public:
 	explicit String(long, unsigned char base=10);
 	explicit String(unsigned long, unsigned char base=10);
 	explicit String(float, unsigned char decimalPlaces=2);
-	explicit String(double, unsigned char decimalPlaces=2);
 	~String(void);
 
 	// memory management
@@ -102,7 +101,6 @@ public:
 	unsigned char concat(long num);
 	unsigned char concat(unsigned long num);
 	unsigned char concat(float num);
-	unsigned char concat(double num);
 	
 	// if there's not enough memory for the concatenated value, the string
 	// will be left unchanged (but this isn't signalled in any way)
@@ -115,7 +113,6 @@ public:
 	String & operator += (long num)			{concat(num); return (*this);}
 	String & operator += (unsigned long num)	{concat(num); return (*this);}
 	String & operator += (float num)		{concat(num); return (*this);}
-	String & operator += (double num)		{concat(num); return (*this);}
 
 	friend StringSumHelper & operator + (const StringSumHelper &lhs, const String &rhs);
 	friend StringSumHelper & operator + (const StringSumHelper &lhs, const char *cstr);
@@ -126,7 +123,6 @@ public:
 	friend StringSumHelper & operator + (const StringSumHelper &lhs, long num);
 	friend StringSumHelper & operator + (const StringSumHelper &lhs, unsigned long num);
 	friend StringSumHelper & operator + (const StringSumHelper &lhs, float num);
-	friend StringSumHelper & operator + (const StringSumHelper &lhs, double num);
 
 	// comparison (only works w/ Strings and "strings")
 	operator StringIfHelperType() const { return buffer ? &String::StringIfHelper : 0; }
@@ -209,7 +205,6 @@ public:
 	StringSumHelper(long num) : String(num) {}
 	StringSumHelper(unsigned long num) : String(num) {}
 	StringSumHelper(float num) : String(num) {}
-	StringSumHelper(double num) : String(num) {}
 };
 
 #endif  // __cplusplus

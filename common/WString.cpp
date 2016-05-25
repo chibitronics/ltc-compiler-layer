@@ -32,10 +32,11 @@ extern "C" {
   extern char * ultoa (unsigned long val, char *s, int radix);
   extern char * itoa (int val, char *s, int radix);
 
-  extern char * dtostre (double __val, char *__s, unsigned char __prec,
+  extern char * dtostre (float __val, char *__s, unsigned char __prec,
                          unsigned char __flags);
-  extern char * dtostrf (double __val, signed char __width,
+  extern char * dtostrf (float __val, signed char __width,
                          unsigned char __prec, char *__s);
+  extern void float2str(float f, char*s, unsigned int fmt);
 };
 
 String::String(const char *cstr)
@@ -116,14 +117,8 @@ String::String(float value, unsigned char decimalPlaces)
 {
 	init();
 	char buf[33];
-	*this = dtostrf(value, (decimalPlaces + 2), decimalPlaces, buf);
-}
-
-String::String(double value, unsigned char decimalPlaces)
-{
-	init();
-	char buf[33];
-	*this = dtostrf(value, (decimalPlaces + 2), decimalPlaces, buf);
+  float2str(value, buf, 0);
+	*this = buf;
 }
 
 String::~String()
@@ -315,13 +310,6 @@ unsigned char String::concat(float num)
 	return concat(string, strlen(string));
 }
 
-unsigned char String::concat(double num)
-{
-	char buf[20];
-	char* string = dtostrf(num, 4, 2, buf);
-	return concat(string, strlen(string));
-}
-
 /*********************************************/
 /*  Concatenate                              */
 /*********************************************/
@@ -383,13 +371,6 @@ StringSumHelper & operator + (const StringSumHelper &lhs, unsigned long num)
 }
 
 StringSumHelper & operator + (const StringSumHelper &lhs, float num)
-{
-	StringSumHelper &a = const_cast<StringSumHelper&>(lhs);
-	if (!a.concat(num)) a.invalidate();
-	return a;
-}
-
-StringSumHelper & operator + (const StringSumHelper &lhs, double num)
 {
 	StringSumHelper &a = const_cast<StringSumHelper&>(lhs);
 	if (!a.concat(num)) a.invalidate();
