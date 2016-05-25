@@ -46,7 +46,6 @@ sub generate_files {
     push (@cxx_destructors, $call) if ($call->[1] eq "D");
   }
 
-  print $app_fh "#include <stdint.h>\n";
   print $app_fh "#include \"Arduino-types.h\"\n";
 
 #  if (@c_syscalls) {
