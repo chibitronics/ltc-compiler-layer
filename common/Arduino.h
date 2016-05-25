@@ -188,8 +188,8 @@ long randomSeed(unsigned long seed);
 #define bitWrite(value, bit, bitvalue) (bitvalue ? bitSet(value, bit) : bitClear(value, bit))
 #define bit(b) (1UL << (b))
 
-#define PTA(x) (x)
-#define PTB(x) (32 + x)
+#define PTA(x) (0x40 | (x))
+#define PTB(x) (0x40 | (32 + x))
 
 #define A0 0x80
 #define A1 0x81
@@ -204,10 +204,19 @@ long randomSeed(unsigned long seed);
 /* Digital pins */
 #define D0 0x00
 #define D1 0x00
-#define LED_BUILTIN_RGB PTA(6)
-#define LED_BUILTIN_RED PTA(5)
+
+#define LED_BUILTIN       PTB(13)
+#define LED_A2            LED_BUILTIN
+#define BUTTON_A1         PTA(9)
+#define BUTTON_REC        PTB(1) /* Silkscreened as "Rec" */
+#define BUTTON_A3         PTB(13)
+#define LED_BUILTIN_RGB   PTA(6)
+
+#define LED_BUILTIN_RED   PTA(5)
 #define LED_BUILTIN_GREEN PTB(6)
-#define MODE_BUTTON PTB(1)
-#define LED_BUILTIN LED_BUILTIN_GREEN
+#define UART_TX           PTB(3)
+#define UART_RX           PTB(4)
+#define SWD_CLK           PTA(0)
+#define SWD_DIO           PTA(2)
 
 #endif /* __ARDUINO_KOSAGI_H__ */
