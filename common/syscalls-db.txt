@@ -229,3 +229,4 @@ c | flashWrite
 
 # Advanced mode
 c | doSudo
+c | setSerialSpeed
