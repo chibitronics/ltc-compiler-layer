@@ -1,7 +1,7 @@
 #ifndef __CHIBI_OS_H__
 #define __CHIBI_OS_H__
 
-//#include <stdint.h>
+#include "Arduino-types.h"
 
 #ifdef __cplusplus
 extern "C" {
