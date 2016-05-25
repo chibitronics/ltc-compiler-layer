@@ -22,7 +22,7 @@
 #ifndef Stream_h
 #define Stream_h
 
-#include <inttypes.h>
+#include "Arduino-types.h"
 #include "Print.h"
 
 // compatability macros for testing

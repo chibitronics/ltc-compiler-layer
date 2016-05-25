@@ -1,6 +1,8 @@
 #ifndef __HARDWARE_SERIAL_H__
 #define __HARDWARE_SERIAL_H__
-#include <stdint.h>
+//#include <stdint.h>
+
+#include "Arduino-types.h"
 #include "Stream.h"
 
 #ifdef __cplusplus

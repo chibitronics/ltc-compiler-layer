@@ -429,7 +429,7 @@ unsigned char String::equalsIgnoreCase( const String &s2 ) const
 	const char *p1 = buffer;
 	const char *p2 = s2.buffer;
 	while (*p1) {
-		if (tolower(*p1++) != tolower(*p2++)) return 0;
+		if (::toLowerCase(*p1++) != ::toLowerCase(*p2++)) return 0;
 	} 
 	return 1;
 }
@@ -652,7 +652,7 @@ void String::toLowerCase(void)
 {
 	if (!buffer) return;
 	for (char *p = buffer; *p; p++) {
-		*p = tolower(*p);
+		*p = ::toLowerCase(*p);
 	}
 }
 
@@ -660,7 +660,7 @@ void String::toUpperCase(void)
 {
 	if (!buffer) return;
 	for (char *p = buffer; *p; p++) {
-		*p = toupper(*p);
+		*p = ::toUpperCase(*p);
 	}
 }
 

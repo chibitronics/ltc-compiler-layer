@@ -3,10 +3,10 @@
 long int strtol(const char *nptr, char **endptr, int base);
 void float2str(float f,char*s,unsigned int fmt);
 
-const char * strstr(const char *haystack, const char *needle) {
+char * strstr(const char *haystack, const char *needle) {
 
   if (!*needle)
-    return haystack;
+    return (char *)haystack;
 
   const char *p1 = haystack;
   const char *p2 = needle;
@@ -23,7 +23,7 @@ const char * strstr(const char *haystack, const char *needle) {
       p2++;
     }
     if (!*p2)
-      return p1Begin;
+      return (char *)p1Begin;
     p1 = p1Begin + 1;
     p1Adv++;
   }

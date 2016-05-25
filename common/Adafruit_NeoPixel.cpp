@@ -33,8 +33,6 @@
   -------------------------------------------------------------------------*/
 
 #include "Adafruit_NeoPixel.h"
-#include <stdlib.h>
-#include <string.h>
 
 // Constructor when length, pin and type are known at compile-time:
 Adafruit_NeoPixel::Adafruit_NeoPixel(uint16_t n, uint8_t p, neoPixelType t) :

@@ -16,6 +16,27 @@ void setup(void);
 void init(void);
 void runCallbacks(void);
 void loop(void);
+
+typedef uint32_t size_t;
+size_t strlen(const char *s);
+void *malloc(size_t size);
+void free(void *ptr);
+void *calloc(size_t nmemb, size_t size);
+void *realloc(void *ptr, size_t size);
+char *strcpy(char *dest, const char *src);
+char *strncpy(char *dest, const char *src, size_t n);
+char *strstr(const char *haystack, const char *needle);
+void *memcpy(void *dest, const void *src, size_t n);
+char *strchr(const char *s, int c);
+char *strrchr(const char *s, int c);
+int strcmp(const char *s1, const char *s2);
+int strncmp(const char *s1, const char *s2, size_t n);
+void *memmove(void *dest, const void *src, size_t n);
+void *memset(void *s, int c, size_t n);
+float atof(const char *nptr);
+int atoi(const char *nptr);
+long atol(const char *nptr);
+
 #ifdef __cplusplus
 };
 #endif

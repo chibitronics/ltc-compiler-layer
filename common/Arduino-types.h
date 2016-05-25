@@ -1,8 +1,21 @@
 #ifndef __ARDUINO_TYPES_KOSAGI_H__
 #define __ARDUINO_TYPES_KOSAGI_H__
 
-#include <stdint.h>
-#include <stdbool.h>
+//#include <stdint.h>
+//#include <stdbool.h>
+
+typedef unsigned int uint32_t;
+typedef signed int int32_t;
+typedef unsigned char uint8_t;
+typedef signed char int8_t;
+typedef unsigned short uint16_t;
+typedef signed short int16_t;
+
+typedef uint32_t size_t;
+
+#ifndef __cplusplus
+typedef uint8_t bool;
+#endif
 
 #ifndef boolean
 #define boolean bool
