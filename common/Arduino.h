@@ -36,6 +36,9 @@ void *memset(void *s, int c, size_t n);
 float atof(const char *nptr);
 int atoi(const char *nptr);
 long atol(const char *nptr);
+int printf(const char *format, ...);
+int printf(const char *format, ...);
+int snprintf(char *str, size_t size, const char *format, ...);
 
 #ifdef __cplusplus
 };
