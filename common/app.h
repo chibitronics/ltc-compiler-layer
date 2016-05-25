@@ -1,7 +1,7 @@
 #ifndef __APP_H__
 #define __APP_H__
 
-#include <stdint.h>
+#include "Arduino-types.h"
 
 struct app_header {
 
