@@ -633,6 +633,10 @@ extern "C" {
     void doSudo(void) {
       asm("svc #138");
     }
+    __attribute__((naked))
+    void setSerialSpeed(void) {
+      asm("svc #139");
+    }
 };
   __attribute__((naked))
   void pinMode(int pin, enum pin_mode mode) {
