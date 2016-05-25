@@ -100,8 +100,83 @@ typedef struct {
 
 typedef uint32_t systime_t;
 typedef uint32_t tprio_t;
+typedef uint64_t stkalign_t;
 typedef uint32_t msg_t;
 typedef thread_t * thread_reference_t;
+typedef void * regarm_t;
+
+struct port_extctx {
+  regarm_t      r0;
+  regarm_t      r1;
+  regarm_t      r2;
+  regarm_t      r3;
+  regarm_t      r12;
+  regarm_t      lr_thd;
+  regarm_t      pc;
+  regarm_t      xpsr;
+};
+
+struct port_intctx {
+  regarm_t      r8;
+  regarm_t      r9;
+  regarm_t      r10;
+  regarm_t      r11;
+  regarm_t      r4;
+  regarm_t      r5;
+  regarm_t      r6;
+  regarm_t      r7;
+  regarm_t      lr;
+};
+
+/**
+ * @brief   Per-thread stack overhead for interrupts servicing.
+ * @details This constant is used in the calculation of the correct working
+ *          area size.
+ * @note    In this port this value is conservatively set to 64 because the
+ *          function @p chSchDoReschedule() can have a stack frame, especially
+ *          with compiler optimizations disabled. The value can be reduced
+ *          when compiler optimizations are enabled.
+ */
+#if !defined(PORT_INT_REQUIRED_STACK)
+#define PORT_INT_REQUIRED_STACK         64
+#endif
+
+/**
+ * @brief   Computes the thread working area global size.
+ * @note    There is no need to perform alignments in this macro.
+ */
+#define PORT_WA_SIZE(n) (sizeof(struct port_intctx) +                       \
+                         sizeof(struct port_extctx) +                       \
+                         ((size_t)(n)) + ((size_t)(PORT_INT_REQUIRED_STACK)))
+
+#define THD_ALIGN_STACK_SIZE(n)                                             \
+  (((((size_t)(n)) - 1U) | (sizeof(stkalign_t) - 1U)) + 1U)
+
+/**
+ * @brief   Calculates the total Working Area size.
+ *
+ * @param[in] n         the stack size to be assigned to the thread
+ * @return              The total used memory in bytes.
+ *
+ * @api
+ */
+#define THD_WORKING_AREA_SIZE(n)                                            \
+  THD_ALIGN_STACK_SIZE(sizeof(thread_t) + PORT_WA_SIZE(n))
+
+#define THD_FUNCTION(tname, arg) void tname(void *arg)
+
+/**
+ * @brief   Static working area allocation.
+ * @details This macro is used to allocate a static thread working area
+ *          aligned as both position and size.
+ *
+ * @param[in] s         the name to be assigned to the stack array
+ * @param[in] n         the stack size to be assigned to the thread
+ *
+ * @api
+ */
+#define THD_WORKING_AREA(s, n)                                              \
+  stkalign_t s[THD_WORKING_AREA_SIZE(n) / sizeof(stkalign_t)]
 
 /**
  * @brief   Type of a Virtual Timer callback function.
