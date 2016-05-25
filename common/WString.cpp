@@ -32,8 +32,6 @@ extern "C" {
   extern char * ultoa (unsigned long val, char *s, int radix);
   extern char * itoa (int val, char *s, int radix);
 
-  extern char * dtostre (float __val, char *__s, unsigned char __prec,
-                         unsigned char __flags);
   extern char * dtostrf (float __val, signed char __width,
                          unsigned char __prec, char *__s);
   extern void float2str(float f, char*s, unsigned int fmt);
