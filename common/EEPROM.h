@@ -21,7 +21,7 @@
 #ifndef EEPROM_h
 #define EEPROM_h
 
-#include <stdint.h>
+#include "Arduino.h"
 
 #if !defined(E2END)
 /* This defines the size of the emulated eeprom (in bytes).

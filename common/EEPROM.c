@@ -1,5 +1,3 @@
-#include <string.h>
-
 #include "Arduino.h"
 #include "ChibiOS.h"
 #include "EEPROM.h"
