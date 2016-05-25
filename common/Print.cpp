@@ -20,12 +20,7 @@
  Modified 03 August 2015 by Chuck Todd
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
 #include "Arduino.h"
-
 #include "Print.h"
 
 extern "C" {
