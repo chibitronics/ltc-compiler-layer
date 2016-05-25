@@ -634,12 +634,24 @@ extern "C" {
       asm("svc #137");
     }
     __attribute__((naked))
-    void doSudo(void) {
+    void __gnu_thumb1_case_sqi(void) {
       asm("svc #138");
     }
     __attribute__((naked))
-    void setSerialSpeed(void) {
+    void __gnu_thumb1_case_uqi(void) {
       asm("svc #139");
+    }
+    __attribute__((naked))
+    void __gnu_thumb1_case_uhi(void) {
+      asm("svc #140");
+    }
+    __attribute__((naked))
+    void doSudo(void) {
+      asm("svc #141");
+    }
+    __attribute__((naked))
+    void setSerialSpeed(void) {
+      asm("svc #142");
     }
 };
   __attribute__((naked))
