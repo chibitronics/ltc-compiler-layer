@@ -227,6 +227,12 @@ c | flashErase
 c | flashWrite
 
 
+# Arm thumb jump tables
+c | __gnu_thumb1_case_sqi
+c | __gnu_thumb1_case_uqi
+c | __gnu_thumb1_case_uhi
+
+
 # Advanced mode
 c | doSudo
 c | setSerialSpeed
