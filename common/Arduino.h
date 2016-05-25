@@ -5,6 +5,8 @@
 #include "WString.h"
 #include "Serial.h"
 
+#define double float
+
 /* Program lifetime */
 #if !defined(ARDUINO_OS) /* These are not syscalls */
 #ifdef __cplusplus
