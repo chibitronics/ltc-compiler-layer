@@ -164,7 +164,9 @@ x | analogWrite | void | int pin, int value | pin, value
 x | analogReference | void | enum analog_reference_type type | type
 x | analogRead | int | int pin | pin
 x | attachInterrupt | void | int irq, void (*func)(void), enum irq_mode mode | irq, func, mode
+c | attachFastInterrupt
 x | detachInterrupt | void | int irq | irq
+c | detachFastInterrupt
 x | tone | void | int pin, unsigned int frequency, unsigned long duration | pin, frequency, duration
 x | noTone | void | int pin | pin
 x | shiftOut | void | int dataPin, int clockPin, int bitOrder, uint8_t val | dataPin, clockPin, bitOrder, val
@@ -194,7 +196,9 @@ c | i2cSetupSlave
 # USB stuff
 c | usbSetup
 c | usbSend
+c | usbSendControl
 c | usbReceive
+c | usbReceiveControl
 c | usbAttach
 c | usbDetach
 
@@ -221,3 +225,7 @@ c | unlockSystemFromISR
 # Flash management
 c | flashErase
 c | flashWrite
+
+
+# Advanced mode
+c | doSudo
