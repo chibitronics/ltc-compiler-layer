@@ -7,6 +7,8 @@
 class HardwareSerial : public Stream
 {
   protected:
+    uint8_t next_byte;
+    uint8_t have_next_byte;
 
   public:
     inline HardwareSerial();

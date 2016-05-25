@@ -21,12 +21,22 @@ int HardwareSerial::available(void) {
 
 int HardwareSerial::peek(void) {
 
-#warning "Implement peek"
+  if (have_next_byte)
+    return next_byte;
+  if (serialCanGetChar()) {
+    have_next_byte = 1;
+    next_byte = serialGetChar();
+    return next_byte;
+  }
   return 0;
 }
 
 int HardwareSerial::read(void) {
 
+  if (have_next_byte) {
+    have_next_byte = 0;
+    return next_byte;
+  }
   return serialGetChar();
 }
 
