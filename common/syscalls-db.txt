@@ -196,9 +196,7 @@ c | i2cSetupSlave
 # USB stuff
 c | usbSetup
 c | usbSend
-c | usbSendControl
 c | usbReceive
-c | usbReceiveControl
 c | usbAttach
 c | usbDetach
 
@@ -220,6 +218,10 @@ c | lockSystem
 c | unlockSystem
 c | lockSystemFromISR
 c | unlockSystemFromISR
+c | mutexInit
+c | mutexLock
+c | mutexTryLock
+c | mutexUnlock
 
 
 # Flash management
