@@ -45,6 +45,9 @@ int snprintf(char *str, size_t size, const char *format, ...);
 #endif
 #endif /* !ARDUINO_OS */
 
+/* Undef this, as there's no difference between the types of memory */
+#define PROGMEM
+
 /* Generic IO */
 void pinMode(int pin, enum pin_mode mode);
 
