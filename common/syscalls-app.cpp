@@ -541,116 +541,124 @@ extern "C" {
       asm("svc #114");
     }
     __attribute__((naked))
-    void usbSendControl(void) {
+    void usbReceive(void) {
       asm("svc #115");
     }
     __attribute__((naked))
-    void usbReceive(void) {
+    void usbAttach(void) {
       asm("svc #116");
     }
     __attribute__((naked))
-    void usbReceiveControl(void) {
+    void usbDetach(void) {
       asm("svc #117");
     }
     __attribute__((naked))
-    void usbAttach(void) {
+    void createThread(void) {
       asm("svc #118");
     }
     __attribute__((naked))
-    void usbDetach(void) {
+    void exitThread(void) {
       asm("svc #119");
     }
     __attribute__((naked))
-    void createThread(void) {
+    void suspendThread(void) {
       asm("svc #120");
     }
     __attribute__((naked))
-    void exitThread(void) {
+    void suspendThreadTimeout(void) {
       asm("svc #121");
     }
     __attribute__((naked))
-    void suspendThread(void) {
+    void resumeThread(void) {
       asm("svc #122");
     }
     __attribute__((naked))
-    void suspendThreadTimeout(void) {
+    void yieldThread(void) {
       asm("svc #123");
     }
     __attribute__((naked))
-    void resumeThread(void) {
+    void threadSleep(void) {
       asm("svc #124");
     }
     __attribute__((naked))
-    void yieldThread(void) {
+    void threadSleepUntil(void) {
       asm("svc #125");
     }
     __attribute__((naked))
-    void threadSleep(void) {
+    void waitThread(void) {
       asm("svc #126");
     }
     __attribute__((naked))
-    void threadSleepUntil(void) {
+    void setTimer(void) {
       asm("svc #127");
     }
     __attribute__((naked))
-    void waitThread(void) {
+    void resetTimer(void) {
       asm("svc #128");
     }
     __attribute__((naked))
-    void setTimer(void) {
+    void runCallbacks(void) {
       asm("svc #129");
     }
     __attribute__((naked))
-    void resetTimer(void) {
+    void lockSystem(void) {
       asm("svc #130");
     }
     __attribute__((naked))
-    void runCallbacks(void) {
+    void unlockSystem(void) {
       asm("svc #131");
     }
     __attribute__((naked))
-    void lockSystem(void) {
+    void lockSystemFromISR(void) {
       asm("svc #132");
     }
     __attribute__((naked))
-    void unlockSystem(void) {
+    void unlockSystemFromISR(void) {
       asm("svc #133");
     }
     __attribute__((naked))
-    void lockSystemFromISR(void) {
+    void mutexInit(void) {
       asm("svc #134");
     }
     __attribute__((naked))
-    void unlockSystemFromISR(void) {
+    void mutexLock(void) {
       asm("svc #135");
     }
     __attribute__((naked))
-    void flashErase(void) {
+    void mutexTryLock(void) {
       asm("svc #136");
     }
     __attribute__((naked))
-    void flashWrite(void) {
+    void mutexUnlock(void) {
       asm("svc #137");
     }
     __attribute__((naked))
-    void __gnu_thumb1_case_sqi(void) {
+    void flashErase(void) {
       asm("svc #138");
     }
     __attribute__((naked))
-    void __gnu_thumb1_case_uqi(void) {
+    void flashWrite(void) {
       asm("svc #139");
     }
     __attribute__((naked))
-    void __gnu_thumb1_case_uhi(void) {
+    void __gnu_thumb1_case_sqi(void) {
       asm("svc #140");
     }
     __attribute__((naked))
-    void doSudo(void) {
+    void __gnu_thumb1_case_uqi(void) {
       asm("svc #141");
     }
     __attribute__((naked))
-    void setSerialSpeed(void) {
+    void __gnu_thumb1_case_uhi(void) {
       asm("svc #142");
+    }
+    __attribute__((naked))
+    void doSudo(void) {
+      asm("svc #143");
+    }
+    __attribute__((naked))
+    void setSerialSpeed(void) {
+      asm("svc #144");
     }
 };
   __attribute__((naked))
