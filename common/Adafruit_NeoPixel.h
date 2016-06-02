@@ -156,7 +156,7 @@ class Adafruit_NeoPixel {
   uint16_t
     numLEDs,       // Number of RGB LEDs in strip
     numBytes;      // Size of 'pixels' buffer below (3 or 4 bytes/pixel)
-  int8_t
+  int
     pin;           // Output pin number (-1 if not yet set)
   uint8_t
     brightness,
