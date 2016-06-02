@@ -25,8 +25,7 @@ ENTRY(Esplanade_Main)
 
 MEMORY
 {
-  flashcfg :  org = 0x00005900,  len = 0x30
-  flash    :  org = 0x00005930,  len = 32k - 0x5930
+  flash    :  org = 0x00005900,  len = 32k - 0x5900
   osram    :  org = 0x1FFFFC00,  len = 1024
   ram      :  org = 0x1FFFFC00 + LENGTH(osram),  len = 4k - LENGTH(osram)
 }
@@ -39,55 +38,35 @@ SECTIONS
 {
   . = 0x5900;
 
-  .hdr : ALIGN(4) SUBALIGN(4)
+  .text : ALIGN(4) SUBALIGN(4)
   {
     KEEP(*(.progheader))
-  } > flashcfg
 
-  _text = .;
+    _text = .;
 
-  constructors : ALIGN(4) SUBALIGN(4)
-  {
     PROVIDE(__init_array_start = .);
     KEEP(*(SORT(.init_array.*)))
     KEEP(*(.init_array))
     PROVIDE(__init_array_end = .);
-  } > flash
 
-  destructors : ALIGN(4) SUBALIGN(4)
-  {
     PROVIDE(__fini_array_start = .);
     KEEP(*(.fini_array))
     KEEP(*(SORT(.fini_array.*)))
     PROVIDE(__fini_array_end = .);
-  } > flash
 
-  .text : ALIGN(4) SUBALIGN(4)
-  {
     *(.text .stub .text.* .gnu.linkonce.t.*)
     KEEP(*(SORT(.chibi_list*)));
     *(.rodata)
     *(.rodata.*)
-  } > flash
 
-  .ARM.extab :
-  {
     *(.ARM.extab* .gnu.linkonce.armextab.*)
-  } > flash
 
-  .ARM.exidx : {
     PROVIDE(__exidx_start = .);
     *(.ARM.exidx* .gnu.linkonce.armexidx.*)
     PROVIDE(__exidx_end = .);
-  } > flash
 
-  .eh_frame_hdr :
-  {
     *(.eh_frame_hdr)
-  } > flash
 
-  .eh_frame : ONLY_IF_RO
-  {
     *(.eh_frame)
   } > flash
 
