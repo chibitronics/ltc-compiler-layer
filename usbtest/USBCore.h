@@ -76,6 +76,7 @@
 #define USB_INTERFACE_DESCRIPTOR_TYPE          4
 #define USB_ENDPOINT_DESCRIPTOR_TYPE           5
 #define USB_DEVICE_QUALIFIER                   6
+#define USB_OTHER_SPEED_CONFIGURATION          7
 
 // usb_20.pdf Table 9.6 Standard Feature Selectors
 #define DEVICE_REMOTE_WAKEUP                   1
@@ -143,7 +144,7 @@ typedef struct {
 	u8	iProduct;
 	u8	iSerialNumber;
 	u8	bNumConfigurations;
-} DeviceDescriptor;
+} __attribute__((packed)) DeviceDescriptor;
 
 //	Config
 typedef struct {
@@ -155,7 +156,7 @@ typedef struct {
 	u8	iconfig;
 	u8	attributes;
 	u8	maxPower;
-} ConfigDescriptor;
+} __attribute__((packed)) ConfigDescriptor;
 
 //	String
 
@@ -171,7 +172,7 @@ typedef struct
 	u8 interfaceSubClass;
 	u8 protocol;
 	u8 iInterface;
-} InterfaceDescriptor;
+} __attribute__((packed)) InterfaceDescriptor;
 
 //	Endpoint
 typedef struct
@@ -182,7 +183,7 @@ typedef struct
 	u8 attr;
 	u16 packetSize;
 	u8 interval;
-} EndpointDescriptor;
+} __attribute__((packed)) EndpointDescriptor;
 
 // Interface Association Descriptor
 // Used to bind 2 interfaces together in CDC compostite device
@@ -196,7 +197,7 @@ typedef struct
 	u8 funtionSubClass;
 	u8 functionProtocol;
 	u8 iInterface;
-} IADDescriptor;
+} __attribute__((packed)) IADDescriptor;
 
 //	CDC CS interface descriptor
 typedef struct
@@ -206,7 +207,7 @@ typedef struct
 	u8 subtype;
 	u8 d0;
 	u8 d1;
-} CDCCSInterfaceDescriptor;
+} __attribute__((packed)) CDCCSInterfaceDescriptor;
 
 typedef struct
 {
@@ -214,7 +215,19 @@ typedef struct
 	u8 dtype;	// 0x24
 	u8 subtype;
 	u8 d0;
-} CDCCSInterfaceDescriptor4;
+} __attribute__((packed)) CDCCSInterfaceDescriptor4;
+
+//  Device Qualifier (only needed for USB2.0 devices)
+typedef struct {
+  uint8_t bLength;
+  uint8_t dtype;
+  uint16_t bDescriptorType;
+  uint8_t bDeviceClass;
+  uint8_t bDeviceSubClass;
+  uint8_t bDeviceProtocol;
+  uint8_t bMaxPacketSize0;
+  uint8_t bNumConfigurations;
+} __attribute__((packed)) QualifierDescriptor;
 
 typedef struct 
 {
@@ -223,7 +236,7 @@ typedef struct
     u8 	subtype;	// 1
     u8 	bmCapabilities;
     u8 	bDataInterface;
-} CMFunctionalDescriptor;
+} __attribute__((packed)) CMFunctionalDescriptor;
 	
 typedef struct 
 {
@@ -231,7 +244,7 @@ typedef struct
     u8 	dtype;		// 0x24
     u8 	subtype;	// 1
     u8 	bmCapabilities;
-} ACMFunctionalDescriptor;
+} __attribute__((packed)) ACMFunctionalDescriptor;
 
 typedef struct 
 {
@@ -250,27 +263,30 @@ typedef struct
 	InterfaceDescriptor			dif;
 	EndpointDescriptor			in;
 	EndpointDescriptor			out;
-} CDCDescriptor;
+} __attribute__((packed)) CDCDescriptor;
 
 typedef struct 
 {
 	InterfaceDescriptor			msc;
 	EndpointDescriptor			in;
 	EndpointDescriptor			out;
-} MSCDescriptor;
+} __attribute__((packed)) MSCDescriptor;
 
 
 #define D_DEVICE(_class,_subClass,_proto,_packetSize0,_vid,_pid,_version,_im,_ip,_is,_configs) \
 	{ 18, 1, 0x200, _class,_subClass,_proto,_packetSize0,_vid,_pid,_version,_im,_ip,_is,_configs }
 
 #define D_CONFIG(_totalLength,_interfaces) \
-	{ 9, 2, _totalLength,_interfaces, 1, 0, USB_CONFIG_BUS_POWERED | USB_CONFIG_REMOTE_WAKEUP, USB_CONFIG_POWER_MA(500) }
+	{ 9, 2, _totalLength,_interfaces, 1, 0, USB_CONFIG_BUS_POWERED | USB_CONFIG_REMOTE_WAKEUP, USB_CONFIG_POWER_MA(100) }
 
 #define D_INTERFACE(_n,_numEndpoints,_class,_subClass,_protocol) \
 	{ 9, 4, _n, 0, _numEndpoints, _class,_subClass, _protocol, 0 }
 
 #define D_ENDPOINT(_addr,_attr,_packetSize, _interval) \
 	{ 7, 5, _addr,_attr,_packetSize, _interval }
+
+#define D_QUALIFIER(_class,_subClass,_proto,_packetSize0,_configs) \
+    { 10, 6, 0x200, _class,_subClass,_proto,_packetSize0,_configs }
 
 #define D_IAD(_firstInterface, _count, _class, _subClass, _protocol) \
 	{ 8, 11, _firstInterface, _count, _class, _subClass, _protocol, 0 }

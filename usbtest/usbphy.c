@@ -115,23 +115,25 @@ void usbPhyWorker(struct USBPHY *phy) {
   return;
 }
 
-#if defined(_CHIBIOS_RT_)
+//#if defined(_CHIBIOS_RT_)
 static THD_FUNCTION(usb_worker_thread, arg) {
 
-  struct USBPHY *phy = arg;
+  volatile struct USBPHY *phy = arg;
 
-  chRegSetThreadName("USB poll thread");
+//  chRegSetThreadName("USB poll thread");
   while (1) {
-    osalSysLock();
-    (void) osalThreadSuspendS(&phy->thread);
-    osalSysUnlock();
+//    osalSysLock();
+//    (void) osalThreadSuspendS(&phy->thread);
+//    osalSysUnlock();
 
-    usbPhyWorker(phy);
+    if (phy->read_queue_tail != phy->read_queue_head)
+      usbPhyWorker(phy);
+//    delayMicroseconds(100);
   }
 
   return;
 }
-#endif
+//#endif
 
 static void usb_phy_fast_isr(void) {
 
@@ -160,21 +162,25 @@ static void usb_phy_fast_isr_disabled(void) {
 
 void usbPhyInit(struct USBPHY *phy, struct USBMAC *mac) {
 
+  if (phy->initialized)
+    return;
+
   attachFastInterrupt(PORTB_IRQ, usb_phy_fast_isr_disabled);
   phy->mac = mac;
   usbMacSetPhy(mac, phy);
   phy->initialized = 1;
   usbPhyDetach(phy);
-#if defined(_CHIBIOS_RT_)
-  chEvtObjectInit(&phy->data_available);
-  chThdCreateStatic(phy->waThread, sizeof(phy->waThread),
-                    HIGHPRIO+1, usb_worker_thread, phy);
-#endif
+//#if defined(_CHIBIOS_RT_)
+//  chEvtObjectInit(&phy->data_available);
+  createThread(phy->waThread, sizeof(phy->waThread),
+                    90, usb_worker_thread, phy);
+//#endif
 }
 
 #if defined(_CHIBIOS_RT_)
 void usbPhyDrainIfNecessary(void) {
   struct USBPHY *phy = current_usb_phy;
+  void (*osalThreadResumeI)
 
   if (phy->read_queue_tail != phy->read_queue_head)
     osalThreadResumeI(&phy->thread, MSG_OK);

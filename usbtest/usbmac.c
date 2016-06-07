@@ -146,31 +146,9 @@ static int usb_mac_process_setup_read(struct USBMAC *mac,
   uint32_t len = 0;
   struct USBLink *link = mac->link;
 
-#if 0
-  switch (setup->bmRequestType) {
-  case 0x80:  /* Device-to-host, standard, read from device */
-    switch (setup->bRequest) {
-
-    /* GET_DESCRIPTOR */
-    case 6:
-#endif
-      link->getDescriptor(link, setup, &response);
-#if 0
-      break;
-    }
-    break;
-  case 0x81: /* Device-to-host, standard, read from interface */
-    switch(setup->bRequest) {
-
-    /* GET_CLASS_DESCRIPTOR */
-    case 6:
-      len = link->getClassDescriptor(link, setup, &response);
-      break;
-    }
-    break;
-  }
-#endif
+  len = link->getDescriptor(link, setup, &response);
   usb_mac_send_data(mac, response, len, setup->wLength);
+
   return 0;
 }
 
@@ -242,7 +220,7 @@ static int usb_mac_process_setup_write(struct USBMAC *mac,
   return 0;
 }
 
-static int usb_mac_process_setup(struct USBMAC *mac, const uint8_t packet[10]) {
+static int usb_mac_process_setup(struct USBMAC *mac, const uint32_t packet[3]) {
 
   const struct usb_mac_setup_packet *setup;
 
@@ -269,11 +247,14 @@ static void usb_mac_parse_data(struct USBMAC *mac,
                                const uint8_t packet[10],
                                uint32_t count) {
   (void)count;
+  uint32_t packet_aligned[3];
+
+  memcpy(packet_aligned, packet, count);
 
   switch (mac->packet_type) {
 
   case packet_type_setup:
-    usb_mac_process_setup(mac, packet);
+    usb_mac_process_setup(mac, packet_aligned);
     break;
 
   case packet_type_in:

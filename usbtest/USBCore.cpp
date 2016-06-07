@@ -19,7 +19,6 @@ static uint8_t _cdcComposite;
 #define PCR_IRQC_EITHER_EDGE        0xB
 #define PCR_IRQC_LOGIC_ONE          0xC
 
-
 static struct USBPHY usbPhy = {
   NULL,
   0,
@@ -29,17 +28,17 @@ static struct USBPHY usbPhy = {
   /*.usbdpSAddr =*/ FGPIOB_PSOR,
   /*.usbdpCAddr =*/ FGPIOB_PCOR,
   /*.usbdpDAddr =*/ FGPIOB_PDDR,
-  /*.usbdpShift =*/ 3,
+  /*.usbdpShift =*/ 2,
 
   /* PTB3? */
   /*.usbdnIAddr =*/ FGPIOB_PDIR,
   /*.usbdnSAddr =*/ FGPIOB_PSOR,
   /*.usbdnCAddr =*/ FGPIOB_PCOR,
   /*.usbdnDAddr =*/ FGPIOB_PDDR,
-  /*.usbdnShift =*/ 4,
+  /*.usbdnShift =*/ 1,
 
-  /*.usbdpMask  =*/ (1 << 3),
-  /*.usbdnMask  =*/ (1 << 4),
+  /*.usbdpMask  =*/ (1 << 2),
+  /*.usbdnMask  =*/ (1 << 1),
 };
 
 static struct USBMAC usbMac;
@@ -78,10 +77,13 @@ const u8 STRING_MANUFACTURER[] = USB_MANUFACTURER;
 
 //  DEVICE DESCRIPTOR
 static const DeviceDescriptor USB_DeviceDescriptor =
-  D_DEVICE(0x00,0x00,0x00,64,USB_VID,USB_PID,0x100,IMANUFACTURER,IPRODUCT,ISERIAL,1);
+  D_DEVICE(0x00,0x00,0x00,8,USB_VID,USB_PID,0x100,IMANUFACTURER,IPRODUCT,ISERIAL,1);
 
 static const DeviceDescriptor USB_DeviceDescriptorA =
-  D_DEVICE(0xEF,0x02,0x01,64,USB_VID,USB_PID,0x100,IMANUFACTURER,IPRODUCT,ISERIAL,1);
+  D_DEVICE(0xEF,0x02,0x01,8,USB_VID,USB_PID,0x100,IMANUFACTURER,IPRODUCT,ISERIAL,1);
+
+const QualifierDescriptor USB_DeviceQualifier =
+  D_QUALIFIER(0x00,0x00,0x00,8,1);
 
 uint8_t _initEndpoints[USB_ENDPOINTS] =
 {
@@ -138,17 +140,25 @@ static int USB_SendConfiguration(int maxlen) {
   return (usb_data_buffer_position > maxlen) ? maxlen : usb_data_buffer_position;
 }
 
-static int USB_SendStringDescriptor(const u8*string_P, uint8_t string_len) {
+static int USB_SendStringDescriptor(const uint8_t *string_P,
+                                    uint8_t string_len) {
+
+  int l = strlen((char *)string_P);
+  if (l < string_len)
+    string_len = l;
 
   usb_data_buffer[usb_data_buffer_position++] = 2 + string_len * 2;
   usb_data_buffer[usb_data_buffer_position++] = 3;
 
-  for(u8 i = 0; i < string_len; i++) {
+  for(u8 i = 0; i < string_len && string_P[i]; i++) {
     usb_data_buffer[usb_data_buffer_position++] = string_P[i];
     usb_data_buffer[usb_data_buffer_position++] = 0; /* UTF-16 high byte */
   }
   return usb_data_buffer_position;
 }
+
+static uint8_t typelog[16];
+static uint8_t typelog_ptr;
 
 static int get_descriptor(struct USBLink *link,
                           const void *setup_ptr,
@@ -156,24 +166,25 @@ static int get_descriptor(struct USBLink *link,
 
   USBSetup *setup = (USBSetup *)setup_ptr;
   uint8_t t = setup->wValueH;
-  uint8_t desc_length = 0;
+  int desc_length = 0;
   int ret = 0;
   const uint8_t *desc_addr = 0;
 
   usb_data_buffer_position = 0;
   *data = (void *)usb_data_buffer;
 
-  if (USB_CONFIGURATION_DESCRIPTOR_TYPE == t) {
-      ret = USB_SendConfiguration(setup->wLength);
-      return ret;
-  }
+  typelog[typelog_ptr++] = t;
+  typelog_ptr &= 0xf;
+
+  if (USB_CONFIGURATION_DESCRIPTOR_TYPE == t)
+      return USB_SendConfiguration(setup->wLength);
 
 #ifdef PLUGGABLE_USB_ENABLED
   ret = PluggableUSB().getDescriptor(*setup);
   if (ret) {
     if (ret > 0)
       return usb_data_buffer_position;
-    return -1;
+    return 0;
   }
 #endif
 
@@ -182,10 +193,12 @@ static int get_descriptor(struct USBLink *link,
     if (setup->wLength == 8)
       _cdcComposite = 1;
 
-    desc_addr = _cdcComposite ?  (const uint8_t*)&USB_DeviceDescriptorA : (const uint8_t*)&USB_DeviceDescriptor;
+    desc_addr = _cdcComposite ? (const uint8_t*)&USB_DeviceDescriptorA
+                              : (const uint8_t*)&USB_DeviceDescriptor;
     if (*desc_addr > setup->wLength)
       desc_length = setup->wLength;
   }
+
   else if (USB_STRING_DESCRIPTOR_TYPE == t) {
     TRACE_CORE(puts("=> USBD_SendDescriptor : USB_STRING_DESCRIPTOR_TYPE\r\n");)
     if (setup->wValueL == 0)
@@ -207,6 +220,23 @@ static int get_descriptor(struct USBLink *link,
     if (*desc_addr > setup->wLength)
       desc_length = setup->wLength;
   }
+
+  else if (USB_DEVICE_QUALIFIER == t)
+  {
+    // Device qualifier descriptor requested
+    desc_addr = (const uint8_t*)&USB_DeviceQualifier;
+    if( *desc_addr > setup->wLength ) {
+        desc_length = setup->wLength;
+    }
+  }
+
+  /*
+  else if (USB_OTHER_SPEED_CONFIGURATION == t)
+  {
+    // Other configuration descriptor requested
+    return USBD_SendOtherConfiguration(setup.wLength);
+  }
+  */
 
   else {
     //printf("Device ERROR");
@@ -543,12 +573,21 @@ static inline void NVIC_EnableIRQ(IRQn_Type IRQn)
   NVIC->ISER[0] = (uint32_t)(1UL << (((uint32_t)(int32_t)IRQn) & 0x1FUL));
 }
 
+static uint32_t exception_stack[32];
+
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(x) (sizeof(x) / (*x))
+#endif
+
 static uint8_t usb_started = 0;
 int usbStart(void) {
   unsigned int i;
 
   if (usb_started)
     return 0;
+
+  i = (uint32_t)&exception_stack[ARRAY_SIZE(exception_stack) - 1];
+  asm("msr MSP, %[value]\r\n" : : [value] "r" (i));
 
   usbMacInit(&usbMac, &thisLink);
   usbPhyInit(&usbPhy, &usbMac);
@@ -561,25 +600,26 @@ int usbStart(void) {
     if (NVIC_GetPriority((IRQn_Type)i) == 0)
       NVIC_SetPriority((IRQn_Type)i, 1);
 
+  /* Enable the IRQ and mux as GPIO */
+  writel(0x000B0100, PORTB_PCR1);
+  writel(0x000B0100, PORTB_PCR2);
+
   /* Enable the PORTB IRQ, with the highest possible priority.*/
   NVIC_SetPriority(PINB_IRQn, 0);
   NVIC_EnableIRQ(PINB_IRQn);
-
-  /* Enable the IRQ and mux as GPIO */
-  writel(0x000B0103, PORTB_PCR4);
-  writel(0x000B0103, PORTB_PCR3);
 
   pinMode(LED_BUILTIN, OUTPUT);
 
   delay(200);
   while (1) {
-    delay(2000);
+    delay(5000);
     digitalWrite(LED_BUILTIN, 1);
-    usbPhyDetach(&usbPhy);
-    delay(2000);
-    digitalWrite(LED_BUILTIN, 0);
     usbPhyAttach(&usbPhy);
+    delay(5000);
+    digitalWrite(LED_BUILTIN, 0);
+    usbPhyDetach(&usbPhy);
   }
+  usbPhyAttach(&usbPhy);
 
   usb_started = 1;
   return 0;

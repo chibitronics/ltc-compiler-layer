@@ -2,7 +2,7 @@
 #define __USB_PHY_H__
 
 #include "ChibiOS.h"
-#define PHY_READ_QUEUE_SIZE 4
+#define PHY_READ_QUEUE_SIZE 16
 #define PHY_READ_QUEUE_MASK (PHY_READ_QUEUE_SIZE - 1)
 
 #ifdef __cplusplus
