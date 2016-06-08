@@ -115,7 +115,7 @@ int USB_SendControl(u8 flags, const void* d, int len) {
 }
 
 static int USB_SendConfiguration(int maxlen) {
-  uint8_t interfaces;
+  uint8_t interfaces = 0;
   
   /* Fill in the config descriptor payload first, then fill in the header.*/
   usb_data_buffer_position = sizeof(ConfigDescriptor);
@@ -160,9 +160,22 @@ static int USB_SendStringDescriptor(const uint8_t *string_P,
 static uint8_t typelog[16];
 static uint8_t typelog_ptr;
 
-static int get_descriptor(struct USBLink *link,
-                          const void *setup_ptr,
-                          void **data) {
+static int get_class_descriptor(struct USBLink *link,
+                                const void *setup_ptr,
+                                void **data) {
+
+  USBSetup *setup = (USBSetup *)setup_ptr;
+  usb_data_buffer_position = 0;
+  *data = (void *)usb_data_buffer;
+
+  PluggableUSB().setup(*setup);
+
+  return usb_data_buffer_position;
+}
+
+static int get_device_descriptor(struct USBLink *link,
+                                 const void *setup_ptr,
+                                 void **data) {
 
   USBSetup *setup = (USBSetup *)setup_ptr;
   uint8_t t = setup->wValueH;
@@ -225,9 +238,8 @@ static int get_descriptor(struct USBLink *link,
   {
     // Device qualifier descriptor requested
     desc_addr = (const uint8_t*)&USB_DeviceQualifier;
-    if( *desc_addr > setup->wLength ) {
+    if (*desc_addr > setup->wLength)
         desc_length = setup->wLength;
-    }
   }
 
   /*
@@ -259,9 +271,20 @@ static int get_descriptor(struct USBLink *link,
   return desc_length;
 }
 
+static int get_descriptor(struct USBLink *link,
+                          const void *setup_ptr,
+                          void **data) {
+  USBSetup *setup = (USBSetup *)setup_ptr;
+
+  if ((setup->bmRequestType & REQUEST_TYPE) == REQUEST_STANDARD)
+    return get_device_descriptor(link, setup_ptr, data);
+  else
+    return get_class_descriptor(link, setup_ptr, data);
+}
+
 //  Blocking Send of data to an endpoint
 int USB_Send(u8 ep, const void* d, int len) {
-    return 0;
+  return usbSendData(&usbMac, ep & 0x7, d, len);
 }
 
 int USB_RecvControl(void* d, int len) {
@@ -573,12 +596,6 @@ static inline void NVIC_EnableIRQ(IRQn_Type IRQn)
   NVIC->ISER[0] = (uint32_t)(1UL << (((uint32_t)(int32_t)IRQn) & 0x1FUL));
 }
 
-static uint32_t exception_stack[32];
-
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(x) (sizeof(x) / (*x))
-#endif
-
 static uint8_t usb_started = 0;
 int usbStart(void) {
   unsigned int i;
@@ -586,39 +603,28 @@ int usbStart(void) {
   if (usb_started)
     return 0;
 
-  i = (uint32_t)&exception_stack[ARRAY_SIZE(exception_stack) - 1];
-  asm("msr MSP, %[value]\r\n" : : [value] "r" (i));
-
   usbMacInit(&usbMac, &thisLink);
   usbPhyInit(&usbPhy, &usbMac);
 
   /* Depriorotize timer IRQs, prioritize our IRQ */
-  NVIC_SetPriority(SVCall_IRQn, 1);
-  NVIC_SetPriority(PendSV_IRQn, 1);
-  NVIC_SetPriority(SysTick_IRQn, 1);
+  NVIC_SetPriority(SVCall_IRQn, 0);
+  NVIC_SetPriority(PendSV_IRQn, 2);
+  NVIC_SetPriority(SysTick_IRQn, 2);
   for (i = 0; i < CORTEX_NUM_VECTORS; i++)
-    if (NVIC_GetPriority((IRQn_Type)i) == 0)
-      NVIC_SetPriority((IRQn_Type)i, 1);
+    if (NVIC_GetPriority((IRQn_Type)i) < 2)
+      NVIC_SetPriority((IRQn_Type)i, 2);
 
   /* Enable the IRQ and mux as GPIO */
   writel(0x000B0100, PORTB_PCR1);
   writel(0x000B0100, PORTB_PCR2);
 
   /* Enable the PORTB IRQ, with the highest possible priority.*/
-  NVIC_SetPriority(PINB_IRQn, 0);
+  NVIC_SetPriority(PINB_IRQn, 1);
   NVIC_EnableIRQ(PINB_IRQn);
 
   pinMode(LED_BUILTIN, OUTPUT);
 
   delay(200);
-  while (1) {
-    delay(5000);
-    digitalWrite(LED_BUILTIN, 1);
-    usbPhyAttach(&usbPhy);
-    delay(5000);
-    digitalWrite(LED_BUILTIN, 0);
-    usbPhyDetach(&usbPhy);
-  }
   usbPhyAttach(&usbPhy);
 
   usb_started = 1;
