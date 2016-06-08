@@ -132,9 +132,7 @@ int usbSendData(struct USBMAC *mac, int epnum, const void *data, int count) {
 
   usb_mac_process_data(mac);
 
-#if defined(_CHIBIOS_RT_)
-  (void) osalThreadSuspendS(&mac->thread);
-#endif
+  suspendThread(&mac->thread);
 
   return 0;
 }
@@ -296,16 +294,18 @@ int usbMacProcess(struct USBMAC *mac,
     break;
 
   case USB_PID_ACK:
-#if defined(_CHIBIOS_RT_)
-    if (mac->thread && !mac->data_out) {
+    if (mac->thread &&
+        (!mac->data_out ||
+          ((mac->data_out_left == 0) && (mac->data_out_max == 0))) ) {
       mac->data_out_left = 0;
       mac->data_out_max = 0;
       mac->data_out = NULL;
-      osalThreadResumeS(&mac->thread, MSG_OK);
+      resumeThread(&mac->thread, 0);
     }
-#endif
     break;
 
+  case USB_PID_IN:
+  case USB_PID_OUT:
   default:
     break;
   }
