@@ -29,7 +29,7 @@ CFLAGS     = $(ADD_CFLAGS) $(PKG_CFLAGS) \
              -DVERSION=\"$(VERSION)\" -DPACKAGE=\"$(PACKAGE)\" \
              -DPREFIX=\"$(PREFIX)\" -DDESTDIR=\"$(DESTDIR)\" -DARDUINO=160 \
              -I. -I../common -Iash -Iash/internals \
-             -fsingle-precision-constant \
+             -fsingle-precision-constant -Wall -Wextra \
              -mcpu=cortex-m0plus -mfloat-abi=soft -mthumb \
              -DARDUINO_APP -fno-builtin \
              -ffunction-sections -fdata-sections -fno-common \
@@ -74,12 +74,12 @@ $(ALL): $(TARGET)
 $(OBJECTS): | $(OBJ_DIR)
 
 $(TARGET): $(OBJECTS) $(LDSCRIPT)
-	$(QUIET) echo "  LD	$@"
+	$(QUIET) echo "  LD       $@"
 	$(QUIET) $(CXX) $(OBJECTS) $(LFLAGS) -o $@
-	$(QUIET) echo "  OBJCOPY	$(PACKAGE).bin"
+	$(QUIET) echo "  OBJCOPY  $(PACKAGE).bin"
 	$(QUIET) $(OBJCOPY) -O binary $@ $(PACKAGE).bin
-	$(QUIET) echo Creating $@
-	$(QUIET) $(OBJCOPY) --only-keep-debug $< $@.symbol 2> /dev/null
+	$(QUIET) echo "  SYMBOL   $(PACKAGE).symbol"
+	$(QUIET) $(OBJCOPY) --only-keep-debug $< $(PACKAGE).symbol 2> /dev/null
 
 
 
@@ -93,15 +93,15 @@ $(OBJ_DIR):
 	$(QUIET) mkdir -p $(OBJ_DIR)
 
 $(COBJS) : $(OBJ_DIR)/%.o : %.c Makefile
-	$(QUIET) echo "  CC	$<	$(notdir $@)"
+	$(QUIET) echo "  CC       $<	$(notdir $@)"
 	$(QUIET) $(CC) -c $< $(CFLAGS) -o $@ -MMD
 
 $(OBJ_DIR)/%.o: %.cpp
-	$(QUIET) echo "  CXX	$<	$(notdir $@)"
+	$(QUIET) echo "  CXX      $<	$(notdir $@)"
 	$(QUIET) $(CXX) -c $< $(CXXFLAGS) -o $@ -MMD
 
 $(OBJ_DIR)/%.o: %.s
-	$(QUIET) echo "  AS	$<	$(notdir $@)"
+	$(QUIET) echo "  AS       $<	$(notdir $@)"
 	$(QUIET) $(CC) -x assembler-with-cpp -c $< $(CFLAGS) -o $@ -MMD
 
 .PHONY: $(CLEAN) $(DISTCLEAN) $(DIST) $(REBUILD) $(DREBUILD) $(INSTALL) \
