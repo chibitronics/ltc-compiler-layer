@@ -93,9 +93,7 @@ struct USBMAC {
   int32_t data_out_left;
   int32_t data_out_max;
 
-#if (CH_USE_RT == TRUE)
   thread_reference_t thread;
-#endif
 
   struct usb_packet packet; /* Currently-queued packet */
   int packet_queued;    /* Whether a packet is queued */
