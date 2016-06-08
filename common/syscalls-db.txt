@@ -238,3 +238,8 @@ c | __gnu_thumb1_case_uhi
 # Advanced mode
 c | doSudo
 c | setSerialSpeed
+c | setThreadName
+c | hookSysTick
+c | resumeThreadI
+c | suspendThreadS
+c | suspendThreadTimeoutS
