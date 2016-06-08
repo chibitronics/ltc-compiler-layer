@@ -1,12 +1,13 @@
 #include <string.h>
 
 #include "Arduino.h"
+#include "ChibiOS.h"
 #include "kl02.h"
 #include "usbphy.h"
 #include "usbmac.h"
 #include "memio.h"
 
-struct USBPHY *current_usb_phy;
+static struct USBPHY *current_usb_phy;
 
 int usbPhyInitialized(struct USBPHY *phy) {
   if (!phy)
@@ -51,8 +52,8 @@ static void usbCaptureI(struct USBPHY *phy) {
   else if (samples[0] == USB_PID_ACK) {
     /* Allow the next byte to be sent */
     phy->queued_size = 0;
-    usbMacTransferSuccess(phy->mac);
     phy->read_queue_head++;
+    usbMacTransferSuccess(phy->mac);
     goto out;
   }
 
@@ -79,16 +80,6 @@ out:
  * to this process, and we need to respond as quickly as possible.
  */
 
-/* Expose the "rev" instruction to C */
-#ifdef REVERSE_BITS
-static inline __attribute__((always_inline)) uint32_t __rev(uint32_t val) {
-  asm("rev %0, %1" : "=r" (val) : "r" (val) );
-  return val;
-}
-#else /* Don't reverse bits */
-#define __rev(x) x
-#endif
-
 int usbPhyWritePrepare(struct USBPHY *phy, const void *buffer, int size) {
 
   phy->queued_data = buffer;
@@ -96,14 +87,9 @@ int usbPhyWritePrepare(struct USBPHY *phy, const void *buffer, int size) {
   return 0;
 }
 
-struct USBPHY *usbPhyTestPhy(void) {
-
-  return NULL;
-}
-
-void usbPhyWorker(struct USBPHY *phy) {
+static void usbPhyWorker(struct USBPHY *phy) {
   while (phy->read_queue_tail != phy->read_queue_head) {
-    uint8_t *in_ptr = (uint8_t *)phy->read_queue[phy->read_queue_tail];
+    uint8_t *in_ptr = phy->read_queue[phy->read_queue_tail];
     int count = in_ptr[11];
 
     usbMacProcess(phy->mac, in_ptr, count);
@@ -115,25 +101,18 @@ void usbPhyWorker(struct USBPHY *phy) {
   return;
 }
 
-//#if defined(_CHIBIOS_RT_)
 static THD_FUNCTION(usb_worker_thread, arg) {
 
-  volatile struct USBPHY *phy = arg;
+  struct USBPHY *phy = arg;
 
-//  chRegSetThreadName("USB poll thread");
+  setThreadName("USB poll thread");
   while (1) {
-//    osalSysLock();
-//    (void) osalThreadSuspendS(&phy->thread);
-//    osalSysUnlock();
-
-    if (phy->read_queue_tail != phy->read_queue_head)
-      usbPhyWorker(phy);
-//    delayMicroseconds(100);
+    suspendThread(&phy->thread);
+    usbPhyWorker(phy);
   }
 
   return;
 }
-//#endif
 
 static void usb_phy_fast_isr(void) {
 
@@ -146,6 +125,7 @@ static void usb_phy_fast_isr(void) {
    * That way, this function is free to preempt EVERYTHING without
    * interfering with the timing of the system.
    */
+
   struct USBPHY *phy = current_usb_phy;
   usbCaptureI(phy);
   /* Clear all pending interrupts on this port. */
@@ -170,24 +150,24 @@ void usbPhyInit(struct USBPHY *phy, struct USBMAC *mac) {
   usbMacSetPhy(mac, phy);
   phy->initialized = 1;
   usbPhyDetach(phy);
-//#if defined(_CHIBIOS_RT_)
-//  chEvtObjectInit(&phy->data_available);
+
   createThread(phy->waThread, sizeof(phy->waThread),
-                    90, usb_worker_thread, phy);
-//#endif
+                    127, usb_worker_thread, phy);
 }
 
-#if defined(_CHIBIOS_RT_)
-void usbPhyDrainIfNecessary(void) {
+static void usb_phy_drain_if_necessary(void) {
   struct USBPHY *phy = current_usb_phy;
-  void (*osalThreadResumeI)
 
-  if (phy->read_queue_tail != phy->read_queue_head)
-    osalThreadResumeI(&phy->thread, MSG_OK);
+  if ((phy->read_queue_tail != phy->read_queue_head) && phy->thread) {
+    __enable_irq();
+    resumeThreadI(&phy->thread, 0);
+    __disable_irq();
+  }
 }
-#endif
 
 void usbPhyDetach(struct USBPHY *phy) {
+
+  hookSysTick(NULL);
 
   /* Set both lines to 0 (clear both D+ and D-) to simulate unplug. */
   writel(phy->usbdpMask, phy->usbdpCAddr);
@@ -213,4 +193,6 @@ void usbPhyAttach(struct USBPHY *phy) {
   /* Set both lines to input */
   writel(readl(phy->usbdpDAddr) & ~phy->usbdpMask, phy->usbdpDAddr);
   writel(readl(phy->usbdnDAddr) & ~phy->usbdnMask, phy->usbdnDAddr);
+
+  hookSysTick(usb_phy_drain_if_necessary);
 }
