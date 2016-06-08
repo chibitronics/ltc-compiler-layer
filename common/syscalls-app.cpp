@@ -660,6 +660,26 @@ extern "C" {
     void setSerialSpeed(void) {
       asm("svc #144");
     }
+    __attribute__((naked))
+    void setThreadName(void) {
+      asm("svc #145");
+    }
+    __attribute__((naked))
+    void hookSysTick(void) {
+      asm("svc #146");
+    }
+    __attribute__((naked))
+    void resumeThreadI(void) {
+      asm("svc #147");
+    }
+    __attribute__((naked))
+    void suspendThreadS(void) {
+      asm("svc #148");
+    }
+    __attribute__((naked))
+    void suspendThreadTimeoutS(void) {
+      asm("svc #149");
+    }
 };
   __attribute__((naked))
   void pinMode(int pin, enum pin_mode mode) {
