@@ -39,14 +39,20 @@ static void usbCaptureI(struct USBPHY *phy) {
 
     phy->read_queue_head++;
     usbPhyWriteI(phy, phy->queued_data, phy->queued_size);
+//    if (phy->thread)
+//      resumeThreadI(&phy->thread, 0);
     goto out;
   }
   else if (samples[0] == USB_PID_SETUP) {
     phy->read_queue_head++;
+//    if (phy->thread)
+//      resumeThreadI(&phy->thread, 0);
     goto out;
   }
   else if (samples[0] == USB_PID_OUT) {
     phy->read_queue_head++;
+//    if (phy->thread)
+//      resumeThreadI(&phy->thread, 0);
     goto out;
   }
   else if (samples[0] == USB_PID_ACK) {
@@ -54,6 +60,8 @@ static void usbCaptureI(struct USBPHY *phy) {
     phy->queued_size = 0;
     phy->read_queue_head++;
     usbMacTransferSuccess(phy->mac);
+//    if (phy->thread)
+//      resumeThreadI(&phy->thread, 0);
     goto out;
   }
 
@@ -61,6 +69,8 @@ static void usbCaptureI(struct USBPHY *phy) {
     phy->read_queue_head++;
     uint8_t pkt[] = {USB_PID_ACK};
     usbPhyWriteI(phy, pkt, sizeof(pkt));
+//    if (phy->thread)
+//      resumeThreadI(&phy->thread, 0);
     goto out;
   }
 

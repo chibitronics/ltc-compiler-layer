@@ -31,6 +31,7 @@ static const uint8_t _hidReportDescriptor[] PROGMEM = {
     0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)  // 47
     0x09, 0x06,                    // USAGE (Keyboard)
     0xa1, 0x01,                    // COLLECTION (Application)
+    0x85, 0x02,                    //   REPORT_ID (2)
     0x05, 0x07,                    //   USAGE_PAGE (Keyboard)
 
   0x19, 0xe0,                    //   USAGE_MINIMUM (Keyboard LeftControl)
