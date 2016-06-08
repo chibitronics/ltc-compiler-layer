@@ -103,9 +103,13 @@ typedef unsigned long long uint64_t;
 
 typedef uint32_t systime_t;
 typedef uint32_t tprio_t;
+typedef int32_t cnt_t;          /**< Generic signed counter.    */
 typedef uint64_t stkalign_t;
 typedef uint32_t msg_t;
 typedef thread_t * thread_reference_t;
+typedef struct ch_threads_list threads_list_t;
+typedef struct ch_threads_queue threads_queue_t;
+
 typedef void * regarm_t;
 
 struct port_extctx {
@@ -211,6 +215,41 @@ struct ch_virtual_timer {
                                                 parameter.                  */
 };
 
+/**
+ * @brief   Generic threads single link list, it works like a stack.
+ */
+struct ch_threads_list {
+  thread_t              *p_next;    /**< @brief Next in the list/queue.     */
+};
+
+/**
+ * @brief   Generic threads bidirectional linked list header and element.
+ */
+struct ch_threads_queue {
+  thread_t              *p_next;    /**< @brief Next in the list/queue.     */
+  thread_t              *p_prev;    /**< @brief Previous in the queue.      */
+};
+
+/**
+ * @brief   Type of a mutex structure.
+ */
+typedef struct ch_mutex mutex_t;
+
+/**
+ * @brief   Mutex structure.
+ */
+struct ch_mutex {
+  threads_queue_t       m_queue;    /**< @brief Queue of the threads sleeping
+                                                on this mutex.              */
+  thread_t              *m_owner;   /**< @brief Owner @p thread_t pointer or
+                                                @p NULL.                    */
+  mutex_t               *m_next;    /**< @brief Next @p mutex_t into an
+                                                owner-list or @p NULL.      */
+#if (CH_CFG_USE_MUTEXES_RECURSIVE == TRUE) || defined(__DOXYGEN__)
+  cnt_t                 m_cnt;      /**< @brief Mutex recursion counter.    */
+#endif
+};
+
 int setTimer(virtual_timer_t *vtp, systime_t delay,
              vtfunc_t vtfunc, void *par);
 void resetTimer(virtual_timer_t *vtp);
@@ -218,8 +257,11 @@ void resetTimer(virtual_timer_t *vtp);
 thread_t *createThread(void *wsp, size_t size,
                        tprio_t prio, tfunc_t pf, void *arg);
 msg_t suspendThread(thread_reference_t *trp);
+msg_t suspendThreadS(thread_reference_t *trp);
 msg_t suspendThreadTimeout(thread_reference_t *trp, systime_t timeout);
+msg_t suspendThreadTimeoutS(thread_reference_t *trp, systime_t timeout);
 void resumeThread(thread_reference_t *trp, msg_t msg);
+void resumeThreadI(thread_reference_t *trp, msg_t msg);
 void yieldThread(void);
 void threadSleep(systime_t time);
 void threadSleepUntil(systime_t time);
@@ -233,6 +275,21 @@ void unlockSystem();
 void unlockSystemFromISR(void);
 
 void getSyscallABI(void);
+
+uint32_t getSyscallAddr(uint32_t sysCallNum);
+void hookSysTick(void (*newHook)(void));
+
+void attachFastInterrupt(int irq, void (*func)(void));
+void detachFastInterrupt(int irq);
+
+void setSerialSpeed(uint32_t speed);
+
+void mutexInit(mutex_t *mp);
+void mutexLock(mutex_t *mp);
+bool mutexTryLock(mutex_t *mp);
+void mutexUnlock(mutex_t *mp);
+
+void setThreadName(const char *name);
 
 #ifdef __cplusplus
 };
