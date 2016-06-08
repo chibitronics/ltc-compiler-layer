@@ -7,6 +7,9 @@
 
 #define double float
 
+#define __disable_irq() asm volatile("CPSID i");
+#define __enable_irq()  asm volatile("CPSIE i");
+
 /* Program lifetime */
 #if !defined(ARDUINO_OS) /* These are not syscalls */
 #ifdef __cplusplus
