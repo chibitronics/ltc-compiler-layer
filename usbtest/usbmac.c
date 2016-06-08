@@ -237,8 +237,8 @@ static int usb_mac_process_setup(struct USBMAC *mac, const uint32_t packet[3]) {
 static inline void usb_mac_parse_token(struct USBMAC *mac,
                                        const uint8_t packet[2]) {
 
-  mac->tok_addr = packet[0] >> 1;
-  mac->tok_epnum = (packet[1] >> 5) | ((packet[0] << 5) & 1);
+  mac->tok_addr = packet[0] & 0x7f;
+  mac->tok_epnum = ((packet[0] >> 7) & 1) | ((packet[1] << 1) & 0xe);
 }
 
 static void usb_mac_parse_data(struct USBMAC *mac,
