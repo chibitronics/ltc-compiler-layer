@@ -110,7 +110,7 @@ $(OBJ_DIR)/%.o: %.s
 $(CLEAN):
 	$(QUIET) rm -f $(wildcard $(OBJ_DIR)/*.d)
 	$(QUIET) rm -f $(wildcard $(OBJ_DIR)/*.o)
-	$(QUIET) rm -f $(TARGET) $(PACKAGE).bin
+	$(QUIET) rm -f $(TARGET) $(PACKAGE).bin $(PACKAGE).symbol
 
 $(DISTCLEAN): $(CLEAN)
 	$(QUIET) rm -rf $(OBJ_DIR) $(wildcard $(TARGET)-*.tar.gz)
