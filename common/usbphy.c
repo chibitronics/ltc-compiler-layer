@@ -8,6 +8,7 @@
 #include "memio.h"
 
 static struct USBPHY *current_usb_phy;
+static void (*resumeThreadIPtr)(thread_reference_t *trp, msg_t *msg);
 
 int usbPhyInitialized(struct USBPHY *phy) {
   if (!phy)
@@ -16,67 +17,67 @@ int usbPhyInitialized(struct USBPHY *phy) {
   return phy->initialized;
 }
 
-static void usbCaptureI(struct USBPHY *phy) {
+static void queue_thread(struct USBPHY *phy) {
+
+  phy->read_queue_head++;
+  phy->read_queue_head &= PHY_READ_QUEUE_MASK;
+  if (phy->thread)
+    resumeThreadIPtr(&phy->thread, 0);
+}
+
+static void usb_capture(struct USBPHY *phy) {
 
   uint8_t *samples;
   int ret;
+  static uint8_t nak_pkt[] = {USB_PID_NAK};
+  static uint8_t ack_pkt[] = {USB_PID_ACK};
+  int queued_size = phy->queued_size;
 
   samples = (uint8_t *)phy->read_queue[phy->read_queue_head];
 
+  /* If there is no data, or if there is an error, return */
   ret = usbPhyReadI(phy, samples);
   if (ret <= 0)
-    goto out;
+    return;
 
   /* Save the byte counter for later inspection */
   samples[11] = ret;
 
-  if (samples[0] == USB_PID_IN) {
-    if (!phy->queued_size) {
-      uint8_t pkt[] = {USB_PID_NAK};
-      usbPhyWriteI(phy, pkt, sizeof(pkt));
-      goto out;
-    }
+  switch (samples[0]) {
 
-    phy->read_queue_head++;
-    usbPhyWriteI(phy, phy->queued_data, phy->queued_size);
-//    if (phy->thread)
-//      resumeThreadI(&phy->thread, 0);
-    goto out;
-  }
-  else if (samples[0] == USB_PID_SETUP) {
-    phy->read_queue_head++;
-//    if (phy->thread)
-//      resumeThreadI(&phy->thread, 0);
-    goto out;
-  }
-  else if (samples[0] == USB_PID_OUT) {
-    phy->read_queue_head++;
-//    if (phy->thread)
-//      resumeThreadI(&phy->thread, 0);
-    goto out;
-  }
-  else if (samples[0] == USB_PID_ACK) {
+  case USB_PID_IN:
+
+    /* If they requested data and we have none, send NAK */
+    if (!queued_size) {
+      usbPhyWriteI(phy, nak_pkt, sizeof(nak_pkt));
+      break;
+    }
+    usbPhyWriteI(phy, phy->queued_data, queued_size);
+    queue_thread(phy);
+    break;
+
+  case USB_PID_SETUP:
+    queue_thread(phy);
+    break;
+
+  case USB_PID_OUT:
+    queue_thread(phy);
+    break;
+
+  case USB_PID_ACK:
     /* Allow the next byte to be sent */
     phy->queued_size = 0;
-    phy->read_queue_head++;
+    queue_thread(phy);
     usbMacTransferSuccess(phy->mac);
-//    if (phy->thread)
-//      resumeThreadI(&phy->thread, 0);
-    goto out;
+    break;
+
+  case USB_PID_DATA0:
+  case USB_PID_DATA1:
+    usbPhyWriteI(phy, ack_pkt, sizeof(ack_pkt));
+    queue_thread(phy);
+    break;
   }
 
-  else if ((samples[0] == USB_PID_DATA0) || (samples[0] == USB_PID_DATA1)) {
-    phy->read_queue_head++;
-    uint8_t pkt[] = {USB_PID_ACK};
-    usbPhyWriteI(phy, pkt, sizeof(pkt));
-//    if (phy->thread)
-//      resumeThreadI(&phy->thread, 0);
-    goto out;
-  }
-
-out:
-
-  phy->read_queue_head &= PHY_READ_QUEUE_MASK;
   return;
 }
 
@@ -137,7 +138,8 @@ static void usb_phy_fast_isr(void) {
    */
 
   struct USBPHY *phy = current_usb_phy;
-  usbCaptureI(phy);
+  usb_capture(phy);
+
   /* Clear all pending interrupts on this port. */
   writel(0xffffffff, PORTB_ISFR);
 }
@@ -155,6 +157,7 @@ void usbPhyInit(struct USBPHY *phy, struct USBMAC *mac) {
   if (phy->initialized)
     return;
 
+  resumeThreadIPtr = getSyscallAddr(147);
   attachFastInterrupt(PORTB_IRQ, usb_phy_fast_isr_disabled);
   phy->mac = mac;
   usbMacSetPhy(mac, phy);
@@ -163,16 +166,6 @@ void usbPhyInit(struct USBPHY *phy, struct USBMAC *mac) {
 
   createThread(phy->waThread, sizeof(phy->waThread),
                     127, usb_worker_thread, phy);
-}
-
-static void usb_phy_drain_if_necessary(void) {
-  struct USBPHY *phy = current_usb_phy;
-
-  if ((phy->read_queue_tail != phy->read_queue_head) && phy->thread) {
-    __enable_irq();
-    resumeThreadI(&phy->thread, 0);
-    __disable_irq();
-  }
 }
 
 void usbPhyDetach(struct USBPHY *phy) {
@@ -203,6 +196,4 @@ void usbPhyAttach(struct USBPHY *phy) {
   /* Set both lines to input */
   writel(readl(phy->usbdpDAddr) & ~phy->usbdpMask, phy->usbdpDAddr);
   writel(readl(phy->usbdnDAddr) & ~phy->usbdnMask, phy->usbdnDAddr);
-
-  hookSysTick(usb_phy_drain_if_necessary);
 }

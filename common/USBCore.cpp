@@ -1,6 +1,5 @@
 #define USB_VID 0x1234
 #define USB_PID 0x5678
-#define TRACE_CORE(x)
 
 #include "USBCore.h"
 
@@ -72,8 +71,6 @@ const u8 STRING_PRODUCT[] = USB_PRODUCT;
 
 const u8 STRING_MANUFACTURER[] = USB_MANUFACTURER;
 
-
-#define DEVICE_CLASS 0x02
 
 //  DEVICE DESCRIPTOR
 static const DeviceDescriptor USB_DeviceDescriptor =
@@ -201,8 +198,8 @@ static int get_device_descriptor(struct USBLink *link,
   }
 #endif
 
-  if (USB_DEVICE_DESCRIPTOR_TYPE == t) {
-    TRACE_CORE(puts("=> USBD_SendDescriptor : USB_DEVICE_DESCRIPTOR_TYPE\r\n");)
+  switch (t) {
+  case USB_DEVICE_DESCRIPTOR_TYPE:
     if (setup->wLength == 8)
       _cdcComposite = 1;
 
@@ -210,12 +207,11 @@ static int get_device_descriptor(struct USBLink *link,
                               : (const uint8_t*)&USB_DeviceDescriptor;
     if (*desc_addr > setup->wLength)
       desc_length = setup->wLength;
-  }
+    break;
 
-  else if (USB_STRING_DESCRIPTOR_TYPE == t) {
-    TRACE_CORE(puts("=> USBD_SendDescriptor : USB_STRING_DESCRIPTOR_TYPE\r\n");)
+  case USB_STRING_DESCRIPTOR_TYPE:
     if (setup->wValueL == 0)
-      desc_addr = (const uint8_t*)&STRING_LANGUAGE;
+      desc_addr = (const uint8_t *)&STRING_LANGUAGE;
     else if (setup->wValueL == IPRODUCT)
       return USB_SendStringDescriptor(STRING_PRODUCT, setup->wLength);
     else if (setup->wValueL == IMANUFACTURER)
@@ -232,15 +228,16 @@ static int get_device_descriptor(struct USBLink *link,
 
     if (*desc_addr > setup->wLength)
       desc_length = setup->wLength;
-  }
+    break;
 
-  else if (USB_DEVICE_QUALIFIER == t)
-  {
+    /*
+  case USB_DEVICE_QUALIFIER:
     // Device qualifier descriptor requested
     desc_addr = (const uint8_t*)&USB_DeviceQualifier;
     if (*desc_addr > setup->wLength)
         desc_length = setup->wLength;
-  }
+    break;
+    */
 
   /*
   else if (USB_OTHER_SPEED_CONFIGURATION == t)
@@ -250,8 +247,9 @@ static int get_device_descriptor(struct USBLink *link,
   }
   */
 
-  else {
+  default:
     //printf("Device ERROR");
+    break;
   }
 
   /* If the calls above haven't returned, or set a descriptor address,
@@ -265,7 +263,6 @@ static int get_device_descriptor(struct USBLink *link,
   if (desc_length == 0)
     desc_length = *desc_addr;
 
-  TRACE_CORE(printf("=> USBD_SendDescriptor : desc_addr=%p desc_length=%d\r\n", desc_addr, desc_length);)
 
   *data = (void *)desc_addr;
   return desc_length;
@@ -598,21 +595,12 @@ static inline void NVIC_EnableIRQ(IRQn_Type IRQn)
 
 static uint8_t usb_started = 0;
 int usbStart(void) {
-  unsigned int i;
 
   if (usb_started)
     return 0;
 
   usbMacInit(&usbMac, &thisLink);
   usbPhyInit(&usbPhy, &usbMac);
-
-  /* Depriorotize timer IRQs, prioritize our IRQ */
-  NVIC_SetPriority(SVCall_IRQn, 0);
-  NVIC_SetPriority(PendSV_IRQn, 2);
-  NVIC_SetPriority(SysTick_IRQn, 2);
-  for (i = 0; i < CORTEX_NUM_VECTORS; i++)
-    if (NVIC_GetPriority((IRQn_Type)i) < 2)
-      NVIC_SetPriority((IRQn_Type)i, 2);
 
   /* Enable the IRQ and mux as GPIO */
   writel(0x000B0100, PORTB_PCR1);

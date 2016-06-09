@@ -276,7 +276,7 @@ void unlockSystemFromISR(void);
 
 void getSyscallABI(void);
 
-uint32_t getSyscallAddr(uint32_t sysCallNum);
+void *getSyscallAddr(uint32_t sysCallNum);
 void hookSysTick(void (*newHook)(void));
 
 void attachFastInterrupt(int irq, void (*func)(void));
