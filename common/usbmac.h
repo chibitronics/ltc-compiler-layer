@@ -79,6 +79,8 @@ struct usb_mac_setup_packet {
 
 struct USBLink;
 
+#define MAX_OUT_QUEUES 4
+
 struct USBMAC {
   struct USBPHY *phy;
   struct USBLink *link;
@@ -92,6 +94,11 @@ struct USBMAC {
   const void *data_out;
   int32_t data_out_left;
   int32_t data_out_max;
+
+  const void *data_out_queues[MAX_OUT_QUEUES];
+  uint8_t data_out_queue_sizes[MAX_OUT_QUEUES];
+  uint8_t data_out_queue_head;
+  uint8_t data_out_queue_tail;
 
   thread_reference_t thread;
 
@@ -130,7 +137,9 @@ struct USBPHY *usbMacPhy(struct USBMAC *mac);
 /* Indicate that the transfer concluded successfully */
 void usbMacTransferSuccess(struct USBMAC *mac);
 
-int usbSendData(struct USBMAC *mac, int epnum, const void *data, int count);
+int usbSendData(struct USBMAC *mac, int epnum, const void *data, int size);
+int usbQueueData(struct USBMAC *mac, int epnum, const void *data, int size);
+int usbSendQueue(struct USBMAC *mac, int epnum);
 
 #ifdef __cplusplus
 };

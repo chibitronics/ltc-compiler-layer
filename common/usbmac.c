@@ -129,6 +129,8 @@ void usbMacTransferSuccess(struct USBMAC *mac) {
       usb_mac_process_data(mac);
     }
   }
+  else
+    usb_mac_process_data(mac);
 }
 
 int usbSendData(struct USBMAC *mac, int epnum, const void *data, int count) {
