@@ -10,11 +10,11 @@ static struct USBMAC default_mac;
 static uint16_t crc16_add(uint16_t crc, uint8_t c, uint16_t poly)
 {
   uint8_t  i;
-  
+
   for (i = 0; i < 8; i++) {
-    if ((crc ^ c) & 1) 
+    if ((crc ^ c) & 1)
       crc = (crc >> 1) ^ poly;
-    else 
+    else
       crc >>= 1;
     c >>= 1;
   }
@@ -88,6 +88,18 @@ static void usb_mac_process_data(struct USBMAC *mac) {
   mac->packet_queued = 1;
 }
 
+static int usb_mac_send_data(struct USBMAC *mac,
+                             const void *data,
+                             int count,
+                             int max) {
+
+  mac->data_out = data;
+  mac->data_out_left = count;
+  mac->data_out_max = max;
+
+  return 0;
+}
+
 void usbMacTransferSuccess(struct USBMAC *mac) {
 
   mac->packet_queued = 0;
@@ -106,19 +118,17 @@ void usbMacTransferSuccess(struct USBMAC *mac) {
     mac->data_out_left = 0;
     mac->data_out_max = 0;
     mac->data_out = NULL;
+
+    if (mac->data_out_queue_tail != mac->data_out_queue_head) {
+      usb_mac_send_data(mac,
+                        mac->data_out_queues[mac->data_out_queue_tail],
+                        mac->data_out_queue_sizes[mac->data_out_queue_tail],
+                        mac->data_out_queue_sizes[mac->data_out_queue_tail]);
+      mac->data_out_queue_tail++;
+      mac->data_out_queue_tail &= (MAX_OUT_QUEUES-1);
+      usb_mac_process_data(mac);
+    }
   }
-}
-
-static int usb_mac_send_data(struct USBMAC *mac,
-                             const void *data,
-                             int count,
-                             int max) {
-
-  mac->data_out = data;
-  mac->data_out_left = count;
-  mac->data_out_max = max;
-
-  return 0;
 }
 
 int usbSendData(struct USBMAC *mac, int epnum, const void *data, int count) {
@@ -133,6 +143,36 @@ int usbSendData(struct USBMAC *mac, int epnum, const void *data, int count) {
   usb_mac_process_data(mac);
 
   suspendThread(&mac->thread);
+
+  return 0;
+}
+
+int usbQueueData(struct USBMAC *mac, int epnum, const void *data, int size) {
+
+  mac->data_out_queue_sizes[mac->data_out_queue_head] = size;
+  mac->data_out_queues[mac->data_out_queue_head] = data;
+  mac->data_out_queue_head++;
+  mac->data_out_queue_head &= (MAX_OUT_QUEUES-1);
+
+  return 0;
+}
+
+int usbSendQueue(struct USBMAC *mac, int epnum) {
+
+  if (mac->data_out_queue_tail == mac->data_out_queue_head)
+    return -1;
+
+  usb_mac_send_data(mac,
+                    mac->data_out_queues[mac->data_out_queue_tail],
+                    mac->data_out_queue_sizes[mac->data_out_queue_tail],
+                    mac->data_out_queue_sizes[mac->data_out_queue_tail]);
+  mac->data_out_queue_tail++;
+  mac->data_out_queue_tail &= (MAX_OUT_QUEUES-1);
+  usb_mac_process_data(mac);
+
+  /* Wait for the queued data to drain out */
+  while (mac->data_out_queue_tail != mac->data_out_queue_head)
+    suspendThread(&mac->thread);
 
   return 0;
 }
