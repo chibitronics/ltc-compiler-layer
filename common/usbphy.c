@@ -39,8 +39,14 @@ static void usb_capture(struct USBPHY *phy) {
 
   /* If there is no data, or if there is an error, return */
   ret = usbPhyReadI(phy, samples);
-  if (ret <= 0)
+  if (ret <= 0) {
+    /* Assume we missed a packet, and just send a NAK.  This works
+     * surprisingly well most of the time.
+     */
+    if ((ret == 0) || (ret == -2) || (ret == -3) || (ret == -4))
+      usbPhyWriteI(phy, nak_pkt, sizeof(nak_pkt));
     return;
+  }
 
   /* Save the byte counter for later inspection */
   samples[11] = ret;
