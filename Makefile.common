@@ -104,6 +104,8 @@ $(OBJ_DIR)/%.o: %.s
 	$(QUIET) echo "  AS       $<	$(notdir $@)"
 	$(QUIET) $(CC) -x assembler-with-cpp -c $< $(CFLAGS) -o $@ -MMD
 
+#$(OBJ_DIR)/crc16.o : CFLAGS += -O3
+
 .PHONY: $(CLEAN) $(DISTCLEAN) $(DIST) $(REBUILD) $(DREBUILD) $(INSTALL) \
         $(CHANGELOG) $(INIT)
 
