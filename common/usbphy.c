@@ -17,6 +17,7 @@ int usbPhyInitialized(struct USBPHY *phy) {
   return phy->initialized;
 }
 
+__attribute__((section(".ramtext")))
 static void queue_thread(struct USBPHY *phy) {
 
   phy->read_queue_head++;
@@ -25,13 +26,14 @@ static void queue_thread(struct USBPHY *phy) {
     resumeThreadIPtr(&phy->thread, 0);
 }
 
+__attribute__((section(".ramtext")))
 static void usb_capture(struct USBPHY *phy) {
 
-  uint8_t *samples;
-  int ret;
   static uint8_t nak_pkt[] = {USB_PID_NAK};
   static uint8_t ack_pkt[] = {USB_PID_ACK};
-  int queued_size = phy->queued_size;
+  uint8_t *samples;
+  struct usb_packet *packet;
+  int ret;
 
   samples = (uint8_t *)phy->read_queue[phy->read_queue_head];
 
@@ -47,28 +49,32 @@ static void usb_capture(struct USBPHY *phy) {
 
   case USB_PID_IN:
 
+    phy->epnum = ((samples[1] >> 7) & 1) | ((samples[2] << 1) & 0xe);
+
     /* If they requested data and we have none, send NAK */
-    if (!queued_size) {
-      usbPhyWriteI(phy, nak_pkt, sizeof(nak_pkt));
-      break;
+    if (macGetEndpointData(phy->mac, phy->epnum, &packet)) {
+      usbPhyWriteI(phy, packet->raw_data, packet->size + 1);
+      queue_thread(phy);
     }
-    usbPhyWriteI(phy, phy->queued_data, queued_size);
-    queue_thread(phy);
+    else
+      usbPhyWriteI(phy, nak_pkt, sizeof(nak_pkt));
+
     break;
 
   case USB_PID_SETUP:
+    phy->epnum = ((samples[1] >> 7) & 1) | ((samples[2] << 1) & 0xe);
     queue_thread(phy);
     break;
 
   case USB_PID_OUT:
+    phy->epnum = ((samples[1] >> 7) & 1) | ((samples[2] << 1) & 0xe);
     queue_thread(phy);
     break;
 
   case USB_PID_ACK:
     /* Allow the next byte to be sent */
-    phy->queued_size = 0;
     queue_thread(phy);
-    usbMacTransferSuccess(phy->mac);
+    usbMacTransferSuccess(phy->mac, phy->epnum);
     break;
 
   case USB_PID_DATA0:
@@ -81,24 +87,8 @@ static void usb_capture(struct USBPHY *phy) {
   return;
 }
 
-/*
- * Note that this interrupt plays fast-and-loose with ChibiOS conventions.
- * It does not call port_lock_from_isr() on entry, nor does it call
- * port_unlock_from_isr() on exit.  As far as ChibiOS is concerned, this
- * function does not exist.
- *
- * This is because standard ChibiOS IRQ housekeeping adds too much overhead
- * to this process, and we need to respond as quickly as possible.
- */
-
-int usbPhyWritePrepare(struct USBPHY *phy, const void *buffer, int size) {
-
-  phy->queued_data = buffer;
-  phy->queued_size = size;
-  return 0;
-}
-
 static void usbPhyWorker(struct USBPHY *phy) {
+
   while (phy->read_queue_tail != phy->read_queue_head) {
     uint8_t *in_ptr = phy->read_queue[phy->read_queue_tail];
     int count = in_ptr[11];
@@ -109,7 +99,6 @@ static void usbPhyWorker(struct USBPHY *phy) {
     phy->read_queue_tail++;
     phy->read_queue_tail &= PHY_READ_QUEUE_MASK;
   }
-  return;
 }
 
 static THD_FUNCTION(usb_worker_thread, arg) {
@@ -125,6 +114,7 @@ static THD_FUNCTION(usb_worker_thread, arg) {
   return;
 }
 
+__attribute__((section(".ramtext")))
 static void usb_phy_fast_isr(void) {
 
   /* Note: We can't use ANY ChibiOS threads here.

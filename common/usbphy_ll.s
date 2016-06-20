@@ -174,6 +174,17 @@ usb_phy_read__se0:
   add rone, rval                    // Combine D+ and D-.
   beq usb_phy_read__se0             // Exit if SE0 condition (both are 0).
 
+  /* Clear out the register shift-chain */
+  mov rsample, #0                   // Reset the sample byte value.
+  mov rcounter, #0                  // Reset the "bits" counter.
+
+  mov rone, #1                      // Actually load the value '1' into the reg.
+
+  mov rval, #0b11
+  mov runstuff, rval                // Load 0b11 into unstuff reg, as the header
+                                    // ends with the pattern KK, which starts
+                                    // a run of two.
+
   // The loop is 4 cycles on a failure.  One
   // pulse is 32 cycles.  Therefore, loop up
   // to 8 times before giving up.
@@ -187,17 +198,17 @@ usb_phy_read__se0:
 
 usb_phy_read__sync_wait:
   // Move us away from the start of the pulse, to avoid transition errors.
-  bl usb_phy_wait_5_cycles
+  bl usb_phy__wait_5_cycles
 
   // Wait for the end-of-header sync pulse, which is when the value
   // repeats itself.  This is the "KK" in the KJKJKJKK training sequence.
-.rept 7
+.rept 6
   ldr rval, [rreg]                    // Sample USBDP
   and rval, rmash                     // Mask off the interesting bit
   cmp rlastval, rval
   beq usb_phy_read__start_reading_usb
   mov rlastval, rval
-  bl usb_phy_wait_27_cycles
+  bl usb_phy__wait_27_cycles
 .endr
   b usb_phy_read__sync_timeout
 
@@ -205,17 +216,6 @@ usb_phy_read__sync_wait:
    * -frame has been found.  Real packet data follows.
    */
 usb_phy_read__start_reading_usb:
-
-  /* Clear out the register shift-chain */
-  mov rsample, #0                   // Reset the sample byte value.
-  mov rcounter, #0                  // Reset the "bits" counter.
-
-  mov rval, #0b11
-  mov runstuff, rval                // Load 0b11 into unstuff reg, as the header
-                                    // ends with the pattern KK, which starts
-                                    // a run of two.
-
-  mov rone, #1                      // Actually load the value '1' into the reg.
   // ?
 
   /* Adjust rlastval so that it's in the correct position -- we skip doing
@@ -231,6 +231,9 @@ usb_phy_read__start_reading_usb:
   mov rlastval, rval
   // 6
 
+  /* We have plenty of extra cycles here, because the first bit is a K,
+   * and we simply need to wait for it to finish.
+   */
   ldr rreg, [rusbphy, #dpIAddr]       // Cache the address of the D+ input bank
   mov rdpiaddr, rreg                  // to save one cycle.
   ldr rreg, [rusbphy, #dnIAddr]       // Cache the address of the D- input bank
@@ -238,6 +241,14 @@ usb_phy_read__start_reading_usb:
   ldr rreg, [rusbphy, #dpShift]       // Cache the D+ shift, too.
   mov rdpshift, rreg
   // 9
+
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
 
 usb_phy_read__get_usb_bit:
   mov rval, rdpiaddr                  // Get the address of the D+ input bank.
@@ -336,7 +347,7 @@ usb_unstuff:
   bgt usb_phy_read__exit              // Exit if so
   // 2
 
-  bl usb_phy_wait_23_cycles
+  bl usb_phy__wait_23_cycles
 
   b usb_phy_read__get_usb_bit
   // 2
@@ -388,34 +399,34 @@ usb_phy_read__timeout:
 
 
 
-usb_phy_wait_32_cycles: nop
-usb_phy_wait_31_cycles: nop
-usb_phy_wait_30_cycles: nop
-usb_phy_wait_29_cycles: nop
-usb_phy_wait_28_cycles: nop
-usb_phy_wait_27_cycles: nop
-usb_phy_wait_26_cycles: nop
-usb_phy_wait_25_cycles: nop
-usb_phy_wait_24_cycles: nop
-usb_phy_wait_23_cycles: nop
-usb_phy_wait_22_cycles: nop
-usb_phy_wait_21_cycles: nop
-usb_phy_wait_20_cycles: nop
-usb_phy_wait_19_cycles: nop
-usb_phy_wait_18_cycles: nop
-usb_phy_wait_17_cycles: nop
-usb_phy_wait_16_cycles: nop
-usb_phy_wait_15_cycles: nop
-usb_phy_wait_14_cycles: nop
-usb_phy_wait_13_cycles: nop
-usb_phy_wait_12_cycles: nop
-usb_phy_wait_11_cycles: nop
-usb_phy_wait_10_cycles: nop
-usb_phy_wait_9_cycles:  nop
-usb_phy_wait_8_cycles:  nop
-usb_phy_wait_7_cycles:  nop
-usb_phy_wait_6_cycles:  nop
-usb_phy_wait_5_cycles:  mov pc, lr
+usb_phy__wait_32_cycles: nop
+usb_phy__wait_31_cycles: nop
+usb_phy__wait_30_cycles: nop
+usb_phy__wait_29_cycles: nop
+usb_phy__wait_28_cycles: nop
+usb_phy__wait_27_cycles: nop
+usb_phy__wait_26_cycles: nop
+usb_phy__wait_25_cycles: nop
+usb_phy__wait_24_cycles: nop
+usb_phy__wait_23_cycles: nop
+usb_phy__wait_22_cycles: nop
+usb_phy__wait_21_cycles: nop
+usb_phy__wait_20_cycles: nop
+usb_phy__wait_19_cycles: nop
+usb_phy__wait_18_cycles: nop
+usb_phy__wait_17_cycles: nop
+usb_phy__wait_16_cycles: nop
+usb_phy__wait_15_cycles: nop
+usb_phy__wait_14_cycles: nop
+usb_phy__wait_13_cycles: nop
+usb_phy__wait_12_cycles: nop
+usb_phy__wait_11_cycles: nop
+usb_phy__wait_10_cycles: nop
+usb_phy__wait_9_cycles:  nop
+usb_phy__wait_8_cycles:  nop
+usb_phy__wait_7_cycles:  nop
+usb_phy__wait_6_cycles:  nop
+usb_phy__wait_5_cycles:  mov pc, lr
 
 
 
@@ -551,7 +562,7 @@ usb_phy_write_get_first_packet:
   mov wstuff, #0b111100             // so load a run of 2 into the stuff value.
   // ?
 
-  //bl usb_phy_wait_5_cycles
+  //bl usb_phy__wait_5_cycles
 
   // usb start-of-frame header //
   /*bl usb_write_state_k // K state entered above already */
@@ -561,7 +572,7 @@ usb_phy_write_get_first_packet:
   bl usb_write_state_k
   bl usb_write_state_j
   bl usb_write_state_k
-  bl usb_phy_wait_26_cycles         // Hold k state for one more cycle.  Take
+  bl usb_phy__wait_26_cycles         // Hold k state for one more cycle.  Take
                                     // up the slack that would normally
                                     // follow this.
   // end of header //
@@ -635,13 +646,13 @@ usb_phy_write_done_stuffing_bit:
 
   /* We're still writing this byte, so there's nothing to do. */
 usb_phy_write_continue_byte:
-  bl usb_phy_wait_7_cycles
+  bl usb_phy__wait_7_cycles
   b usb_phy_write_stuff_bit_maybe
   // 2
 
 usb_phy_write_stuff_bit:
   /* When we get here, we are already into the packet. */
-  bl usb_phy_wait_5_cycles
+  bl usb_phy__wait_5_cycles
   mov wstuff, #0b111110             // Clear out the bit-stuff rcounter
   // 2
 
@@ -667,17 +678,17 @@ usb_phy_write_stuff_out:
   str wnmask, [wnaddr]
   // 7 (either branch taken)
 
-  bl usb_phy_wait_13_cycles
+  bl usb_phy__wait_13_cycles
   b usb_phy_write_done_stuffing_bit
 
 usb_write_eof:
-  bl usb_phy_wait_13_cycles
+  bl usb_phy__wait_13_cycles
   bl usb_write_state_se0
   bl usb_write_state_se0
 
   /* Set J-state, as required by the spec */
 #if 1
-  bl usb_phy_wait_5_cycles
+  bl usb_phy__wait_5_cycles
   mov wpaddr, wdpsetreg             // D+ set
   mov wnaddr, wdnclrreg             // D- clr
   str wpmask, [wpaddr]
@@ -691,7 +702,7 @@ usb_write_eof:
    * Disabled, because the line is not driven so it will drift
    * slowly enough that it doesn't matter.
    */
-  bl usb_phy_wait_12_cycles
+  bl usb_phy__wait_12_cycles
 
   // --- Done Transmitting --- //
 
@@ -736,7 +747,7 @@ usb_write_state_k:
 usb_phy_write_out_func:
   str wpmask, [wpaddr]
   str wnmask, [wnaddr]
-  b usb_phy_wait_24_cycles
+  b usb_phy__wait_24_cycles
 
 .endfunc
 .type usbPhyWriteI, %function

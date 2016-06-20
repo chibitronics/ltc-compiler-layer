@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+#define MAX_EPS 4
+
 enum usb_pids {
   USB_PID_RESERVED = 0xf0,
   USB_PID_OUT = 0xe1,
@@ -79,8 +81,6 @@ struct usb_mac_setup_packet {
 
 struct USBLink;
 
-#define MAX_OUT_QUEUES 4
-
 struct USBMAC {
   struct USBPHY *phy;
   struct USBLink *link;
@@ -91,19 +91,16 @@ struct USBMAC {
     struct usb_mac_setup_packet data_setup;
   };
 
-  const void *data_out;
-  int32_t data_out_left;
-  int32_t data_out_max;
+  const void *data_out[MAX_EPS];
+  int32_t data_out_left[MAX_EPS];
+  int32_t data_out_max[MAX_EPS];
 
-  const void *data_out_queues[MAX_OUT_QUEUES];
-  uint8_t data_out_queue_sizes[MAX_OUT_QUEUES];
-  uint8_t data_out_queue_head;
-  uint8_t data_out_queue_tail;
+  mutex_t access_mutex;
 
-  thread_reference_t thread;
-
-  struct usb_packet packet; /* Currently-queued packet */
-  int packet_queued;    /* Whether a packet is queued */
+  /* Currently-queued packets */
+  struct usb_packet packet[MAX_EPS];
+  uint8_t packet_queued[MAX_EPS];
+  thread_reference_t threads[MAX_EPS];
 
   uint8_t data_buffer;  /* Whether we're sending DATA0 or DATA1 */
   uint8_t packet_type;  /* PACKET_SETUP, PACKET_IN, or PACKET_OUT */
@@ -135,7 +132,11 @@ struct USBMAC *usbMacDefault(void);
 struct USBPHY *usbMacPhy(struct USBMAC *mac);
 
 /* Indicate that the transfer concluded successfully */
-void usbMacTransferSuccess(struct USBMAC *mac);
+void usbMacTransferSuccess(struct USBMAC *mac, int epnum);
+
+/* Get one unit of queued data, for the specific epnum */
+int macGetEndpointData(struct USBMAC *mac, int epnum,
+                       struct usb_packet **queued_data);
 
 int usbSendData(struct USBMAC *mac, int epnum, const void *data, int size);
 int usbQueueData(struct USBMAC *mac, int epnum, const void *data, int size);

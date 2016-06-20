@@ -33,8 +33,7 @@ struct USBPHY {
   uint32_t usbdpMask;
   uint32_t usbdnMask;
 
-  const void *queued_data;
-  uint32_t queued_size;
+  uint32_t epnum;
 
 #if (CH_USE_RT == TRUE)
   thread_reference_t thread;
@@ -60,7 +59,7 @@ int usbProcessIncoming(struct USBPHY *phy);
 int usbPhyQueue(struct USBPHY *phy, const uint8_t *buffer, int buffer_size);
 int usbCapture(struct USBPHY *phy);
 int usbPhyInitialized(struct USBPHY *phy);
-int usbPhyWritePrepare(struct USBPHY *phy, const void *buffer, int size);
+int usbPhyWritePrepare(struct USBPHY *phy, int epnum, const void *buffer, int size);
 
 void usbPhyAttach(struct USBPHY *phy);
 void usbPhyDetach(struct USBPHY *phy);
