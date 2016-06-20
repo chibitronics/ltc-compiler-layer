@@ -79,9 +79,6 @@ static const DeviceDescriptor USB_DeviceDescriptor =
 static const DeviceDescriptor USB_DeviceDescriptorA =
   D_DEVICE(0xEF,0x02,0x01,8,USB_VID,USB_PID,0x100,IMANUFACTURER,IPRODUCT,ISERIAL,1);
 
-const QualifierDescriptor USB_DeviceQualifier =
-  D_QUALIFIER(0x00,0x00,0x00,8,1);
-
 uint8_t _initEndpoints[USB_ENDPOINTS] =
 {
   0,                      // Control Endpoint
@@ -102,6 +99,8 @@ static uint16_t usb_data_buffer_position;
  * This is probably wasteful of memory.
  */
 int USB_SendControl(u8 flags, const void* d, int len) {
+
+  (void)flags;
   if ((usb_data_buffer_position + (uint32_t)len) >= sizeof(usb_data_buffer))
     return false;
 
@@ -161,6 +160,7 @@ static int get_class_descriptor(struct USBLink *link,
                                 const void *setup_ptr,
                                 void **data) {
 
+  (void)link;
   USBSetup *setup = (USBSetup *)setup_ptr;
   usb_data_buffer_position = 0;
   *data = (void *)usb_data_buffer;
@@ -230,23 +230,6 @@ static int get_device_descriptor(struct USBLink *link,
       desc_length = setup->wLength;
     break;
 
-    /*
-  case USB_DEVICE_QUALIFIER:
-    // Device qualifier descriptor requested
-    desc_addr = (const uint8_t*)&USB_DeviceQualifier;
-    if (*desc_addr > setup->wLength)
-        desc_length = setup->wLength;
-    break;
-    */
-
-  /*
-  else if (USB_OTHER_SPEED_CONFIGURATION == t)
-  {
-    // Other configuration descriptor requested
-    return USBD_SendOtherConfiguration(setup.wLength);
-  }
-  */
-
   default:
     //printf("Device ERROR");
     break;
@@ -262,7 +245,6 @@ static int get_device_descriptor(struct USBLink *link,
    */
   if (desc_length == 0)
     desc_length = *desc_addr;
-
 
   *data = (void *)desc_addr;
   return desc_length;
@@ -281,6 +263,7 @@ static int get_descriptor(struct USBLink *link,
 
 //  Blocking Send of data to an endpoint
 int USB_Send(u8 ep, const void* d, int len) {
+
   return usbSendData(&usbMac, ep & 0x7, d, len);
 }
 
