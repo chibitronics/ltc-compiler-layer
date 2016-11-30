@@ -25,18 +25,20 @@ ENTRY(Esplanade_Main)
 
 MEMORY
 {
-  flash    :  org = 0x00005900,  len = 32k - 0x5900
-  osram    :  org = 0x1FFFFC00,  len = 1024
+  osflash  :  org = 0x00000000,                  len = 0x5900
+  flash    :  org = LENGTH(osflash),             len = 32k - LENGTH(osflash)
+  osram    :  org = 0x1FFFFC00,                  len = 1024
   ram      :  org = 0x1FFFFC00 + LENGTH(osram),  len = 4k - LENGTH(osram)
 }
 
+/* Make the RAM size available to the OS */
 __ram_start__           = ORIGIN(ram);
 __ram_size__            = LENGTH(ram);
 __ram_end__             = __ram_start__ + __ram_size__;
 
 SECTIONS
 {
-  . = 0x5900;
+  . = ORIGIN(flash);
 
   .text : ALIGN(4) SUBALIGN(4)
   {
@@ -48,11 +50,6 @@ SECTIONS
     KEEP(*(SORT(.init_array.*)))
     KEEP(*(.init_array))
     PROVIDE(__init_array_end = .);
-
-    PROVIDE(__fini_array_start = .);
-    KEEP(*(.fini_array))
-    KEEP(*(SORT(.fini_array.*)))
-    PROVIDE(__fini_array_end = .);
 
     *(.text .stub .text.* .gnu.linkonce.t.*)
     KEEP(*(SORT(.chibi_list*)));
@@ -119,6 +116,8 @@ SECTIONS
     *(.glue_7)
     *(.gcc*)
     *(.interp)
+    *(.fini_array)
+    *(.fini_array.*)
   }
 
   /* ld.bfd will segfault without these */
