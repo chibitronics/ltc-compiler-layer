@@ -52,6 +52,7 @@ enum pin_mode {
   OUTPUT = 1,
   INPUT_PULLUP = 2,
   INPUT_PULLDOWN = 3,
+  OUTPUT_LOW = 0x21,
 };
 
 #endif /* __ARDUINO_TYPES_KOSAGI_H__ */
