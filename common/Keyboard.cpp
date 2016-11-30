@@ -218,8 +218,6 @@ const uint8_t _asciimap[128] =
 };
 
 
-uint8_t USBPutChar(uint8_t c);
-
 // press() adds the specified key (printing, non-printing, or modifier)
 // to the persistent key report and sends the report.  Because of the way
 // USB HID works, the host acts like the key remains pressed until we
