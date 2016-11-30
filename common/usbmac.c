@@ -137,11 +137,8 @@ static int usb_mac_send_data(struct USBMAC *mac,
   mac->data_out_max = max;
   mac->data_out = data;
 
-#if defined(_CHIBIOS_RT_)
-  /* Indicate failure if there is a thread blocking */
   if (mac->thread)
-    osalThreadResumeS(&mac->thread, MSG_RESET);
-#endif
+    resumeThread(&mac->thread, 1);
 
   return 0;
 }
@@ -160,9 +157,7 @@ int usbMacSendData(struct USBMAC *mac, int epnum, const void *data, int count) {
 
   usb_mac_process_data(mac);
 
-#if defined(_CHIBIOS_RT_)
-  (void) osalThreadSuspendS(&mac->thread);
-#endif
+  (void) suspendThread(&mac->thread);
 
   return 0;
 }
@@ -366,10 +361,8 @@ int usbMacProcess(struct USBMAC *mac,
       mac->data_out_max = 0;
       mac->data_out = NULL;
       mac->packet_type = packet_type_none;
-#if defined(_CHIBIOS_RT_)
-        if (mac->thread)
-          osalThreadResumeS(&mac->thread, MSG_OK);
-#endif
+      if (mac->thread)
+        resumeThread(&mac->thread, 0);
     }
     break;
 

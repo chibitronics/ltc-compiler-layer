@@ -1,6 +1,8 @@
 #ifndef __USB_MAC_H__
 #define __USB_MAC_H__
 
+#include "Arduino.h"
+#include "ChibiOS.h"
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -95,9 +97,7 @@ struct USBMAC {
   int32_t data_out_max;
   int32_t data_out_epnum;
 
-#if defined(_CHIBIOS_RT_)
   thread_reference_t thread;
-#endif
 
   struct usb_packet packet; /* Currently-queued packet */
   int packet_queued;    /* Whether a packet is queued */
