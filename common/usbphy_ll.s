@@ -20,26 +20,25 @@
    * Both functions take the following struct as their first parameter:
    *
    *  static struct USBPHY {
-   *    /* USB D- line descriptor */
-   *    uint32_t dpIAddr; /* GPIO "sample-whole-bank" address */
-   *    uint32_t dpSAddr; /* GPIO "set-pin-level" address */
-   *    uint32_t dpCAddr; /* GPIO "clear-pin-level" address */
-   *    uint32_t dpDAddr; /* GPIO "pin-direction" address, where 1 = output */
-   *    uint32_t dpShift; /* Shift of GPIO pin in S/C/D/I addresses */
+   *    // USB D- line descriptor 
+   *    uint32_t dpIAddr; // GPIO "sample-whole-bank" address
+   *    uint32_t dpSAddr; // GPIO "set-pin-level" address
+   *    uint32_t dpCAddr; // GPIO "clear-pin-level" address
+   *    uint32_t dpDAddr; // GPIO "pin-direction" address, where 1 = output
+   *    uint32_t dpShift; // Shift of GPIO pin in S/C/D/I addresses
    *
-   *    /* USB D+ line descriptor, as above */
+   *    // USB D+ line descriptor, as above
    *    uint32_t dnIAddr;
    *    uint32_t dnSAddr;
    *    uint32_t dnCAddr;
    *    uint32_t dnDAddr;
    *    uint32_t dnShift;
    *
-   *    /* USB masks */
-   *    uint32_t dpMask;  /* Mask of GPIO pin in S/C/D/I addresses */
+   *    // USB masks
+   *    uint32_t dpMask;  // Mask of GPIO pin in S/C/D/I addresses
    *    uint32_t dnMask;
    *
-   *    /* Store the stack pointer here during running */
-   *    uint32_t sp_temp;
+   *    // Optional extra data follows
    * };
    */
 #endif
@@ -557,7 +556,7 @@ wstuff    .req r0   /* The last six bits, used for bit stuffing (reuses wusbphy)
   mov wleft, #8                     // Start over with 8 bytes.
   // ?
 
-usb_phy_write_get_first_packet:
+usb_phy_write__get_first_packet:
   mov wlastsym, #1                  // Last symbols were "KK" from the header,
   mov wstuff, #0b111100             // so load a run of 2 into the stuff value.
   // ?
@@ -565,19 +564,19 @@ usb_phy_write_get_first_packet:
   //bl usb_phy__wait_5_cycles
 
   // usb start-of-frame header //
-  /*bl usb_write_state_k // K state entered above already */
-  bl usb_write_state_j
-  bl usb_write_state_k
-  bl usb_write_state_j
-  bl usb_write_state_k
-  bl usb_write_state_j
-  bl usb_write_state_k
-  bl usb_phy__wait_26_cycles         // Hold k state for one more cycle.  Take
+  /*bl usb_phy_write__state_k // K state entered above already */
+  bl usb_phy_write__state_j
+  bl usb_phy_write__state_k
+  bl usb_phy_write__state_j
+  bl usb_phy_write__state_k
+  bl usb_phy_write__state_j
+  bl usb_phy_write__state_k
+  bl usb_phy__wait_26_cycles        // Hold k state for one more cycle.  Take
                                     // up the slack that would normally
                                     // follow this.
   // end of header //
 
-usb_phy_write_top:
+usb_phy_write__top:
 
   mov wtmp1, #0                     // Clear wthisbit, so we can add later.
   lsr wpkt, #1                      // Shift the bottom bit into the carry bit.
@@ -594,17 +593,17 @@ usb_phy_write_top:
   // 8
 
   /* Write the desired state out (each branch is balanced) */
-  bne usb_phy_write_j
-usb_phy_write_k:
+  bne usb_phy_write__j
+usb_phy_write__k:
   mov wpaddr, wdpsetreg             // D+ set
   mov wnaddr, wdnclrreg
-  b usb_phy_write_out
+  b usb_phy_write__out
 
-usb_phy_write_j:
+usb_phy_write__j:
   mov wpaddr, wdpclrreg             // D+ clr
   ldr wnaddr, [sp, #0]              // D- set
 
-usb_phy_write_out:
+usb_phy_write__out:
   str wpmask, [wpaddr]
   str wnmask, [wnaddr]
   // 7 (either branch taken)
@@ -612,20 +611,20 @@ usb_phy_write_out:
   // 15 cycles total
 
   sub wleft, wleft, #1              // See how many bits we have left to write.
-  bne usb_phy_write_continue_byte   // If nonzero, write another bit.
+  bne usb_phy_write__continue_byte  // If nonzero, write another bit.
   // 2
 
   /* We just finished writing a byte.  Load the next byte, or exit. */
-usb_phy_write_finished_byte:
+usb_phy_write__finished_byte:
   mov wtmp1, wbytes                 // Move byte array into a lo reg
   cmp wtmp1, wend                   // See if we've reached the end.
-  beq usb_write_eof                 // Exit if it's now 0.
+  beq usb_write__eof                // Exit if it's now 0.
   ldrb wpkt, [wtmp1]                // Read the next byte into wpkt.
   add wtmp1, #1                     // Advance byte array by one.
   mov wbytes, wtmp1                 // ...or store byte addr back in the hi reg.
   // 7
 
-usb_phy_write_calculate_next_pkt:
+usb_phy_write__calculate_next_pkt:
   mvn wpkt, wpkt                    // Invert it to make the math work.
   mov wleft, #8                     // Reset "bits left" to 8.
   // 2
@@ -634,26 +633,27 @@ usb_phy_write_calculate_next_pkt:
   // 1
 
   /* If we just wrote "111111", then stuff one bit */
-usb_phy_write_stuff_bit_maybe:
+usb_phy_write__stuff_bit_maybe:
   mov wtmp2, #0b111111              // Compare it with the wstuff value
   and wtmp2, wstuff                 // AND the two together.  If they're the
-  beq usb_phy_write_stuff_bit       // same, then stuff one bit.
+  beq usb_phy_write__stuff_bit      // same, then stuff one bit.
   // 3
 
-usb_phy_write_done_stuffing_bit:
-  b usb_phy_write_top
+usb_phy_write__done_stuffing_bit:
+  b usb_phy_write__top
   // 2
 
   /* We're still writing this byte, so there's nothing to do. */
-usb_phy_write_continue_byte:
+usb_phy_write__continue_byte:
   bl usb_phy__wait_7_cycles
-  b usb_phy_write_stuff_bit_maybe
+  b usb_phy_write__stuff_bit_maybe
   // 2
 
-usb_phy_write_stuff_bit:
+usb_phy_write__stuff_bit:
   /* When we get here, we are already into the packet. */
+// Need 18 cycles until packet is written
   bl usb_phy__wait_5_cycles
-  mov wstuff, #0b111110             // Clear out the bit-stuff rcounter
+  mov wstuff, #0b111111             // Clear out the bit-stuff rcounter
   // 2
 
   add wlastsym, wlastsym, #1        // Invert the last symbol.
@@ -663,28 +663,28 @@ usb_phy_write_stuff_bit:
   // 3
 
   /* Write the desired state out (each branch is balanced) */
-  bne usb_phy_write_stuff_j
+  bne usb_phy_write__stuff_j
 usb_phy_write_stuff_k:
   mov wpaddr, wdpsetreg             // D+ set
   mov wnaddr, wdnclrreg             // D- clr
-  b usb_phy_write_stuff_out
+  b usb_phy_write__stuff_out
 
-usb_phy_write_stuff_j:
+usb_phy_write__stuff_j:
   mov wpaddr, wdpclrreg             // D+ clr
   ldr wnaddr, [sp, #0]              // D- set
 
-usb_phy_write_stuff_out:
+usb_phy_write__stuff_out:
   str wpmask, [wpaddr]
   str wnmask, [wnaddr]
   // 7 (either branch taken)
 
   bl usb_phy__wait_13_cycles
-  b usb_phy_write_done_stuffing_bit
+  b usb_phy_write__done_stuffing_bit
 
-usb_write_eof:
+usb_write__eof:
   bl usb_phy__wait_13_cycles
-  bl usb_write_state_se0
-  bl usb_write_state_se0
+  bl usb_phy_write__state_se0
+  bl usb_phy_write__state_se0
 
   /* Set J-state, as required by the spec */
 #if 1
@@ -732,19 +732,19 @@ usb_write_eof:
   pop {r3-r7,pc}                    // Restore and return to caller.
 
   // Useful functions
-usb_write_state_se0:
+usb_phy_write__state_se0:
   mov wpaddr, wdpclrreg             // D+ clr
   mov wnaddr, wdnclrreg             // D- clr
-  b usb_phy_write_out_func
-usb_write_state_j:
+  b usb_phy_write__out_func
+usb_phy_write__state_j:
   mov wpaddr, wdpsetreg             // D+ set
   mov wnaddr, wdnclrreg             // D- clr
-  b usb_phy_write_out_func
-usb_write_state_k:
+  b usb_phy_write__out_func
+usb_phy_write__state_k:
   mov wpaddr, wdpclrreg             // D+ clr
   ldr wnaddr, [sp, #0]              // D- set
   nop
-usb_phy_write_out_func:
+usb_phy_write__out_func:
   str wpmask, [wpaddr]
   str wnmask, [wnaddr]
   b usb_phy__wait_24_cycles

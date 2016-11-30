@@ -1,13 +1,15 @@
 #ifndef __USB_PHY_H__
 #define __USB_PHY_H__
 
+#include <stdint.h>
 #include "ChibiOS.h"
-#define PHY_READ_QUEUE_SIZE 16
-#define PHY_READ_QUEUE_MASK (PHY_READ_QUEUE_SIZE - 1)
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define PHY_READ_QUEUE_SIZE 16
+#define PHY_READ_QUEUE_MASK (PHY_READ_QUEUE_SIZE - 1)
 
 struct USBMAC;
 
@@ -33,22 +35,25 @@ struct USBPHY {
   uint32_t usbdpMask;
   uint32_t usbdnMask;
 
-  uint32_t epnum;
+  const void *queued_data;
+  uint32_t queued_size;
+  uint32_t queued_epnum;
 
-#if (CH_USE_RT == TRUE)
   thread_reference_t thread;
   THD_WORKING_AREA(waThread, 128);
-#endif
 
   uint8_t read_queue_head;
   uint8_t read_queue_tail;
-  uint16_t padding;
 
   /* pkt_size is cached in read_queue[x][11] */
+  /* read_queue is aligned such that its first byte is on a word boundary.
+   * This is because the first byte of every packet is a PID, which is
+   * immediately discarded.  This leaves the remainder of the packet
+   * word-aligned.
+   */
+  uint8_t padding[1];
   uint8_t read_queue[PHY_READ_QUEUE_SIZE][12];
 } __attribute__((packed, aligned(4)));
-
-int usbPhyResetStatistics(struct USBPHY *phy);
 
 void usbPhyInit(struct USBPHY *phy, struct USBMAC *mac);
 int usbPhyReadI(const struct USBPHY *phy, uint8_t samples[11]);
@@ -59,7 +64,12 @@ int usbProcessIncoming(struct USBPHY *phy);
 int usbPhyQueue(struct USBPHY *phy, const uint8_t *buffer, int buffer_size);
 int usbCapture(struct USBPHY *phy);
 int usbPhyInitialized(struct USBPHY *phy);
-int usbPhyWritePrepare(struct USBPHY *phy, int epnum, const void *buffer, int size);
+int usbPhyWritePrepare(struct USBPHY *phy, int epnum,
+                       const void *buffer, int size);
+void usbCaptureI(struct USBPHY *phy);
+
+int usbPhyProcessNextEvent(struct USBPHY *phy);
+void usbPhyWorker(struct USBPHY *phy);
 
 void usbPhyAttach(struct USBPHY *phy);
 void usbPhyDetach(struct USBPHY *phy);

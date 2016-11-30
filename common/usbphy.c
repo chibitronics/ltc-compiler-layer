@@ -7,8 +7,8 @@
 #include "usbmac.h"
 #include "memio.h"
 
-static struct USBPHY *current_usb_phy;
 static void (*resumeThreadIPtr)(thread_reference_t *trp, msg_t *msg);
+static struct USBPHY *current_usb_phy;
 
 int usbPhyInitialized(struct USBPHY *phy) {
   if (!phy)
@@ -29,82 +29,97 @@ static void queue_thread(struct USBPHY *phy) {
 __attribute__((section(".ramtext")))
 static void usb_capture(struct USBPHY *phy) {
 
-  static uint8_t nak_pkt[] = {USB_PID_NAK};
-  static uint8_t ack_pkt[] = {USB_PID_ACK};
   uint8_t *samples;
-  struct usb_packet *packet;
   int ret;
 
   samples = (uint8_t *)phy->read_queue[phy->read_queue_head];
 
-  /* If there is no data, or if there is an error, return */
   ret = usbPhyReadI(phy, samples);
-  if (ret <= 0) {
-    /* Assume we missed a packet, and just send a NAK.  This works
-     * surprisingly well most of the time.
-     */
-    if ((ret == 0) || (ret == -2) || (ret == -3) || (ret == -4))
-      usbPhyWriteI(phy, nak_pkt, sizeof(nak_pkt));
-    return;
-  }
+  if (ret <= 0)
+    goto out;
 
   /* Save the byte counter for later inspection */
   samples[11] = ret;
 
-  switch (samples[0]) {
+  if (samples[0] == USB_PID_IN) {
 
-  case USB_PID_IN:
-
-    phy->epnum = ((samples[1] >> 7) & 1) | ((samples[2] << 1) & 0xe);
-
-    /* If they requested data and we have none, send NAK */
-    if (macGetEndpointData(phy->mac, phy->epnum, &packet)) {
-      usbPhyWriteI(phy, packet->raw_data, packet->size + 1);
-      queue_thread(phy);
+    /* Make sure we have queued data, and that it's for this particular EP */
+    if ((!phy->queued_size)
+    || (((((const uint16_t *)(samples+1))[0] >> 7) & 0xf) != phy->queued_epnum))
+    {
+      uint8_t pkt[] = {USB_PID_NAK};
+      usbPhyWriteI(phy, pkt, sizeof(pkt));
+      goto out;
     }
-    else
-      usbPhyWriteI(phy, nak_pkt, sizeof(nak_pkt));
 
-    break;
-
-  case USB_PID_SETUP:
-    phy->epnum = ((samples[1] >> 7) & 1) | ((samples[2] << 1) & 0xe);
     queue_thread(phy);
-    break;
-
-  case USB_PID_OUT:
-    phy->epnum = ((samples[1] >> 7) & 1) | ((samples[2] << 1) & 0xe);
-    queue_thread(phy);
-    break;
-
-  case USB_PID_ACK:
-    /* Allow the next byte to be sent */
-    queue_thread(phy);
-    usbMacTransferSuccess(phy->mac, phy->epnum);
-    break;
-
-  case USB_PID_DATA0:
-  case USB_PID_DATA1:
-    usbPhyWriteI(phy, ack_pkt, sizeof(ack_pkt));
-    queue_thread(phy);
-    break;
+    usbPhyWriteI(phy, phy->queued_data, phy->queued_size);
+    goto out;
   }
+  else if (samples[0] == USB_PID_SETUP) {
+    queue_thread(phy);
+    goto out;
+  }
+  else if (samples[0] == USB_PID_OUT) {
+    queue_thread(phy);
+    goto out;
+  }
+  else if (samples[0] == USB_PID_ACK) {
+    /* Allow the next byte to be sent */
+    phy->queued_size = 0;
+    usbMacTransferSuccess(phy->mac);
+    queue_thread(phy);
+    goto out;
+  }
+
+  else if ((samples[0] == USB_PID_DATA0) || (samples[0] == USB_PID_DATA1)) {
+    queue_thread(phy);
+    uint8_t pkt[] = {USB_PID_ACK};
+    usbPhyWriteI(phy, pkt, sizeof(pkt));
+    goto out;
+  }
+
+out:
 
   return;
 }
 
-static void usbPhyWorker(struct USBPHY *phy) {
+int usbPhyWritePrepare(struct USBPHY *phy, int epnum,
+                       const void *buffer, int size)
+{
+  phy->queued_data = buffer;
+  phy->queued_epnum = epnum;
+  phy->queued_size = size;
+  return 0;
+}
 
-  while (phy->read_queue_tail != phy->read_queue_head) {
-    uint8_t *in_ptr = phy->read_queue[phy->read_queue_tail];
+struct USBPHY *usbPhyTestPhy(void) {
+
+  return NULL;
+}
+
+int usbPhyProcessNextEvent(struct USBPHY *phy) {
+  if (phy->read_queue_tail != phy->read_queue_head) {
+    uint8_t *in_ptr = (uint8_t *)phy->read_queue[phy->read_queue_tail];
     int count = in_ptr[11];
 
-    usbMacProcess(phy->mac, in_ptr, count);
-
-    // Advance to the next packet
+    // Advance to the next packet (allowing us to be reentrant)
     phy->read_queue_tail++;
     phy->read_queue_tail &= PHY_READ_QUEUE_MASK;
+
+    // Process the current packet
+    usbMacProcess(phy->mac, in_ptr, count);
+
+    return 1;
   }
+
+  return 0;
+}
+
+void usbPhyWorker(struct USBPHY *phy) {
+  while (phy->read_queue_tail != phy->read_queue_head)
+    usbPhyProcessNextEvent(phy);
+  return;
 }
 
 static THD_FUNCTION(usb_worker_thread, arg) {
@@ -121,8 +136,8 @@ static THD_FUNCTION(usb_worker_thread, arg) {
 }
 
 __attribute__((section(".ramtext")))
-static void usb_phy_fast_isr(void) {
-
+static void usb_phy_fast_isr(void)
+{
   /* Note: We can't use ANY ChibiOS threads here.
    * This thread may interrupt the SysTick handler, which would cause
    * Major Problems if we called OSAL_IRQ_PROLOGUE().
@@ -132,7 +147,6 @@ static void usb_phy_fast_isr(void) {
    * That way, this function is free to preempt EVERYTHING without
    * interfering with the timing of the system.
    */
-
   struct USBPHY *phy = current_usb_phy;
   usb_capture(phy);
 
@@ -154,6 +168,7 @@ void usbPhyInit(struct USBPHY *phy, struct USBMAC *mac) {
     return;
 
   resumeThreadIPtr = getSyscallAddr(147);
+
   attachFastInterrupt(PORTB_IRQ, usb_phy_fast_isr_disabled);
   phy->mac = mac;
   usbMacSetPhy(mac, phy);
@@ -161,7 +176,7 @@ void usbPhyInit(struct USBPHY *phy, struct USBMAC *mac) {
   usbPhyDetach(phy);
 
   createThread(phy->waThread, sizeof(phy->waThread),
-                    127, usb_worker_thread, phy);
+               127, usb_worker_thread, phy);
 }
 
 void usbPhyDetach(struct USBPHY *phy) {

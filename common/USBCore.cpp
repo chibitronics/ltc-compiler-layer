@@ -1,6 +1,10 @@
 #define USB_VID 0x1234
 #define USB_PID 0x5678
 
+#define BUFFER_SIZE 8
+#define NUM_BUFFERS 4
+#define EP_INTERVAL_MS 10
+
 #include "USBCore.h"
 
 #include "usbmac.h"
@@ -38,6 +42,8 @@ static struct USBPHY usbPhy = {
 
   /*.usbdpMask  =*/ (1 << 2),
   /*.usbdnMask  =*/ (1 << 1),
+
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
 static struct USBMAC usbMac;
@@ -158,7 +164,7 @@ static uint8_t typelog_ptr;
 
 static int get_class_descriptor(struct USBLink *link,
                                 const void *setup_ptr,
-                                void **data) {
+                                const void **data) {
 
   (void)link;
   USBSetup *setup = (USBSetup *)setup_ptr;
@@ -172,8 +178,9 @@ static int get_class_descriptor(struct USBLink *link,
 
 static int get_device_descriptor(struct USBLink *link,
                                  const void *setup_ptr,
-                                 void **data) {
+                                 const void **data) {
 
+  (void)link;
   USBSetup *setup = (USBSetup *)setup_ptr;
   uint8_t t = setup->wValueH;
   int desc_length = 0;
@@ -252,7 +259,7 @@ static int get_device_descriptor(struct USBLink *link,
 
 static int get_descriptor(struct USBLink *link,
                           const void *setup_ptr,
-                          void **data) {
+                          const void **data) {
   USBSetup *setup = (USBSetup *)setup_ptr;
 
   if ((setup->bmRequestType & REQUEST_TYPE) == REQUEST_STANDARD)
@@ -261,10 +268,54 @@ static int get_descriptor(struct USBLink *link,
     return get_class_descriptor(link, setup_ptr, data);
 }
 
+static uint32_t rx_buffer[NUM_BUFFERS][BUFFER_SIZE / sizeof(uint32_t)];
+static uint8_t rx_buffer_sizes[NUM_BUFFERS];
+static uint8_t rx_buffer_eps[NUM_BUFFERS];
+static uint8_t rx_buffer_head;
+static uint8_t rx_buffer_tail;
+
+static void * get_usb_rx_buffer(struct USBLink *link,
+                                uint8_t epNum,
+                                int32_t *size)
+{
+  (void)link;
+  (void)epNum;
+
+  if (size)
+    *size = sizeof(rx_buffer[0]);
+  return rx_buffer[rx_buffer_head];
+}
+
+static void *outgoing_buffer;
+static uint32_t outgoing_buffer_size;
+
+static void * get_usb_tx_buffer(struct USBLink *link, uint8_t epNum, int32_t *size)
+{
+  (void)link;
+  (void)epNum;
+
+//  if (epNum == 2) {
+    if (outgoing_buffer_size)
+      *size = outgoing_buffer_size;
+    return outgoing_buffer;
+//  }
+
+  return NULL;
+}
+
+static int send_data_finished(struct USBLink *link, uint8_t epNum, const void *data)
+{
+  (void)link;
+  (void)epNum;
+  (void)data;
+
+  return 0;
+}
+
 //  Blocking Send of data to an endpoint
 int USB_Send(u8 ep, const void* d, int len) {
 
-  return usbSendData(&usbMac, ep & 0x7, d, len);
+  return usbMacSendData(&usbMac, ep & 0x7, d, len);
 }
 
 int USB_RecvControl(void* d, int len) {
@@ -276,11 +327,30 @@ uint8_t USB_SendSpace(uint8_t ep);
 
 // Non-blocking endpoint reception.
 int USB_Recv(uint8_t ep, void* data, int len) {
-  return 0;
+
+  int bytes_to_copy;
+
+  if (rx_buffer_tail == rx_buffer_head)
+    return 0;
+
+  if (ep != rx_buffer_eps[rx_buffer_tail])
+    return 0;
+
+  bytes_to_copy = rx_buffer_sizes[rx_buffer_tail];
+  if (len < rx_buffer_sizes[rx_buffer_tail])
+    bytes_to_copy = len;
+
+  memcpy(data, rx_buffer[rx_buffer_tail], bytes_to_copy);
+  rx_buffer_tail = (rx_buffer_tail + 1) & (NUM_BUFFERS - 1);
+
+  return bytes_to_copy;
 }
 
 int USB_Recv(uint8_t ep) {
-    return 0;
+  uint8_t c;
+  if (USB_Recv(ep,&c,1) != 1)
+    return -1;
+  return c;
 }                           // non-blocking
 
 void USB_Flush(uint8_t ep) {
@@ -288,8 +358,33 @@ void USB_Flush(uint8_t ep) {
     return;
 }
 
-static struct USBLink thisLink = {
-  .getDescriptor = get_descriptor,
+static int received_data(struct USBLink *link,
+                         uint8_t epNum,
+                         uint32_t bytes,
+                         const void *data)
+{
+  (void)link;
+  (void)epNum;
+  (void)bytes;
+  (void)data;
+
+  rx_buffer_sizes[rx_buffer_head] = bytes;
+  rx_buffer_eps[rx_buffer_head] = epNum;
+  rx_buffer_head = (rx_buffer_head + 1) & (NUM_BUFFERS - 1);
+
+  /* Return 0, indicating this packet is complete. */
+  return 0;
+}
+
+static struct USBLink usbLink = {
+  /*.getDescriptor     = */ get_descriptor,
+  /*.getReceiveBuffer  = */ get_usb_rx_buffer,
+  /*.getSendBuffer     = */ get_usb_tx_buffer,
+  /*.receiveData       = */ received_data,
+  /*.sendData          = */ send_data_finished,
+  /*.setConfigNum      = */ NULL,
+  /*.mac               = */ NULL,
+  /*.data              = */ NULL,
 };
 
 /*
@@ -582,7 +677,7 @@ int usbStart(void) {
   if (usb_started)
     return 0;
 
-  usbMacInit(&usbMac, &thisLink);
+  usbMacInit(&usbMac, &usbLink);
   usbPhyInit(&usbPhy, &usbMac);
 
   /* Enable the IRQ and mux as GPIO */
@@ -590,8 +685,16 @@ int usbStart(void) {
   writel(0x000B0100, PORTB_PCR2);
 
   /* Enable the PORTB IRQ, with the highest possible priority.*/
-  NVIC_SetPriority(PINB_IRQn, 1);
-  NVIC_EnableIRQ(PINB_IRQn);
+  {
+    int i;
+    NVIC_SetPriority(SVCall_IRQn, 1);
+    NVIC_SetPriority(PendSV_IRQn, 2);
+    NVIC_SetPriority(SysTick_IRQn, 2);
+    for (i = 0; i < 32; i++)
+      NVIC_SetPriority((IRQn_Type)i, 3);
+    NVIC_SetPriority(PINB_IRQn, 0);
+    NVIC_EnableIRQ(PINB_IRQn);
+  }
 
   pinMode(LED_BUILTIN, OUTPUT);
 

@@ -1,13 +1,11 @@
 #ifndef __USB_MAC_H__
 #define __USB_MAC_H__
 
-#include "ChibiOS.h"
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define MAX_EPS 4
 
 enum usb_pids {
   USB_PID_RESERVED = 0xf0,
@@ -51,16 +49,18 @@ struct usb_packet {
     struct {
       uint8_t pid;
       uint8_t data[10]; /* Including CRC */
-    };
+    } __attribute((packed, aligned(4)));
     uint8_t raw_data[11];
-  };
+  } __attribute((packed, aligned(4)));
   uint8_t size; /* Not including pid (so may be 0) */
   /* Checksum omitted */
-} __attribute__((packed));
+} __attribute__((packed, aligned(4)));
 
 enum usb_mac_packet_type {
   packet_type_none,
   packet_type_setup,
+  packet_type_setup_in,
+  packet_type_setup_out,
   packet_type_in,
   packet_type_out,
 };
@@ -77,39 +77,41 @@ struct usb_mac_setup_packet {
   };
   uint16_t wIndex;
   uint16_t wLength;
-} __attribute__((packed));
+} __attribute__((packed, aligned(4)));
 
 struct USBLink;
 
 struct USBMAC {
   struct USBPHY *phy;
   struct USBLink *link;
-  int phy_internal_is_ready;
 
   union {
     uint8_t data_in[8];
     struct usb_mac_setup_packet data_setup;
-  };
+  } __attribute((packed, aligned(4)));
 
-  const void *data_out[MAX_EPS];
-  int32_t data_out_left[MAX_EPS];
-  int32_t data_out_max[MAX_EPS];
+  const void *data_out;
+  int32_t data_out_left;
+  int32_t data_out_max;
+  int32_t data_out_epnum;
 
-  mutex_t access_mutex;
+#if defined(_CHIBIOS_RT_)
+  thread_reference_t thread;
+#endif
 
-  /* Currently-queued packets */
-  struct usb_packet packet[MAX_EPS];
-  uint8_t packet_queued[MAX_EPS];
-  thread_reference_t threads[MAX_EPS];
+  struct usb_packet packet; /* Currently-queued packet */
+  int packet_queued;    /* Whether a packet is queued */
+
+  uint32_t tok_pos;     /* Position within the current token */
+  void *tok_buf;        /* Buffer storing current token's data */
+  uint8_t tok_addr;     /* Last token's address */
+  uint8_t tok_epnum;    /* Last token's endpoint */
 
   uint8_t data_buffer;  /* Whether we're sending DATA0 or DATA1 */
   uint8_t packet_type;  /* PACKET_SETUP, PACKET_IN, or PACKET_OUT */
 
   uint8_t address;      /* Our configured address */
-
-  uint8_t tok_addr;     /* Last token's address */
-  uint8_t tok_epnum;    /* Last token's endpoint */
-};
+} __attribute((packed, aligned(4)));
 
 /* Process all packets sitting in the queue */
 int usbMacProcess(struct USBMAC *mac,
@@ -132,15 +134,9 @@ struct USBMAC *usbMacDefault(void);
 struct USBPHY *usbMacPhy(struct USBMAC *mac);
 
 /* Indicate that the transfer concluded successfully */
-void usbMacTransferSuccess(struct USBMAC *mac, int epnum);
+void usbMacTransferSuccess(struct USBMAC *mac);
 
-/* Get one unit of queued data, for the specific epnum */
-int macGetEndpointData(struct USBMAC *mac, int epnum,
-                       struct usb_packet **queued_data);
-
-int usbSendData(struct USBMAC *mac, int epnum, const void *data, int size);
-int usbQueueData(struct USBMAC *mac, int epnum, const void *data, int size);
-int usbSendQueue(struct USBMAC *mac, int epnum);
+int usbMacSendData(struct USBMAC *mac, int epnum, const void *data, int count);
 
 #ifdef __cplusplus
 };

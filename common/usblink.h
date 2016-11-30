@@ -96,10 +96,43 @@ struct usb_hid_descriptor {
 struct USBLink;
 typedef int (*get_usb_descriptor_t)(struct USBLink *link,
                                     const void *pkt,
-                                    void **data);
+                                    const void **data);
+typedef void (*usb_set_config_num_t)(struct USBLink *link,
+                                     int configNum);
+
+/*
+ * Called when doing an OUT xfer (data to device) to get a buffer for
+ * the specified endpoint.
+ * It is up to the user to ensure the buffer is large enough.
+ */
+typedef void * (*usb_get_buffer_t)(struct USBLink *link,
+                                   uint8_t epnum,
+                                   int32_t *size);
+
+/*
+ * When data is received (i.e. OUT EP), this function will be called.
+ */
+typedef int (*usb_data_in_t)(struct USBLink *link,
+                             uint8_t epnum,
+                             uint32_t bytes,
+                             const void *data);
+
+/*
+ * When data is finished sending (i.e. IN EP), this function will be called.
+ */
+typedef int (*usb_data_out_t)(struct USBLink *link,
+                             uint8_t epnum,
+                             const void *data);
+
 struct USBLink {
-  get_usb_descriptor_t getDescriptor;
-  int config_num;
+  get_usb_descriptor_t      getDescriptor;
+  usb_get_buffer_t          getReceiveBuffer;
+  usb_get_buffer_t          getSendBuffer;
+  usb_data_in_t             receiveData;
+  usb_data_out_t            sendData;
+  usb_set_config_num_t      setConfigNum;
+  void                     *data;
+  struct USBMAC            *mac;
 } __attribute__((packed, aligned(4)));
 
 #endif /* __USB_LINK_H__ */
