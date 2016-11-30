@@ -94,16 +94,6 @@ int HID_::SendReport(uint8_t id, const void *data, int len)
   packet[0] = id;
   memcpy(packet + 1, data, len);
   return USB_Send(pluggedEndpoint, packet, sizeof(packet));
-
-  /*
-	auto ret = USB_Send(pluggedEndpoint, &id, 1);
-	if (ret < 0)
-    return ret;
-	auto ret2 = USB_Send(pluggedEndpoint | TRANSFER_RELEASE, data, len);
-	if (ret2 < 0)
-    return ret2;
-	return ret + ret2;
-  */
 }
 
 bool HID_::setup(USBSetup& setup)
