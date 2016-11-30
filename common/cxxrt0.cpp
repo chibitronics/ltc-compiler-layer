@@ -4,7 +4,7 @@
 
 extern "C" void __cxa_pure_virtual()
 {
-  asm("bkpt #0");
+  asm("bkpt #1");
 }
 
 namespace __cxxabiv1
@@ -28,7 +28,7 @@ namespace __cxxabiv1
 
   extern "C" void __cxa_guard_abort (__guard *)
   {
-    asm("bkpt #0");
+    asm("bkpt #2");
   }
 }
 
