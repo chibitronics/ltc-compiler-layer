@@ -19,7 +19,9 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#define DONT_DEFINE_KEYBOARD_OBJECT
 #include "Keyboard.h"
+#undef DONT_DEFINE_KEYBOARD_OBJECT
 
 //================================================================================
 //================================================================================
@@ -315,5 +317,3 @@ size_t Keyboard_::write(uint8_t c)
   release(c);            // Keyup
   return p;              // just return the result of press() since release() almost always returns 1
 }
-
-Keyboard_ Keyboard;

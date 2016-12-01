@@ -93,7 +93,12 @@ public:
   size_t release(uint8_t k);
   void releaseAll(void);
 };
+
+#ifdef DONT_DEFINE_KEYBOARD_OBJECT
 extern Keyboard_ Keyboard;
+#else
+Keyboard_ Keyboard;
+#endif
 
 #endif
 #endif
