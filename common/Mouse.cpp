@@ -19,7 +19,9 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#define DONT_DEFINE_MOUSE_OBJECT
 #include "Mouse.h"
+#undef DONT_DEFINE_MOUSE_OBJECT
 
 #if defined(_USING_HID)
 
@@ -120,6 +122,6 @@ bool Mouse_::isPressed(uint8_t b)
 	return false;
 }
 
-Mouse_ Mouse;
+//Mouse_ Mouse;
 
 #endif

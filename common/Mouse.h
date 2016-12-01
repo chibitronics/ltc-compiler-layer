@@ -54,7 +54,12 @@ public:
   void release(uint8_t b = MOUSE_LEFT); // release LEFT by default
   bool isPressed(uint8_t b = MOUSE_LEFT); // check LEFT by default
 };
+
+#ifdef DONT_DEFINE_MOUSE_OBJECT
 extern Mouse_ Mouse;
+#else
+Mouse_ Mouse;
+#endif
 
 #endif
 #endif
