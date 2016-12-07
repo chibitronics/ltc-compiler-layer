@@ -137,9 +137,9 @@ static int USB_SendConfiguration(int maxlen) {
 }
 
 static int USB_SendStringDescriptor(const uint8_t *string_P,
-                                    uint8_t string_len) {
+                                    uint32_t string_len) {
 
-  int l = strlen((char *)string_P);
+  uint32_t l = strlen((char *)string_P);
   if (l < string_len)
     string_len = l;
 
