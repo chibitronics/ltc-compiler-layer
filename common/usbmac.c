@@ -182,6 +182,7 @@ static int usb_mac_process_setup_write(struct USBMAC *mac,
   const void *response = (const void *)-1;
   int len = 0;
   int max = 0;
+  int handled = 0;
   struct USBLink *link = mac->link;
 
   switch (setup->bmRequestType) {
@@ -189,52 +190,21 @@ static int usb_mac_process_setup_write(struct USBMAC *mac,
     switch (setup->bRequest) {
     case 5: /* SET_ADDRESS */
       mac->address = setup->wValue;
+      handled = 1;
       break;
 
     case 9: /* SET_CONFIGURATION */
       if (link->setConfigNum)
         link->setConfigNum(link, setup->wValue);
+      handled = 1;
       break;
     }
     break;
+  }
 
-  case 0x01: /* Device-to-host, standard, write to host */
-    break;
-
-  case 0x02: /* Device-to-host, standard, write to host */
-    break;
-
-  case 0x03: /* Device-to-host, standard, write to host */
-    break;
-
-  case 0x20: /* Device-to-host, class, write to host */
-    break;
-
-  case 0x21: /* Device-to-host, class, write to host */
-    switch (setup->bRequest) {
-    case 0x0a: /* Thingy? */
-      /* This happens in Set Idle */
-      break;
-    }
-    break;
-
-  case 0x22: /* Device-to-host, class, write to host */
-    break;
-
-  case 0x23: /* Device-to-host, class, write to host */
-    break;
-
-  case 0x40: /* Device-to-host, vendor, write to host */
-    break;
-
-  case 0x41: /* Device-to-host, vendor, write to host */
-    break;
-
-  case 0x42: /* Device-to-host, vendor, write to host */
-    break;
-
-  case 0x43: /* Device-to-host, vendor, write to host */
-    break;
+  if (!handled) {
+    if (link->getDescriptor)
+      len = link->getDescriptor(link, setup, &response);
   }
 
   /* We must always send a response packet.  If there's ever a time when
