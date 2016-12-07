@@ -8,6 +8,8 @@
 #include "memio.h"
 
 static void (*resumeThreadIPtr)(thread_reference_t *trp, msg_t *msg);
+static void (*lockFromISR)();
+static void (*unlockFromISR)();
 static struct USBPHY *current_usb_phy;
 
 int usbPhyInitialized(struct USBPHY *phy) {
@@ -22,17 +24,17 @@ static void queue_thread(struct USBPHY *phy) {
 
   phy->read_queue_head++;
   phy->read_queue_head &= PHY_READ_QUEUE_MASK;
-  if (phy->thread)
+  if (phy->thread) {
+    lockFromISR();
     resumeThreadIPtr(&phy->thread, 0);
+    unlockFromISR();
+  }
 }
 
 __attribute__((section(".ramtext")))
-static void usb_capture(struct USBPHY *phy) {
+static void usb_capture(struct USBPHY *phy, uint8_t *samples) {
 
-  uint8_t *samples;
   int ret;
-
-  samples = (uint8_t *)phy->read_queue[phy->read_queue_head];
 
   ret = usbPhyReadI(phy, samples);
   if (ret <= 0)
@@ -47,13 +49,13 @@ static void usb_capture(struct USBPHY *phy) {
     if ((!phy->queued_size)
     || (((((const uint16_t *)(samples+1))[0] >> 7) & 0xf) != phy->queued_epnum))
     {
-      uint8_t pkt[] = {USB_PID_NAK};
+      const uint8_t pkt[] = {USB_PID_NAK};
       usbPhyWriteI(phy, pkt, sizeof(pkt));
       goto out;
     }
 
-    queue_thread(phy);
     usbPhyWriteI(phy, phy->queued_data, phy->queued_size);
+    queue_thread(phy);
     goto out;
   }
   else if (samples[0] == USB_PID_SETUP) {
@@ -67,15 +69,14 @@ static void usb_capture(struct USBPHY *phy) {
   else if (samples[0] == USB_PID_ACK) {
     /* Allow the next byte to be sent */
     phy->queued_size = 0;
-    usbMacTransferSuccess(phy->mac);
     queue_thread(phy);
     goto out;
   }
 
   else if ((samples[0] == USB_PID_DATA0) || (samples[0] == USB_PID_DATA1)) {
-    queue_thread(phy);
-    uint8_t pkt[] = {USB_PID_ACK};
+    const uint8_t pkt[] = {USB_PID_ACK};
     usbPhyWriteI(phy, pkt, sizeof(pkt));
+    queue_thread(phy);
     goto out;
   }
 
@@ -98,7 +99,7 @@ struct USBPHY *usbPhyTestPhy(void) {
   return NULL;
 }
 
-int usbPhyProcessNextEvent(struct USBPHY *phy) {
+static int usb_phy_process_next_event(struct USBPHY *phy) {
   if (phy->read_queue_tail != phy->read_queue_head) {
     uint8_t *in_ptr = (uint8_t *)phy->read_queue[phy->read_queue_tail];
     int count = in_ptr[11];
@@ -116,9 +117,9 @@ int usbPhyProcessNextEvent(struct USBPHY *phy) {
   return 0;
 }
 
-void usbPhyWorker(struct USBPHY *phy) {
+static void usb_phy_worker(struct USBPHY *phy) {
   while (phy->read_queue_tail != phy->read_queue_head)
-    usbPhyProcessNextEvent(phy);
+    usb_phy_process_next_event(phy);
   return;
 }
 
@@ -128,13 +129,14 @@ static THD_FUNCTION(usb_worker_thread, arg) {
 
   setThreadName("USB poll thread");
   while (1) {
-    suspendThread(&phy->thread);
-    usbPhyWorker(phy);
+    suspendThreadTimeout(&phy->thread, ST2MS(5));
+    usb_phy_worker(phy);
   }
 
   return;
 }
 
+static uint8_t *usb_samples;
 __attribute__((section(".ramtext")))
 static void usb_phy_fast_isr(void)
 {
@@ -148,7 +150,8 @@ static void usb_phy_fast_isr(void)
    * interfering with the timing of the system.
    */
   struct USBPHY *phy = current_usb_phy;
-  usb_capture(phy);
+  usb_capture(phy, usb_samples);
+  usb_samples = (uint8_t *)phy->read_queue[phy->read_queue_head];
 
   /* Clear all pending interrupts on this port. */
   writel(0xffffffff, PORTB_ISFR);
@@ -166,8 +169,11 @@ void usbPhyInit(struct USBPHY *phy, struct USBMAC *mac) {
 
   if (phy->initialized)
     return;
+  usb_samples = (uint8_t *)phy->read_queue[phy->read_queue_head];
 
   resumeThreadIPtr = getSyscallAddr(147);
+  lockFromISR = getSyscallAddr(132);
+  unlockFromISR = getSyscallAddr(133);
 
   attachFastInterrupt(PORTB_IRQ, usb_phy_fast_isr_disabled);
   phy->mac = mac;

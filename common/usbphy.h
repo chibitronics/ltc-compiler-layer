@@ -68,9 +68,6 @@ int usbPhyWritePrepare(struct USBPHY *phy, int epnum,
                        const void *buffer, int size);
 void usbCaptureI(struct USBPHY *phy);
 
-int usbPhyProcessNextEvent(struct USBPHY *phy);
-void usbPhyWorker(struct USBPHY *phy);
-
 void usbPhyAttach(struct USBPHY *phy);
 void usbPhyDetach(struct USBPHY *phy);
 
