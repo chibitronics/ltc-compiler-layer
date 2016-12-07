@@ -315,7 +315,7 @@ int usbMacProcess(struct USBMAC *mac,
       //mac->data_buffer = 0;
       usb_mac_parse_token(mac, packet + 1);
 
-      void *buffer;
+      const void *buffer;
       int32_t size;
       buffer = mac->link->getSendBuffer(mac->link, mac->tok_epnum, &size);
 
