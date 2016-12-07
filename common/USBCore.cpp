@@ -164,9 +164,6 @@ static int USB_SendStringDescriptor(const uint8_t *string_P,
   return usb_data_buffer_position;
 }
 
-static uint8_t typelog[16];
-static uint8_t typelog_ptr;
-
 static int get_class_descriptor(struct USBLink *link,
                                 const void *setup_ptr,
                                 const void **data) {
@@ -194,9 +191,6 @@ static int get_device_descriptor(struct USBLink *link,
 
   usb_data_buffer_position = 0;
   *data = (void *)usb_data_buffer;
-
-  typelog[typelog_ptr++] = t;
-  typelog_ptr &= 0xf;
 
   if (USB_CONFIGURATION_DESCRIPTOR_TYPE == t)
       return USB_SendConfiguration(setup->wLength);
