@@ -181,6 +181,9 @@ static int get_device_descriptor(struct USBLink *link,
   usb_data_buffer_position = 0;
   *data = (void *)usb_data_buffer;
 
+  if ((setup->bmRequestType & REQUEST_DIRECTION) == REQUEST_HOSTTODEVICE)
+    return 0;
+
   if (USB_CONFIGURATION_DESCRIPTOR_TYPE == t)
       return USB_SendConfiguration(setup->wLength);
 
