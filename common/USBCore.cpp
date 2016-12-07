@@ -267,23 +267,6 @@ static void * get_usb_rx_buffer(struct USBLink *link,
   return rx_buffer[rx_buffer_head];
 }
 
-static void *outgoing_buffer;
-static uint32_t outgoing_buffer_size;
-
-static void * get_usb_tx_buffer(struct USBLink *link, uint8_t epNum, int32_t *size)
-{
-  (void)link;
-  (void)epNum;
-
-//  if (epNum == 2) {
-    if (outgoing_buffer_size)
-      *size = outgoing_buffer_size;
-    return outgoing_buffer;
-//  }
-
-  return NULL;
-}
-
 static int send_data_finished(struct USBLink *link, uint8_t epNum, const void *data)
 {
   (void)link;
@@ -387,7 +370,6 @@ static void set_config_num(struct USBLink *link, int configNum)
 static struct USBLink usbLink = {
   /*.getDescriptor     = */ get_descriptor,
   /*.getReceiveBuffer  = */ get_usb_rx_buffer,
-  /*.getSendBuffer     = */ get_usb_tx_buffer,
   /*.receiveData       = */ received_data,
   /*.sendData          = */ send_data_finished,
   /*.setConfigNum      = */ set_config_num,
