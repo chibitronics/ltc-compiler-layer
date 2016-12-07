@@ -321,18 +321,25 @@ int USB_RecvControl(void* d, int len) {
     return USB_Recv(0, d, len);
 }
 
-uint8_t USB_Available(uint8_t ep);
 uint8_t USB_SendSpace(uint8_t ep);
+
+uint8_t USB_Available(uint8_t ep) {
+
+  if (rx_buffer_tail == rx_buffer_head)
+    return 0;
+
+  if (ep != rx_buffer_eps[rx_buffer_tail])
+    return 0;
+
+  return 1;
+}
 
 // Non-blocking endpoint reception.
 int USB_Recv(uint8_t ep, void* data, int len) {
 
   int bytes_to_copy;
 
-  if (rx_buffer_tail == rx_buffer_head)
-    return 0;
-
-  if (ep != rx_buffer_eps[rx_buffer_tail])
+  if (!USB_Available(ep))
     return 0;
 
   bytes_to_copy = rx_buffer_sizes[rx_buffer_tail];
