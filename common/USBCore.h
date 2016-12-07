@@ -294,6 +294,8 @@ typedef struct
 #define D_CDCCS(_subtype,_d0,_d1)	{ 5, 0x24, _subtype, _d0, _d1 }
 #define D_CDCCS4(_subtype,_d0)		{ 4, 0x24, _subtype, _d0 }
 
+int USB_RecvWait(uint8_t ep, void *data, int len);
+
 extern "C" {
   struct USBPHY;
   struct USBMAC;

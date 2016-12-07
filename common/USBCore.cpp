@@ -25,6 +25,13 @@ struct usb_link_private {
 };
 static struct usb_link_private link_priv;
 
+static uint32_t rx_buffer[NUM_BUFFERS][BUFFER_SIZE / sizeof(uint32_t)];
+static uint8_t rx_buffer_sizes[NUM_BUFFERS];
+static uint8_t rx_buffer_eps[NUM_BUFFERS];
+static uint8_t rx_buffer_head;
+static uint8_t rx_buffer_tail;
+static thread_t *waiting_read_threads[8];
+
 static struct USBPHY usbPhy = {
   NULL,
   0,
@@ -261,12 +268,6 @@ static int get_descriptor(struct USBLink *link,
     return get_class_descriptor(link, setup_ptr, data);
 }
 
-static uint32_t rx_buffer[NUM_BUFFERS][BUFFER_SIZE / sizeof(uint32_t)];
-static uint8_t rx_buffer_sizes[NUM_BUFFERS];
-static uint8_t rx_buffer_eps[NUM_BUFFERS];
-static uint8_t rx_buffer_head;
-static uint8_t rx_buffer_tail;
-
 static void * get_usb_rx_buffer(struct USBLink *link,
                                 uint8_t epNum,
                                 int32_t *size)
@@ -308,7 +309,12 @@ static int send_data_finished(struct USBLink *link, uint8_t epNum, const void *d
 //  Blocking Send of data to an endpoint
 int USB_Send(u8 ep, const void* d, int len) {
 
-  return usbMacSendData(&usbMac, ep & 0x7, d, len);
+  int ret;
+
+  while ((ret = usbMacSendData(&usbMac, ep & 0x7, d, len)) < 0)
+    threadSleep(ST2MS(1));
+
+  return ret;
 }
 
 int USB_RecvControl(void* d, int len) {
@@ -353,6 +359,13 @@ int USB_Recv(uint8_t ep) {
   return c;
 }                           // non-blocking
 
+int USB_RecvWait(uint8_t ep, void *data, int len)
+{
+  if (!USB_Available(ep))
+    suspendThread(&waiting_read_threads[ep]);
+  return USB_Recv(ep, data, len);
+}
+
 void USB_Flush(uint8_t ep) {
     (void)ep;
     return;
@@ -364,13 +377,15 @@ static int received_data(struct USBLink *link,
                          const void *data)
 {
   (void)link;
-  (void)epNum;
-  (void)bytes;
   (void)data;
 
   rx_buffer_sizes[rx_buffer_head] = bytes;
   rx_buffer_eps[rx_buffer_head] = epNum;
+  memcpy(rx_buffer[rx_buffer_head], data, bytes);
   rx_buffer_head = (rx_buffer_head + 1) & (NUM_BUFFERS - 1);
+
+  if (waiting_read_threads[epNum])
+    resumeThread(&waiting_read_threads[epNum], 0);
 
   /* Return 0, indicating this packet is complete. */
   return 0;
