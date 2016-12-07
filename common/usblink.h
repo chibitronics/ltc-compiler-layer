@@ -127,7 +127,6 @@ typedef int (*usb_data_out_t)(struct USBLink *link,
 struct USBLink {
   get_usb_descriptor_t      getDescriptor;
   usb_get_buffer_t          getReceiveBuffer;
-  usb_get_buffer_t          getSendBuffer;
   usb_data_in_t             receiveData;
   usb_data_out_t            sendData;
   usb_set_config_num_t      setConfigNum;
