@@ -731,12 +731,9 @@ usb_phy_write__send_se0:
 #warning "Not setting J state (fix this before committing)"
 #endif
   /* Cheat a bit on the end-of-packet time, since the following
-   * instructions take roughly 20 cycles before the lines reset.
-   *
-   * Disabled, because the line is not driven so it will drift
-   * slowly enough that it doesn't matter.
+   * instructions take roughly 10 cycles before the lines reset.
    */
-  bl usb_phy__wait_12_cycles
+  bl usb_phy__wait_24_cycles
 
   // --- Done Transmitting --- //
 
