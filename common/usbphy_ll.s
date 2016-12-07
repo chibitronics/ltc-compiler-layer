@@ -618,7 +618,7 @@ usb_phy_write__out:
 usb_phy_write__finished_byte:
   mov wtmp1, wbytes                 // Move byte array into a lo reg
   cmp wtmp1, wend                   // See if we've reached the end.
-  beq usb_write__eof                // Exit if it's now 0.
+  beq usb_phy_write__send_eof       // Exit if it's now 0.
   ldrb wpkt, [wtmp1]                // Read the next byte into wpkt.
   add wtmp1, #1                     // Advance byte array by one.
   mov wbytes, wtmp1                 // ...or store byte addr back in the hi reg.
@@ -681,14 +681,48 @@ usb_phy_write__stuff_out:
   bl usb_phy__wait_13_cycles
   b usb_phy_write__done_stuffing_bit
 
-usb_write__eof:
-  bl usb_phy__wait_13_cycles
+usb_phy_write__eof_stuff_bit:
+  bl usb_phy__wait_18_cycles
+  mov wstuff, #0b111111             // Clear out the bit-stuff rcounter
+  // 2
+
+  add wlastsym, wlastsym, #1        // Invert the last symbol.
+
+  mov wtmp1, #0b1                   // See if we need to send j or k
+  tst wlastsym, wtmp1
+  // 3
+
+  /* Write the desired state out (each branch is balanced) */
+  bne usb_phy_write__eof_stuff_j
+usb_phy_write__eof_stuff_k:
+  mov wpaddr, wdpsetreg             // D+ set
+  mov wnaddr, wdnclrreg             // D- clr
+  b usb_phy_write__eof_stuff_out
+
+usb_phy_write__eof_stuff_j:
+  mov wpaddr, wdpclrreg             // D+ clr
+  ldr wnaddr, [sp, #0]              // D- set
+
+usb_phy_write__eof_stuff_out:
+  str wpmask, [wpaddr]
+  str wnmask, [wnaddr]
+  bl usb_phy__wait_27_cycles
+  b usb_phy_write__send_se0
+  // 7 (either branch taken)
+
+usb_phy_write__send_eof:
+  mov wtmp2, #0b111111              // Compare it with the wstuff value
+  and wtmp2, wstuff                 // AND the two together.  If they're the
+  beq usb_phy_write__eof_stuff_bit  // same, then stuff one bit.
+
+  bl usb_phy__wait_14_cycles
+usb_phy_write__send_se0:
   bl usb_phy_write__state_se0
   bl usb_phy_write__state_se0
 
   /* Set J-state, as required by the spec */
 #if 1
-  bl usb_phy__wait_5_cycles
+  bl usb_phy__wait_6_cycles
   mov wpaddr, wdpsetreg             // D+ set
   mov wnaddr, wdnclrreg             // D- clr
   str wpmask, [wpaddr]
