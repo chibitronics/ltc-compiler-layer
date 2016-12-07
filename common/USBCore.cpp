@@ -64,44 +64,28 @@ const u16 STRING_LANGUAGE[2] = {
 };
 
 #ifndef USB_PRODUCT
-// If no product is provided, use USB IO Board
-#define USB_PRODUCT     "USB IO Board"
+#define USB_PRODUCT     "Love to Code"
+#endif
+
+#ifndef USB_MANUFACTURER
+#define USB_MANUFACTURER "Chibitronics"
 #endif
 
 const u8 STRING_PRODUCT[] = USB_PRODUCT;
 
-#if USB_VID == 0x2341
-#  if defined(USB_MANUFACTURER)
-#    undef USB_MANUFACTURER
-#  endif
-#  define USB_MANUFACTURER "Arduino LLC"
-#elif USB_VID == 0x1b4f
-#  if defined(USB_MANUFACTURER)
-#    undef USB_MANUFACTURER
-#  endif
-#  define USB_MANUFACTURER "SparkFun"
-#elif !defined(USB_MANUFACTURER)
-// Fall through to unknown if no manufacturer name was provided in a macro
-#  define USB_MANUFACTURER "Unknown"
-#endif
-
 const u8 STRING_MANUFACTURER[] = USB_MANUFACTURER;
-
 
 //  DEVICE DESCRIPTOR
 static const DeviceDescriptor USB_DeviceDescriptor =
   D_DEVICE(0x00,0x00,0x00,8,USB_VID,USB_PID,0x100,IMANUFACTURER,IPRODUCT,ISERIAL,1);
-
-static const DeviceDescriptor USB_DeviceDescriptorA =
-  D_DEVICE(0xEF,0x02,0x01,8,USB_VID,USB_PID,0x100,IMANUFACTURER,IPRODUCT,ISERIAL,1);
 
 uint8_t _initEndpoints[USB_ENDPOINTS] =
 {
   0,                      // Control Endpoint
 
   EP_TYPE_INTERRUPT_IN,   // CDC_ENDPOINT_ACM
-  EP_TYPE_BULK_OUT,       // CDC_ENDPOINT_OUT
-  EP_TYPE_BULK_IN,        // CDC_ENDPOINT_IN
+  EP_TYPE_INTERRUPT_IN,        // CDC_ENDPOINT_IN
+  EP_TYPE_INTERRUPT_OUT,       // CDC_ENDPOINT_OUT
 
   // Following endpoints are automatically initialized to 0
 };
