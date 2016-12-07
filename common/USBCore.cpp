@@ -14,8 +14,6 @@
 #include "kl02.h"
 #include "memio.h"
 
-static uint8_t _cdcComposite;
-
 #define PCR_IRQC_LOGIC_ZERO         0x8
 #define PCR_IRQC_RISING_EDGE        0x9
 #define PCR_IRQC_FALLING_EDGE       0xA
@@ -206,11 +204,7 @@ static int get_device_descriptor(struct USBLink *link,
 
   switch (t) {
   case USB_DEVICE_DESCRIPTOR_TYPE:
-    if (setup->wLength == 8)
-      _cdcComposite = 1;
-
-    desc_addr = _cdcComposite ? (const uint8_t*)&USB_DeviceDescriptorA
-                              : (const uint8_t*)&USB_DeviceDescriptor;
+    desc_addr = (const uint8_t*)&USB_DeviceDescriptor;
     if (*desc_addr > setup->wLength)
       desc_length = setup->wLength;
     break;
