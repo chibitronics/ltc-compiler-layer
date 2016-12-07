@@ -1,5 +1,5 @@
-#define USB_VID 0x1234
-#define USB_PID 0x5678
+#define USB_VID 0x1209
+#define USB_PID 0x9317
 
 #define BUFFER_SIZE 8
 #define NUM_BUFFERS 4
