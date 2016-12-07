@@ -97,6 +97,27 @@ int HID_::SendReport(uint8_t id, const void *data, int len)
   return USB_Send(pluggedEndpoint, packet, sizeof(packet));
 }
 
+int HID_::Send(const void *data, int len)
+{
+  /* Prefix the report with the report ID */
+  return USB_Send(pluggedEndpoint, data, len);
+}
+
+int HID_::RecvReport(uint8_t id, void *data, int len)
+{
+  return USB_Recv(pluggedEndpoint, data, len);
+}
+
+int HID_::RecvReportWait(uint8_t id, void *data, int len)
+{
+  return USB_RecvWait(pluggedEndpoint, data, len);
+}
+
+int HID_::CanRecvReport(uint8_t id)
+{
+  return USB_Available(pluggedEndpoint);
+}
+
 bool HID_::setup(USBSetup& setup)
 {
 	if (pluggedInterface != setup.wIndex) {

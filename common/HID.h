@@ -98,6 +98,10 @@ public:
   HID_(void);
   int begin(void);
   int SendReport(uint8_t id, const void* data, int len);
+  int Send(const void* data, int len); // Raw send
+  int CanRecvReport(uint8_t id);
+  int RecvReport(uint8_t id, void *data, int len);
+  int RecvReportWait(uint8_t id, void *data, int len);
   void AppendDescriptor(HIDSubDescriptor* node);
 
 protected:
