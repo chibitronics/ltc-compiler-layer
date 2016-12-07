@@ -46,6 +46,9 @@ enum usb_pids_rev {
   USB_DIP_MDATA = 0xf0,
 };
 
+#define SET_ADDRESS 5
+#define SET_CONFIGURATION 9
+
 struct usb_packet {
   union {
     struct {
@@ -134,7 +137,7 @@ struct USBMAC *usbMacDefault(void);
 struct USBPHY *usbMacPhy(struct USBMAC *mac);
 
 /* Indicate that the transfer concluded successfully */
-void usbMacTransferSuccess(struct USBMAC *mac);
+//void usbMacTransferSuccess(struct USBMAC *mac);
 
 int usbMacSendData(struct USBMAC *mac, int epnum, const void *data, int count);
 
