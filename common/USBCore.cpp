@@ -52,8 +52,6 @@ static struct USBPHY usbPhy = {
 
   /*.usbdpMask  =*/ (1 << 2),
   /*.usbdnMask  =*/ (1 << 1),
-
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
 static struct USBMAC usbMac;
@@ -670,9 +668,9 @@ int usbStart(void) {
   usbMacInit(&usbMac, &usbLink);
   usbPhyInit(&usbPhy, &usbMac);
 
-  /* Enable the IRQ and mux as GPIO */
-  writel(0x000B0100, PORTB_PCR1);
-  writel(0x000B0100, PORTB_PCR2);
+  /* Enable the IRQ and mux as GPIO with slow slew rate */
+  writel(0x000B0104, PORTB_PCR1);
+  writel(0x000B0104, PORTB_PCR2);
 
   /* Enable the PORTB IRQ, with the highest possible priority.*/
   {
