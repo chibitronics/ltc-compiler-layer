@@ -22,6 +22,11 @@ static uint8_t _cdcComposite;
 #define PCR_IRQC_EITHER_EDGE        0xB
 #define PCR_IRQC_LOGIC_ONE          0xC
 
+struct usb_link_private {
+	int config_num;
+};
+static struct usb_link_private link_priv;
+
 static struct USBPHY usbPhy = {
   NULL,
   0,
@@ -376,15 +381,21 @@ static int received_data(struct USBLink *link,
   return 0;
 }
 
+static void set_config_num(struct USBLink *link, int configNum)
+{
+	struct usb_link_private *priv = (struct usb_link_private *)link->data;
+	priv->config_num = configNum;
+}
+
 static struct USBLink usbLink = {
   /*.getDescriptor     = */ get_descriptor,
   /*.getReceiveBuffer  = */ get_usb_rx_buffer,
   /*.getSendBuffer     = */ get_usb_tx_buffer,
   /*.receiveData       = */ received_data,
   /*.sendData          = */ send_data_finished,
-  /*.setConfigNum      = */ NULL,
+  /*.setConfigNum      = */ set_config_num,
+  /*.data              = */ &link_priv,
   /*.mac               = */ NULL,
-  /*.data              = */ NULL,
 };
 
 /*
