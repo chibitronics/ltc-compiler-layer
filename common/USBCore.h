@@ -77,6 +77,7 @@
 #define USB_ENDPOINT_DESCRIPTOR_TYPE           5
 #define USB_DEVICE_QUALIFIER                   6
 #define USB_OTHER_SPEED_CONFIGURATION          7
+#define USB_BOS_DESCRIPTOR_TYPE                15
 
 // usb_20.pdf Table 9.6 Standard Feature Selectors
 #define DEVICE_REMOTE_WAKEUP                   1
@@ -272,9 +273,41 @@ typedef struct
 	EndpointDescriptor			out;
 } __attribute__((packed)) MSCDescriptor;
 
+typedef struct
+{
+    uint8_t  len;
+    uint8_t  stype;
+    uint16_t clen;
+    uint8_t  numCaps;
+} __attribute__((packed)) BOSDescriptor;
+
+typedef struct
+{
+	uint8_t  bLength;       				/* Size of this descriptor. Must be set to 24. */
+	uint8_t  bDescriptorType;     			/* DEVICE CAPABILITY descriptor type ([USB31] Table 9-6). */
+	uint8_t  bDevCapabilityType;			/* PLATFORM capability type ([USB31] Table 9-14). */
+	uint8_t  bReserved;              		/* This field is reserved and shall be set to zero.  */
+	uint8_t  PlatformCapabilityUUID[16]; 	/* Must be set to {3408b638-09a9-47a0-8bfd-a0768815b665}. */
+	uint16_t bcdVersion;					/* Protocol version supported. Must be set to 0x0100. */
+	uint8_t  bVendorCode;					/* bRequest value used for issuing WebUSB requests. */
+	uint8_t  iLandingPage;					/* URL descriptor index of the device’s landing page. */
+} __attribute__((packed)) WebUSBPlatformCapabilityDescriptor;
+
+typedef struct
+{
+	uint8_t  bLength;
+	uint8_t  bDescriptorType;
+	uint8_t  bDevCapabilityType;
+	uint8_t  bReserved;
+	uint8_t  PlatformCapabilityUUID[16];
+	uint32_t dwWindowsVersion;
+	uint16_t wMSOSDescriptorSetTotalLength;
+	uint8_t  bMS_VendorCode;
+	uint8_t  bAltEnumCode;
+} __attribute__((packed)) MicrosoftOs2p0PlatformCapabilityDescriptor;
 
 #define D_DEVICE(_class,_subClass,_proto,_packetSize0,_vid,_pid,_version,_im,_ip,_is,_configs) \
-	{ 18, 1, 0x200, _class,_subClass,_proto,_packetSize0,_vid,_pid,_version,_im,_ip,_is,_configs }
+	{ 18, 1, 0x210, _class,_subClass,_proto,_packetSize0,_vid,_pid,_version,_im,_ip,_is,_configs }
 
 #define D_CONFIG(_totalLength,_interfaces) \
 	{ 9, 2, _totalLength,_interfaces, 1, 0, USB_CONFIG_BUS_POWERED | USB_CONFIG_REMOTE_WAKEUP, USB_CONFIG_POWER_MA(100) }
@@ -293,6 +326,22 @@ typedef struct
 
 #define D_CDCCS(_subtype,_d0,_d1)	{ 5, 0x24, _subtype, _d0, _d1 }
 #define D_CDCCS4(_subtype,_d0)		{ 4, 0x24, _subtype, _d0 }
+
+#define D_BOS(_len, _ncaps) {sizeof(BOSDescriptor), 0x0f, (_len), _ncaps}
+#define D_WEBUSB(_vendorcode, _urlindex) \
+	{ sizeof(WebUSBPlatformCapabilityDescriptor), 0x10 /* DEVICE_CAPABILITY */, 0x05 /* PLATFORM */, 0, \
+	0x34, 0x08, 0xb6, 0x38, 0x09, 0xa9, 0x47, 0xa0, \
+	0x8b, 0xfd, 0xa0, 0x76, 0x88, 0x15, 0xb6, 0x65, \
+	0x0100, (_vendorcode), (_urlindex) \
+	}
+
+#define D_MSOS2p0(_descSize, _vendorCode) { \
+	sizeof(MicrosoftOs2p0PlatformCapabilityDescriptor), 0x10, 0x05, 0x00, \
+	0xdf, 0x60, 0xdd, 0xd8,  0x89, 0x45,  0xc7, 0x4c,  0x9c, 0xd2,  0x65, 0x9d, 0x9e, 0x64, 0x8a, 0x9f, \
+	/*0x00000603*/ 0x06030000, \
+	(_descSize) /* length of MS OS 2.0 descriptor set */, \
+	(_vendorCode), 0 \
+}
 
 int USB_RecvWait(uint8_t ep, void *data, int len);
 
