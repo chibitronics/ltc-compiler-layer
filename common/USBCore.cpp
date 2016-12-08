@@ -75,7 +75,7 @@ const u8 STRING_MANUFACTURER[] = USB_MANUFACTURER;
 
 //  DEVICE DESCRIPTOR
 static const DeviceDescriptor USB_DeviceDescriptor =
-  D_DEVICE(0x00,0x00,0x00,8,USB_VID,USB_PID,0x100,IMANUFACTURER,IPRODUCT,ISERIAL,1);
+  D_DEVICE(0xff,0x00,0x00,8,USB_VID,USB_PID,0x100,IMANUFACTURER,IPRODUCT,ISERIAL,1);
 
 uint8_t _initEndpoints[USB_ENDPOINTS] =
 {
@@ -90,54 +90,8 @@ uint8_t _initEndpoints[USB_ENDPOINTS] =
 
 static uint8_t usb_data_buffer[128];
 static uint16_t usb_data_buffer_position;
-
-static const uint8_t ms_os_20_descriptor_set[] = {//
-
-0x0A, 0x00,					// Descriptor size (10 bytes)
-0x00, 0x00,					// MS OS 2.0 descriptor set header
-0x00, 0x00, 0x03, 0x06,					// Windows version (8.1) (0x06030000)
-0x9E, 0x00,					// Size, MS OS 2.0 descriptor set (158 bytes)
-
-// Microsoft OS 2.0 compatible ID descriptor
-
-0x14, 0x00,						// Descriptor size (20 bytes)
-0x03, 0x00,			 		  // MS OS 2.0 compatible ID descriptor
-0x57, 0x49, 0x4E, 0x55, 0x53, 0x42, 0x00, 0x00,			// WINUSB string
-0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,			// Sub-compatible ID
-
-// Registry property descriptor
-
-0x80, 0x00,				// Descriptor size (130 bytes)
-0x04, 0x00,				// Registry Property descriptor
-0x01, 0x00,				// Strings are null-terminated Unicode
-0x28, 0x00,				// Size of Property Name (40 bytes)
-
-//Property Name ("DeviceInterfaceGUID")
-
-0x44, 0x00, 0x65, 0x00, 0x76, 0x00, 0x69, 0x00, 0x63, 0x00, 0x65, 0x00,
-0x49, 0x00, 0x6E, 0x00, 0x74, 0x00, 0x65, 0x00, 0x72, 0x00, 0x66, 0x00,
-0x61, 0x00, 0x63, 0x00, 0x65, 0x00, 0x47, 0x00, 0x55, 0x00, 0x49, 0x00,
-0x44, 0x00, 0x00, 0x00, 
-
-0x4E, 0x00,				// Size of Property Data (78 bytes)
-
-// Vendor-defined Property Data: {ecceff35-146c-4ff3-acd9-8f992d09acdd}
-
-0x7b, 0x00, 0x64, 0x00, 0x65, 0x00, 0x65, 0x00, 0x38, 0x00, 0x32, 0x00,
-0x34, 0x00, 0x65, 0x00, 0x66, 0x00, 0x2d, 0x00, 0x37, 0x00, 0x32, 0x00,
-0x39, 0x00, 0x62, 0x00, 0x2d, 0x00, 0x34, 0x00, 0x61, 0x00, 0x30, 0x00,
-0x65, 0x00, 0x2d, 0x00, 0x39, 0x00, 0x63, 0x00, 0x31, 0x00, 0x34, 0x00,
-0x2d, 0x00, 0x62, 0x00, 0x37, 0x00, 0x31, 0x00, 0x31, 0x00, 0x37, 0x00,
-0x64, 0x00, 0x33, 0x00, 0x33, 0x00, 0x61, 0x00, 0x38, 0x00, 0x31, 0x00,
-0x37, 0x00, 0x7d, 0x00, 0x00, 0x00};
-/*
-0x7B, 0x00, 0x65, 0x00, 0x63, 0x00, 0x63, 0x00, 0x65, 0x00, 0x66, 0x00,
-0x66, 0x00, 0x33, 0x00, 0x35, 0x00, 0x2D, 0x00, 0x31, 0x00, 0x34, 0x00,
-0x36, 0x00, 0x33, 0x00, 0x2D, 0x00, 0x34, 0x00, 0x66, 0x00, 0x66, 0x00,
-0x33, 0x00, 0x2D, 0x00, 0x61, 0x00, 0x63, 0x00, 0x64, 0x00, 0x39, 0x00,
-0x2D, 0x00, 0x38, 0x00, 0x66, 0x00, 0x39, 0x00, 0x39, 0x00, 0x32, 0x00,
-0x64, 0x00, 0x30, 0x00, 0x39, 0x00, 0x61, 0x00, 0x63, 0x00, 0x64, 0x00,
-0x64, 0x00, 0x7D, 0x00, 0x00, 0x00};*/
+static const void *usb_data_buffer_ptr;
+static uint32_t usb_data_buffer_ptr_len = 0;
 
 /* Arduino routines call this function to send packets over USB.
  * Our system is a pull-rather-than-push, so use this to fill up a
@@ -154,6 +108,12 @@ int USB_SendControl(u8 flags, const void* d, int len) {
   usb_data_buffer_position += len;
 
   return true;
+}
+
+int USB_SendEntireControl(const void *d, int len) {
+  usb_data_buffer_ptr = d;
+  usb_data_buffer_ptr_len = len;
+  return len;
 }
 
 static int USB_SendConfiguration(int maxlen) {
@@ -199,45 +159,6 @@ static int USB_SendStringDescriptor(const uint8_t *string_P,
   return usb_data_buffer_position;
 }
 
-static int USB_SendBOSDescriptor(struct USBLink *link,
-                                 USBSetup *setup,
-                                 const void **data) {
-  (void)link;
-  (void)setup;
-
-  static uint8_t bos_descriptor_buffer[sizeof(BOSDescriptor) + sizeof(WebUSBPlatformCapabilityDescriptor) + sizeof(MicrosoftOs2p0PlatformCapabilityDescriptor)];
-  BOSDescriptor bos = D_BOS(sizeof(bos_descriptor_buffer), 2);
-  WebUSBPlatformCapabilityDescriptor wusb = D_WEBUSB(0x12, 0);
-  MicrosoftOs2p0PlatformCapabilityDescriptor msos2p0 = D_MSOS2p0(sizeof(ms_os_20_descriptor_set), 1);
-
-  memcpy(bos_descriptor_buffer, &bos, sizeof(bos));
-  memcpy(bos_descriptor_buffer + sizeof(bos), &wusb, sizeof(wusb));
-  memcpy(bos_descriptor_buffer + sizeof(bos) + sizeof(wusb), &msos2p0, sizeof(msos2p0));
-
-  *data = bos_descriptor_buffer;
-
-  return sizeof(bos_descriptor_buffer);
-}
-
-static int USB_SendMSDescriptor(struct USBLink *link,
-                                USBSetup *setup,
-                                const void **data) {
-
-  *data = ms_os_20_descriptor_set;
-  return sizeof(ms_os_20_descriptor_set);
-}
-
-static int get_vendor_descriptor(struct USBLink *link,
-                                 const void *setup_ptr,
-                                 const void **data) {
-  USBSetup *setup = (USBSetup *)setup_ptr;
-
-  if (setup->wIndex == 7)
-    return USB_SendMSDescriptor(link, setup, data);
-
-  return 0;
-}
-
 static int get_class_descriptor(struct USBLink *link,
                                 const void *setup_ptr,
                                 const void **data) {
@@ -245,9 +166,15 @@ static int get_class_descriptor(struct USBLink *link,
   USBSetup *setup = (USBSetup *)setup_ptr;
   usb_data_buffer_position = 0;
   *data = (void *)usb_data_buffer;
+  usb_data_buffer_ptr = NULL;
+  usb_data_buffer_ptr_len = 0;
 
   PluggableUSB().setup(*setup);
 
+  if (usb_data_buffer_ptr) {
+    *data = usb_data_buffer_ptr;
+    return usb_data_buffer_ptr_len;
+  }
   return usb_data_buffer_position;
 }
 
@@ -255,6 +182,7 @@ static int get_device_descriptor(struct USBLink *link,
                                  const void *setup_ptr,
                                  const void **data) {
 
+  (void)link;
   USBSetup *setup = (USBSetup *)setup_ptr;
   uint8_t t = setup->wValueH;
   int desc_length = 0;
@@ -263,25 +191,32 @@ static int get_device_descriptor(struct USBLink *link,
 
   usb_data_buffer_position = 0;
   *data = (void *)usb_data_buffer;
+  usb_data_buffer_ptr = 0;
 
   if ((setup->bmRequestType & REQUEST_DIRECTION) == REQUEST_HOSTTODEVICE)
     return 0;
 
-  if (USB_BOS_DESCRIPTOR_TYPE == t)
-    return USB_SendBOSDescriptor(link, setup, data);
-
   if (USB_CONFIGURATION_DESCRIPTOR_TYPE == t)
       return USB_SendConfiguration(setup->wLength);
 
-#ifdef PLUGGABLE_USB_ENABLED
+  /* See if the PluggableUSB module will handle this request */
   ret = PluggableUSB().getDescriptor(*setup);
   if (ret) {
-    if (ret > 0)
+    if (ret > 0) {
+      if (usb_data_buffer_ptr) {
+        *data = usb_data_buffer_ptr;
+        return usb_data_buffer_ptr_len;
+      }
       return usb_data_buffer_position;
+    }
     return 0;
   }
-#endif
 
+  if ((setup->wValueH == 0) && (setup->wIndex == 0) && (setup->wLength == 2)) {
+    static const uint8_t okay[] = {0, 0};
+    *data = okay;
+    return sizeof(okay);
+  }
   switch (t) {
   case USB_DEVICE_DESCRIPTOR_TYPE:
     desc_addr = (const uint8_t*)&USB_DeviceDescriptor;
@@ -297,11 +232,9 @@ static int get_device_descriptor(struct USBLink *link,
     else if (setup->wValueL == IMANUFACTURER)
       return USB_SendStringDescriptor(STRING_MANUFACTURER, setup->wLength);
     else if (setup->wValueL == ISERIAL) {
-#ifdef PLUGGABLE_USB_ENABLED
-      char name[ISERIAL_MAX_LEN];
+      char name[ISERIAL_MAX_LEN] = {};
       PluggableUSB().getShortName(name);
       return USB_SendStringDescriptor((uint8_t*)name, setup->wLength);
-#endif
     }
     else
       return false;
@@ -337,10 +270,8 @@ static int get_descriptor(struct USBLink *link,
 
   if ((setup->bmRequestType & REQUEST_TYPE) == REQUEST_STANDARD)
     return get_device_descriptor(link, setup_ptr, data);
-  else if ((setup->bmRequestType & REQUEST_TYPE) == REQUEST_CLASS)
+  else 
     return get_class_descriptor(link, setup_ptr, data);
-  else if ((setup->bmRequestType & REQUEST_TYPE) == REQUEST_VENDOR)
-    return get_vendor_descriptor(link, setup_ptr, data);
   return 0;
 }
 
