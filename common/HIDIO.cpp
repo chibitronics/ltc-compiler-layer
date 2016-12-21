@@ -305,14 +305,16 @@ int HIDIO_::getDescriptor(USBSetup& setup)
   return 0;
 }
 
+#define IN_EPNUM 1
+#define OUT_EPNUM 2
 int HIDIO_::getInterface(uint8_t* interfaceCount)
 {
   *interfaceCount += 1; // uses 1
   WebUSBDescriptor webUSBInterface = {
-    D_INTERFACE(pluggedInterface, 2, 0xff/*USB_DEVICE_CLASS_HUMAN_INTERFACE*/, HID_SUBCLASS_NONE, HID_PROTOCOL_NONE),
+    D_INTERFACE(pluggedInterface, 2, 0xff, 0, 0),
     //D_HIDREPORT(sizeof(_hidReportDescriptor)),
-    D_ENDPOINT(USB_ENDPOINT_OUT(pluggedEndpoint), USB_ENDPOINT_TYPE_CONTROL, USB_EP_SIZE, 0x00),
-    D_ENDPOINT(USB_ENDPOINT_IN(pluggedEndpoint+1), USB_ENDPOINT_TYPE_INTERRUPT, USB_EP_SIZE, 0x10),
+    D_ENDPOINT(USB_ENDPOINT_OUT(OUT_EPNUM), USB_ENDPOINT_TYPE_INTERRUPT, USB_EP_SIZE, 1),
+    D_ENDPOINT(USB_ENDPOINT_IN(IN_EPNUM), USB_ENDPOINT_TYPE_INTERRUPT, USB_EP_SIZE, 1),
   };
   USB_SendControl(0, &webUSBInterface, sizeof(webUSBInterface));
   return true;
@@ -429,19 +431,19 @@ size_t HIDIO_::write(uint8_t byte)
 {
   memset(output_report, 0, sizeof(output_report));
   output_report[0] = byte;
-  return USB_Send(pluggedEndpoint, output_report, sizeof(output_report));
+  return USB_Send(IN_EPNUM, output_report, sizeof(output_report));
 }
 
 size_t HIDIO_::write(void *buffer, int count)
 {
   memset(output_report, 0, sizeof(output_report));
   memcpy(output_report, buffer, (count < (int)sizeof(output_report) ? count : sizeof(output_report)));
-  return USB_Send(pluggedEndpoint, output_report, sizeof(output_report));
+  return USB_Send(IN_EPNUM, output_report, sizeof(output_report));
 }
 
 int HIDIO_::available(void)
 {
-  return (_bufferOffset < _bufferSize) || USB_Available(pluggedEndpoint);
+  return (_bufferOffset < _bufferSize) || USB_Available(OUT_EPNUM);
 }
 
 int HIDIO_::read(void)
@@ -450,7 +452,7 @@ int HIDIO_::read(void)
   // We need to ignore the report descriptor that lives at offset 0.
   while (_bufferOffset >= _bufferSize) {
     _bufferOffset = 1;
-    _bufferSize = USB_RecvWait(pluggedEndpoint, _buffer, sizeof(_buffer));
+    _bufferSize = USB_RecvWait(OUT_EPNUM, _buffer, sizeof(_buffer));
   }
 
   return _buffer[_bufferOffset++];
@@ -458,7 +460,7 @@ int HIDIO_::read(void)
 
 size_t HIDIO_::readWait(void *buffer, int max)
 {
-  return USB_RecvWait(pluggedEndpoint, buffer, max);
+  return USB_RecvWait(OUT_EPNUM, buffer, max);
 }
 
 int HIDIO_::peek(void)
