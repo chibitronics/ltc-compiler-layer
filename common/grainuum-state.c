@@ -36,7 +36,7 @@
 
 void *memcpy(void *dest, const void *src, unsigned int n);
 
-enum usb_mac_packet_type {
+enum usb_state_packet_type {
   packet_type_none,
   packet_type_setup,
   packet_type_setup_in,
@@ -79,122 +79,122 @@ static uint16_t crc16(const uint8_t *data, uint32_t size,
   return init;
 }
 
-static void grainuum_mac_clear_tx(struct GrainuumMAC *mac, int result)
+static void grainuum_state_clear_tx(struct GrainuumState *state, int result)
 {
-  struct GrainuumUSB *usb = mac->usb;
+  struct GrainuumUSB *usb = state->usb;
 
   /* If a thread is blocking, wake it up with a failure */
   if (usb->cfg->sendDataFinished)
     usb->cfg->sendDataFinished(usb, result);
-  mac->data_out_left = 0;
-  mac->data_out_max = 0;
-  mac->data_out = NULL;
-  mac->packet_queued = 0;
+  state->data_out_left = 0;
+  state->data_out_max = 0;
+  state->data_out = NULL;
+  state->packet_queued = 0;
 }
 
-static void grainuum_mac_process_tx(struct GrainuumMAC *mac)
+static void grainuum_state_process_tx(struct GrainuumState *state)
 {
 
   uint16_t crc;
-  struct GrainuumUSB *usb = mac->usb;
+  struct GrainuumUSB *usb = state->usb;
 
   /* Don't allow us to re-prepare data */
-  if (mac->packet_queued) {
+  if (state->packet_queued) {
     return;
   }
-  mac->packet_queued = 1;
+  state->packet_queued = 1;
 
   /* If there's no data to send, then don't send any */
-  if (!mac->data_out) {
-    mac->packet_queued = 0;
+  if (!state->data_out) {
+    state->packet_queued = 0;
     return;
   }
 
   /* If we've sent all of our data, then there's nothing else to send */
-  if ((mac->data_out_left < 0) || (mac->data_out_max < 0)) {
-    grainuum_mac_clear_tx(mac, 0);
+  if ((state->data_out_left < 0) || (state->data_out_max < 0)) {
+    grainuum_state_clear_tx(state, 0);
     return;
   }
 
   /* Pick the correct PID, DATA0 or DATA1 */
-  if (mac->data_buffer & (1 << mac->tok_epnum))
-    mac->packet.pid = USB_PID_DATA1;
+  if (state->data_buffer & (1 << state->tok_epnum))
+    state->packet.pid = USB_PID_DATA1;
   else
-    mac->packet.pid = USB_PID_DATA0;
+    state->packet.pid = USB_PID_DATA0;
 
   /* If there's no data, prepare a special NULL packet */
-  if ((mac->data_out_left == 0) || (mac->data_out_max == 0)) {
+  if ((state->data_out_left == 0) || (state->data_out_max == 0)) {
 
     /* The special-null thing only happens for EP0 */
-    if (mac->data_out_epnum != 0) {
-      grainuum_mac_clear_tx(mac, 0);
+    if (state->data_out_epnum != 0) {
+      grainuum_state_clear_tx(state, 0);
       return;
     }
-    mac->packet.data[0] = 0;  /* CRC16 for empty packets is 0 */
-    mac->packet.data[1] = 0;
-    mac->packet.size = 2;
-    grainuumWriteQueue(usb, mac->data_out_epnum,
-                         &mac->packet, mac->packet.size + 1);
+    state->packet.data[0] = 0;  /* CRC16 for empty packets is 0 */
+    state->packet.data[1] = 0;
+    state->packet.size = 2;
+    grainuumWriteQueue(usb, state->data_out_epnum,
+                         &state->packet, state->packet.size + 1);
     return;
   }
 
   /* Keep the packet size to 8 bytes max */
-  if (mac->data_out_left > 8)
-    mac->packet.size = 8;
+  if (state->data_out_left > 8)
+    state->packet.size = 8;
   else
-    mac->packet.size = mac->data_out_left;
+    state->packet.size = state->data_out_left;
 
   /* Limit the amount of data transferred to data_out_max */
-  if (mac->packet.size > mac->data_out_max)
-    mac->packet.size = mac->data_out_max;
+  if (state->packet.size > state->data_out_max)
+    state->packet.size = state->data_out_max;
 
   /* Copy over data bytes */
-  memcpy(mac->packet.data, mac->data_out, mac->packet.size);
+  memcpy(state->packet.data, state->data_out, state->packet.size);
 
   /* Calculate and copy the crc16 */
-  crc = ~crc16(mac->packet.data, mac->packet.size, 0xffff, 0xa001);
-  mac->packet.data[mac->packet.size++] = crc;
-  mac->packet.data[mac->packet.size++] = crc >> 8;
+  crc = ~crc16(state->packet.data, state->packet.size, 0xffff, 0xa001);
+  state->packet.data[state->packet.size++] = crc;
+  state->packet.data[state->packet.size++] = crc >> 8;
 
   /* Prepare the packet, including the PID at the end */
-  grainuumWriteQueue(usb, mac->data_out_epnum,
-                       &mac->packet, mac->packet.size + 1);
+  grainuumWriteQueue(usb, state->data_out_epnum,
+                       &state->packet, state->packet.size + 1);
 }
 
 /* Called when a packet is ACKed.
  * Updates the outgoing packet buffer.
  */
-static void usbMacTransferSuccess(struct GrainuumMAC *mac)
+static void usbStateTransferSuccess(struct GrainuumState *state)
 {
 
   /* Reduce the amount of data left.
    * If the packet is divisible by 8, this will cause one more call
-   * to this function with mac->data_out_left == 0.  This will send
+   * to this function with state->data_out_left == 0.  This will send
    * a NULL packet, which indicates end-of-transfer.
    */
-  mac->data_out_left -= 8;
-  mac->data_out_max -= 8;
-  mac->data_out += 8;
+  state->data_out_left -= 8;
+  state->data_out_max -= 8;
+  state->data_out += 8;
 
-  if ((mac->data_out_left < 0) || (mac->data_out_max < 0)) {
-    grainuum_mac_clear_tx(mac, 0);
+  if ((state->data_out_left < 0) || (state->data_out_max < 0)) {
+    grainuum_state_clear_tx(state, 0);
 
-    /* End of a MAC setup packet */
-    if (mac->packet_type == packet_type_setup_out)
-      mac->packet_type = packet_type_none;
-    if (mac->packet_type == packet_type_setup_in)
-      mac->packet_type = packet_type_none;
-    if (mac->packet_type == packet_type_out)
-      mac->packet_type = packet_type_none;
+    /* End of a State setup packet */
+    if (state->packet_type == packet_type_setup_out)
+      state->packet_type = packet_type_none;
+    if (state->packet_type == packet_type_setup_in)
+      state->packet_type = packet_type_none;
+    if (state->packet_type == packet_type_out)
+      state->packet_type = packet_type_none;
   }
 
-  mac->packet_queued = 0;
+  state->packet_queued = 0;
 }
 
 /* Send data down the wire, interrupting any existing
  * data that may be queued.
  */
-static int grainuum_mac_send_data(struct GrainuumMAC *mac,
+static int grainuum_state_send_data(struct GrainuumState *state,
                              int epnum,
                              const void *data,
                              int size,
@@ -202,12 +202,12 @@ static int grainuum_mac_send_data(struct GrainuumMAC *mac,
 {
 
   /* De-queue any data that may already be queued. */
-  grainuum_mac_clear_tx(mac, 1);
+  grainuum_state_clear_tx(state, 1);
 
-  mac->data_out_epnum = epnum;
-  mac->data_out_left = size;
-  mac->data_out_max = max;
-  mac->data_out = data;
+  state->data_out_epnum = epnum;
+  state->data_out_left = size;
+  state->data_out_max = max;
+  state->data_out = data;
 
   return 0;
 }
@@ -216,18 +216,18 @@ int grainuumSendData(struct GrainuumUSB *usb, int epnum,
                      const void *data, int size)
 {
 
-  struct GrainuumMAC *mac = &usb->mac;
+  struct GrainuumState *state = &usb->state;
   int ret;
 
-  if (mac->data_out || !mac->address || mac->packet_queued) {
+  if (state->data_out || !state->address || state->packet_queued) {
     return -11; /* EAGAIN */
   }
 
-  ret = grainuum_mac_send_data(mac, epnum, data, size, size);
+  ret = grainuum_state_send_data(state, epnum, data, size, size);
   if (ret)
     return ret;
 
-  grainuum_mac_process_tx(mac);
+  grainuum_state_process_tx(state);
 
   if (usb->cfg->sendDataStarted)
     usb->cfg->sendDataStarted(usb, epnum, data, size);
@@ -235,19 +235,19 @@ int grainuumSendData(struct GrainuumUSB *usb, int epnum,
   return 0;
 }
 
-static int grainuum_mac_process_setup(struct GrainuumMAC *mac, const uint8_t packet[10])
+static int grainuum_state_process_setup(struct GrainuumState *state, const uint8_t packet[10])
 {
 
   const struct usb_setup_packet *setup;
   const void *response = (void *)-1;
   uint32_t response_len = 0;
-  struct GrainuumUSB *usb = mac->usb;
+  struct GrainuumUSB *usb = state->usb;
   struct GrainuumConfig *cfg = usb->cfg;
 
   setup = (const struct usb_setup_packet *)packet;
 
   if ((setup->bmRequestType == 0x00) && (setup->bRequest == SET_ADDRESS)) {
-    mac->address = setup->wValue;
+    state->address = setup->wValue;
   }
   else if ((setup->bmRequestType == 0x00) && (setup->bRequest == SET_CONFIGURATION)) {
     if (cfg->setConfigNum)
@@ -256,36 +256,36 @@ static int grainuum_mac_process_setup(struct GrainuumMAC *mac, const uint8_t pac
   else {
     response_len = cfg->getDescriptor(usb, setup, &response);
   }
-  grainuum_mac_send_data(mac, mac->tok_epnum, response, response_len, setup->wLength);
+  grainuum_state_send_data(state, state->tok_epnum, response, response_len, setup->wLength);
 
   return 0;
 }
 
-static void grainuum_mac_parse_data(struct GrainuumMAC *mac,
+static void grainuum_state_parse_data(struct GrainuumState *state,
                                const uint8_t packet[10],
                                uint32_t size)
 {
   (void)size;
-  struct GrainuumUSB *usb = mac->usb;
+  struct GrainuumUSB *usb = state->usb;
 
-  switch (mac->packet_type) {
+  switch (state->packet_type) {
 
   case packet_type_setup:
-    grainuum_mac_process_setup(mac, packet);
-    grainuum_mac_process_tx(mac);
-    mac->packet_type = packet_type_none;
+    grainuum_state_process_setup(state, packet);
+    grainuum_state_process_tx(state);
+    state->packet_type = packet_type_none;
     break;
 
   case packet_type_out:
     // XXX HACK: An OUT packet gets generated (on Windows at least) when
     // terminating a SETUP sequence.  This seems odd.
-    if (mac->tok_epnum == 0)
+    if (state->tok_epnum == 0)
       break;
     // Copy over the packet, minus the CRC16
-    memcpy(mac->tok_buf + mac->tok_pos, packet, size - 2);
-    mac->tok_pos += (size - 2);
-    if (!usb->cfg->receiveData(usb, mac->tok_epnum, size - 2, packet))
-      mac->packet_type = packet_type_none;
+    memcpy(state->tok_buf + state->tok_pos, packet, size - 2);
+    state->tok_pos += (size - 2);
+    if (!usb->cfg->receiveData(usb, state->tok_epnum, size - 2, packet))
+      state->packet_type = packet_type_none;
     break;
 
   case packet_type_in:
@@ -295,12 +295,12 @@ static void grainuum_mac_parse_data(struct GrainuumMAC *mac,
   }
 }
 
-static inline void grainuum_mac_parse_token(struct GrainuumMAC *mac,
+static inline void grainuum_state_parse_token(struct GrainuumState *state,
                                        const uint8_t packet[2])
 {
 
-  mac->tok_epnum = (((const uint16_t *)packet)[0] >> 7) & 0xf;
-  /*mac->tok_addr  = (((const uint16_t *)packet)[0] >> 11) & 0x1f; // Field unused in this code*/
+  state->tok_epnum = (((const uint16_t *)packet)[0] >> 7) & 0xf;
+  /*state->tok_addr  = (((const uint16_t *)packet)[0] >> 11) & 0x1f; // Field unused in this code*/
 }
 
 void grainuumProcess(struct GrainuumUSB *usb,
@@ -308,39 +308,39 @@ void grainuumProcess(struct GrainuumUSB *usb,
 {
 
   uint32_t size = packet[11];
-  struct GrainuumMAC *mac = &usb->mac;
+  struct GrainuumState *state = &usb->state;
   switch(packet[0]) {
   case USB_PID_SETUP:
-    mac->packet_type = packet_type_setup;
-    grainuum_mac_clear_tx(mac, 1);
-    grainuum_mac_parse_token(mac, packet + 1);
+    state->packet_type = packet_type_setup;
+    grainuum_state_clear_tx(state, 1);
+    grainuum_state_parse_token(state, packet + 1);
     break;
 
   case USB_PID_DATA0:
-    mac->data_buffer |= (1 << mac->tok_epnum);
-    grainuum_mac_parse_data(mac, packet + 1, size - 1);
+    state->data_buffer |= (1 << state->tok_epnum);
+    grainuum_state_parse_data(state, packet + 1, size - 1);
     break;
 
   case USB_PID_DATA1:
-    mac->data_buffer &= ~(1 << mac->tok_epnum);
-    grainuum_mac_parse_data(mac, packet + 1, size - 1);
+    state->data_buffer &= ~(1 << state->tok_epnum);
+    grainuum_state_parse_data(state, packet + 1, size - 1);
     break;
 
   case USB_PID_OUT:
-    grainuum_mac_parse_token(mac, packet + 1);
-    mac->packet_type = packet_type_out;
-    mac->tok_pos = 0;
-    mac->tok_buf = usb->cfg->getReceiveBuffer(usb, mac->tok_epnum, NULL);
+    grainuum_state_parse_token(state, packet + 1);
+    state->packet_type = packet_type_out;
+    state->tok_pos = 0;
+    state->tok_buf = usb->cfg->getReceiveBuffer(usb, state->tok_epnum, NULL);
   break;
 
   case USB_PID_ACK:
-    mac->data_buffer ^= (1 << mac->tok_epnum);
-    usbMacTransferSuccess(mac);
-    if (mac->data_out) {
-      grainuum_mac_process_tx(mac);
+    state->data_buffer ^= (1 << state->tok_epnum);
+    usbStateTransferSuccess(state);
+    if (state->data_out) {
+      grainuum_state_process_tx(state);
     }
     else {
-      grainuum_mac_clear_tx(mac, 0);
+      grainuum_state_clear_tx(state, 0);
     }
     break;
 
