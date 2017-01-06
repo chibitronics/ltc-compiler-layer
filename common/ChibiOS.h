@@ -274,7 +274,7 @@ void lockSystemFromISR(void);
 void unlockSystem();
 void unlockSystemFromISR(void);
 
-void getSyscallABI(void);
+uint32_t getSyscallABI(void);
 
 void *getSyscallAddr(uint32_t sysCallNum);
 void hookSysTick(void (*newHook)(void));
