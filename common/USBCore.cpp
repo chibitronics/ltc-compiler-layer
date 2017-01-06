@@ -44,22 +44,22 @@ static struct GrainuumUSB usbPhy = {
   NULL,
   0,
 
-  /* PTB4 */
+  /* PTB2 */
   /*.usbdpIAddr =*/ FGPIOB_PDIR,
   /*.usbdpSAddr =*/ FGPIOB_PSOR,
   /*.usbdpCAddr =*/ FGPIOB_PCOR,
   /*.usbdpDAddr =*/ FGPIOB_PDDR,
-  /*.usbdpShift =*/ 2,
+  /*.usbdpShift =*/ 1,
 
-  /* PTB3? */
+  /* PTB1 */
   /*.usbdnIAddr =*/ FGPIOB_PDIR,
   /*.usbdnSAddr =*/ FGPIOB_PSOR,
   /*.usbdnCAddr =*/ FGPIOB_PCOR,
   /*.usbdnDAddr =*/ FGPIOB_PDDR,
-  /*.usbdnShift =*/ 1,
+  /*.usbdnShift =*/ 2,
 
-  /*.usbdpMask  =*/ (1 << 2),
-  /*.usbdnMask  =*/ (1 << 1),
+  /*.usbdpMask  =*/ (1 << 1),
+  /*.usbdnMask  =*/ (1 << 2),
 };
 
 const u16 STRING_LANGUAGE[2] = {
@@ -786,6 +786,14 @@ int usbStart(void) {
 
   GRAINUUM_BUFFER_INIT(usb_buffer);
   attachFastInterrupt(PORTB_IRQ, usb_phy_fast_isr_disabled);
+
+  /* First batch of stickers reported ABI 1.  The pins were swapped on that version. */
+  if (getSyscallABI() == 1) {
+    usbPhy.usbdpShift = 2;
+    usbPhy.usbdnShift = 1;
+    usbPhy.usbdpMask  = (1 << 2);
+    usbPhy.usbdnMask  = (1 << 1);
+  }
   grainuumInit(&usbPhy, &usbConfig);
 
   createThread(usbPhy.waThread, sizeof(usbPhy.waThread),
