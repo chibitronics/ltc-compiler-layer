@@ -197,13 +197,13 @@ c | i2cSetupSlave
 # former usbSetup
 c | hookSoftPwm
 # former usbSend
-c | do_nothing
+c | do_nothing1
 # former usbReceive
-c | do_nothing
+c | do_nothing2
 # former usbAttach
-c | do_nothing
+c | do_nothing3
 # former usbDetach
-c | do_nothing
+c | do_nothing4
 
 
 # ChibiOS wrapper calls
