@@ -533,23 +533,23 @@ extern "C" {
       asm("svc #112");
     }
     __attribute__((naked))
-    void usbSetup(void) {
+    void hookSoftPwm(void) {
       asm("svc #113");
     }
     __attribute__((naked))
-    void usbSend(void) {
+    void do_nothing1(void) {
       asm("svc #114");
     }
     __attribute__((naked))
-    void usbReceive(void) {
+    void do_nothing2(void) {
       asm("svc #115");
     }
     __attribute__((naked))
-    void usbAttach(void) {
+    void do_nothing3(void) {
       asm("svc #116");
     }
     __attribute__((naked))
-    void usbDetach(void) {
+    void do_nothing4(void) {
       asm("svc #117");
     }
     __attribute__((naked))
