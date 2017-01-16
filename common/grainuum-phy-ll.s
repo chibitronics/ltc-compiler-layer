@@ -1,5 +1,38 @@
-.section .ramtext /* Can also run out of .section .ramtext */
-//.section .text    /* Can also run out of .section .ramtext */
+/****************************************************************************
+ * Grainuum Software USB Stack                                              *
+ *                                                                          *
+ * MIT License:                                                             *
+ * Copyright (c) 2016 Sean Cross                                            *
+ *                                                                          *
+ * Permission is hereby granted, free of charge, to any person obtaining a  *
+ * copy of this software and associated documentation files (the            *
+ * "Software"), to deal in the Software without restriction, including      *
+ * without limitation the rights to use, copy, modify, merge, publish,      *
+ * distribute, distribute with modifications, sublicense, and/or sell       *
+ * copies of the Software, and to permit persons to whom the Software is    *
+ * furnished to do so, subject to the following conditions:                 *
+ *                                                                          *
+ * The above copyright notice and this permission notice shall be included  *
+ * in all copies or substantial portions of the Software.                   *
+ *                                                                          *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS  *
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF               *
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.   *
+ * IN NO EVENT SHALL THE ABOVE COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,   *
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR    *
+ * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR    *
+ * THE USE OR OTHER DEALINGS IN THE SOFTWARE.                               *
+ *                                                                          *
+ * Except as contained in this notice, the name(s) of the above copyright   *
+ * holders shall not be used in advertising or otherwise to promote the     *
+ * sale, use or other dealings in this Software without prior written       *
+ * authorization.                                                           *
+ ****************************************************************************/
+
+#ifndef GRAINUUM_SECTION
+#define GRAINUUM_SECTION .ramtest
+#endif 
+.section GRAINUUM_SECTION /* Can also run out of .section .text */
 
 .cpu    cortex-m0plus
 .fpu    softvfp
@@ -10,8 +43,8 @@
    *
    * Exports the following functions:
    *
-   *    int usbPhyReadI(USBPhy *phy, uint8_t buffer[11], uint32_t scratch[3])
-   *    void usbPhyWriteI(USBPhy *phy, uint8_t buffer[11], uint32_t count)
+   *    int usbPhyReadI(struct GrainuumUSB *usb, uint8_t buffer[11])
+   *    void usbPhyWriteI(struct GrainuumUSB *usb, const uint8_t buffer[11], uint32_t count)
    *
    * Interrupts are disabled during this code, since it is time-critical.
    * Note that as a Kinetis "feature", jumps of more than 48 bytes can
@@ -143,7 +176,7 @@ usb_phy_read__se0:
   sub rretval, #4                   // Return -4
   pop {r2-r7,pc}
 
-/*int */usbPhyReadI/*(const USBPHY *phy, uint8_t samples[11])*/:
+/*int */usbPhyReadI/*(struct GrainuumUSB *usb, uint8_t samples[11])*/:
   push {r2-r7,lr}
   mov r2, r8
   mov r3, r9
@@ -241,17 +274,11 @@ usb_phy_read__start_reading_usb:
   mov rdpshift, rreg
   // 9
 
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
+  bl usb_phy__wait_9_cycles
 
 usb_phy_read__get_usb_bit:
   mov rval, rdpiaddr                  // Get the address of the D+ input bank.
-  mov rreg, rdniaddr                  // Get the address of the D+ input bank.
+  mov rreg, rdniaddr                  // Get the address of the D- input bank.
   ldr rval, [rval]                    // Actually sample D+
   ldr rreg, [rreg]                    // Also sample D-
 
@@ -483,7 +510,7 @@ wstuff    .req r0   /* The last six bits, used for bit stuffing (reuses wusbphy)
 .thumb_func
 .global usbPhyWriteI
 .func usbPhyWriteI
-/*void */usbPhyWriteI/*(const USBPHY *phy, uint8_t buffer[11], uint32_t count)*/:
+/*void */usbPhyWriteI/*(struct GrainuumUSB *usb, const uint8_t buffer[11], uint32_t count)*/:
   push {r3-r7,lr}
   mov r3, r8
   mov r4, r9
