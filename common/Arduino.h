@@ -20,7 +20,6 @@ void init(void);
 void runCallbacks(void);
 void loop(void);
 
-typedef uint32_t size_t;
 size_t strlen(const char *s);
 void *malloc(size_t size);
 void free(void *ptr);
@@ -37,11 +36,16 @@ int strncmp(const char *s1, const char *s2, size_t n);
 void *memmove(void *dest, const void *src, size_t n);
 void *memset(void *s, int c, size_t n);
 float atof(const char *nptr);
-int atoi(const char *nptr);
+int gtoi(const char *nptr);
 long atol(const char *nptr);
-int printf(const char *format, ...);
+int getchar(void);
 int printf(const char *format, ...);
 int snprintf(char *str, size_t size, const char *format, ...);
+int putchar(int c);
+int cangetchar(void);
+int putchar(int c);
+long int strtol(const char *nptr, char **endptr, int base);
+unsigned long int strtoul(const char *nptr, char **endptr, int base);
 
 #ifdef __cplusplus
 };
@@ -230,27 +234,30 @@ long randomSeed(unsigned long seed);
 #define A1 0x81
 #define A2 0x82
 #define A3 0x83
-#define A4 0x84
-#define A5 0x85 /* Temperature sensor */
-#define A6 0x86 /* Voltage sensor */
-#define A7 0x87 /* VDD voltage value */
-#define A8 0x88 /* VCC voltage value */
+#define A4 0x84 /* Actually a digital pin */
+#define A5 0x85 /* Actually a digital pin */
+#define A6 0x86 /* Temperature sensor */
+#define A7 0x87 /* Voltage sensor */
+#define A8 0x88 /* VDD voltage value */
+#define A9 0x89 /* VCC voltage value */
+#define A10 0x8a /* Audio pin */
 
 /* Digital pins */
-#define D0 0x00
-#define D1 0x01
+#define D0 0xa0
+#define D1 0xa1
+#define D2 0xa2
+#define D3 0xa3
+#define D4 0xa4
+#define D5 0xa5
 
 #define LED_BUILTIN       PTA(12)
-#define LED_A2            LED_BUILTIN
-#define BUTTON_A1         PTA(9)
-#define BUTTON_REC        PTB(1) /* Silkscreened as "Rec" */
-#define BUTTON_A3         PTB(13)
 #define LED_BUILTIN_RGB   PTA(6)
 
 #define LED_BUILTIN_RED   PTA(5)
 #define LED_BUILTIN_GREEN PTB(6)
-#define UART_TX           PTB(3)
-#define UART_RX           PTB(4)
+#define AUDIO_IN          PTB(5)
+#define UART_TX           PTB(2)
+#define UART_RX           PTB(1)
 #define SWD_CLK           PTA(0)
 #define SWD_DIO           PTA(2)
 

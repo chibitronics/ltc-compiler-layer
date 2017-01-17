@@ -1,23 +1,8 @@
 #ifndef __ARDUINO_TYPES_KOSAGI_H__
 #define __ARDUINO_TYPES_KOSAGI_H__
 
-//#include <stdint.h>
-//#include <stdbool.h>
-
-typedef unsigned int uint32_t;
-typedef int int32_t;
-typedef unsigned char uint8_t;
-typedef char int8_t;
-typedef unsigned short uint16_t;
-typedef short int16_t;
-typedef long long int64_t;
-typedef unsigned long long uint64_t;
-
-typedef uint32_t size_t;
-
-#ifndef __cplusplus
-typedef uint8_t bool;
-#endif
+#include <stdint.h>
+#include <stdbool.h>
 
 #ifndef boolean
 #define boolean bool
@@ -54,5 +39,8 @@ enum pin_mode {
   INPUT_PULLDOWN = 3,
   OUTPUT_LOW = 0x21,
 };
+
+#define LSBFIRST 0
+#define MSBFIRST 1
 
 #endif /* __ARDUINO_TYPES_KOSAGI_H__ */
