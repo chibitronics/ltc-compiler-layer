@@ -53,7 +53,10 @@ sub generate_files {
     push (@cxx_member_methods, $call) if ($call->[1] eq "m");
     push (@cxx_constructors, $call) if ($call->[1] eq "C");
     push (@cxx_destructors, $call) if ($call->[1] eq "D");
-    push (@reserved, $call) if ($call->[1] eq "r");
+    if ($call->[1] eq "r") {
+      push (@reserved, $call);
+      $idx++;
+    }
   }
 
   print $app_fh "#include \"Arduino-types.h\"\n";
