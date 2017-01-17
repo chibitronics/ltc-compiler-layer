@@ -123,6 +123,10 @@ double exp(double x);
 long map(long value, long fromLow, long fromHigh, long toLow, long toHigh);
 double pow(double base, double exponent);
 double sqrt(double x);
+
+uint32_t getOsVersion(void);
+uint32_t getHwVersion(void);
+const char * getGitVersion(void);
 #ifdef __cplusplus
 };
 #endif
