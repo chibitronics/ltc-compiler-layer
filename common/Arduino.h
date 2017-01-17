@@ -120,7 +120,6 @@ double sin(double rad);
 double atan2(double y, double x);
 double log2(double rad);
 double exp(double x);
-long map(long value, long fromLow, long fromHigh, long toLow, long toHigh);
 double pow(double base, double exponent);
 double sqrt(double x);
 
