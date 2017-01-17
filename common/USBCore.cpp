@@ -1,5 +1,5 @@
 #define USB_VID 0x1209
-#define USB_PID 0x9317
+#define USB_PID 0xC1B1
 
 #define BUFFER_SIZE 8
 #define NUM_BUFFERS 4
@@ -44,14 +44,14 @@ static struct GrainuumUSB usbPhy = {
   NULL,
   0,
 
-  /* PTB2 */
+  /* PTB1 */
   /*.usbdpIAddr =*/ FGPIOB_PDIR,
   /*.usbdpSAddr =*/ FGPIOB_PSOR,
   /*.usbdpCAddr =*/ FGPIOB_PCOR,
   /*.usbdpDAddr =*/ FGPIOB_PDDR,
   /*.usbdpShift =*/ 1,
 
-  /* PTB1 */
+  /* PTB2 */
   /*.usbdnIAddr =*/ FGPIOB_PDIR,
   /*.usbdnSAddr =*/ FGPIOB_PSOR,
   /*.usbdnCAddr =*/ FGPIOB_PCOR,
@@ -81,16 +81,11 @@ const u8 STRING_MANUFACTURER[] = USB_MANUFACTURER;
 
 //  DEVICE DESCRIPTOR
 static const DeviceDescriptor USB_DeviceDescriptor =
-  D_DEVICE(0x00,0x00,0x00,8,USB_VID,USB_PID,0x100,IMANUFACTURER,IPRODUCT,ISERIAL,1);
+  D_DEVICE(0x00,0x00,0x00,8,USB_VID,USB_PID,0x100,IMANUFACTURER,IPRODUCT,0,1);
 
 uint8_t _initEndpoints[USB_ENDPOINTS] =
 {
   0,                      // Control Endpoint
-
-  EP_TYPE_INTERRUPT_IN,   // CDC_ENDPOINT_ACM
-  EP_TYPE_INTERRUPT_IN,        // CDC_ENDPOINT_IN
-  EP_TYPE_INTERRUPT_OUT,       // CDC_ENDPOINT_OUT
-
   // Following endpoints are automatically initialized to 0
 };
 
@@ -460,6 +455,7 @@ static void usb_phy_fast_isr_disabled(void) {
   writel(0xffffffff, PORTB_ISFR);
 }
 
+__attribute__((section(".ramtext")))
 void grainuumReceivePacket(struct GrainuumUSB *usb)
 {
   GRAINUUM_BUFFER_ADVANCE(usb_buffer);
@@ -794,6 +790,7 @@ int usbStart(void) {
     usbPhy.usbdpMask  = (1 << 2);
     usbPhy.usbdnMask  = (1 << 1);
   }
+  grainuumDisconnect(&usbPhy);
   grainuumInit(&usbPhy, &usbConfig);
 
   createThread(usbPhy.waThread, sizeof(usbPhy.waThread),
@@ -817,7 +814,7 @@ int usbStart(void) {
 
   pinMode(LED_BUILTIN, OUTPUT);
 
-  delay(200);
+  delay(1000);
   grainuumConnect(&usbPhy);
 
   usb_started = 1;
