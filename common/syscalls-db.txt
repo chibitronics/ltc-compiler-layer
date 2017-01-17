@@ -265,6 +265,7 @@ c | hookSoftPwm
 # Get OS and hardware revision
 c | getOsVersion
 c | getHwVersion
+c | getGitVersion
 
 # More Arduino IO stuff
 c | digitalPinToInterrupt
