@@ -8,6 +8,7 @@
 #    C - C++ constructor
 #    D - C++ destructor
 #    m - C++ member function
+#    r - Reserved (deprecated)
 #
 # c fields (standard C function):
 # type | osname | [aliases]
@@ -16,6 +17,10 @@
 # x fields (standard C++ function):
 # type | name | return type | arguments | names
 # e.g. int digitalRead(int pin) -> "x | digitalRead | int | int pin | pin"
+#
+# r fields (Reserved):
+# type
+# Used to disable old syscalls, or reserve numbers for newer ones.
 
 # Functions we must implement, but shouldn't do anything.
 c | do_nothing | __aeabi_atexit,__cxa_atexit,atexit,_atexit,__cxa_finalize,__aeabi_d2f,__aeabi_f2d,__aeabi_h2f,__aeabi_h2f_alt,__aeabi_f2h,__aeabi_f2h_alt,__aeabi_d2h,__aeabi_d2h_alt
@@ -169,10 +174,14 @@ x | detachInterrupt | void | int irq | irq
 c | detachFastInterrupt
 x | tone | void | int pin, unsigned int frequency, unsigned long duration | pin, frequency, duration
 x | noTone | void | int pin | pin
-x | shiftOut | void | int dataPin, int clockPin, int bitOrder, uint8_t val | dataPin, clockPin, bitOrder, val
-x | shiftIn | uint8_t | int dataPin, int clockPin, int bitOrder | dataPin, clockPin, bitOrder
-x | pulseIn | unsigned long | int pin, uint8_t state, unsigned long timeout | pin, state, timeout
-x | pulseInLong | unsigned long | int pin, uint8_t state, unsigned long timeout | pin, state, timeout
+# Former shiftOut
+r
+# Former shiftIn
+r
+# Former pulseIn
+r
+# Former pulseInLong
+r
 
 
 # Arduino time management
@@ -195,15 +204,15 @@ c | i2cSetupSlave
 
 # Former USB stuff
 # former usbSetup
-c | hookSoftPwm
+r
 # former usbSend
-c | do_nothing1
+r
 # former usbReceive
-c | do_nothing2
+r
 # former usbAttach
-c | do_nothing3
+r
 # former usbDetach
-c | do_nothing4
+r
 
 
 # ChibiOS wrapper calls
@@ -248,3 +257,18 @@ c | hookSysTick
 c | resumeThreadI
 c | suspendThreadS
 c | suspendThreadTimeoutS
+
+# Allow the user to hook the softPWM callback
+c | hookSoftPwm
+
+# Get OS and hardware revision
+c | getOsVersion
+c | getHwVersion
+
+# More Arduino IO stuff
+c | digitalPinToInterrupt
+c | analogReadResolution
+c | canonicalizePin | canonicalizePin,canonicalisePin
+
+# We've got this function, might as well expose it
+c | MurmurHash3_x86_32 | MurmurHash3_x86_32,murmur3
