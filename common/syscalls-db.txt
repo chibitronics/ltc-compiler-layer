@@ -277,3 +277,8 @@ c | MurmurHash3_x86_32 | MurmurHash3_x86_32,murmur3
 
 # Allow us to enable the timer interrupt
 c | enableTimer | enableLptmr
+
+# Interrupt hacks
+c | enableInterrupt
+c | disableInterrupt
+c | setInterruptPriority
