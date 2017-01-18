@@ -294,6 +294,10 @@ void setThreadName(const char *name);
 void MurmurHash3_x86_32(const void * key, int len, uint32_t seed, void * out);
 void murmur3(const void * key, int len, uint32_t seed, void * out);
 
+void enableInterrupt(int irq);
+void disableInterrupt(int irq);
+void setInterruptPriority(int irq, int priority);
+
 #ifdef __cplusplus
 };
 #endif
