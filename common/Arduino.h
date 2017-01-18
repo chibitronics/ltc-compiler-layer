@@ -281,6 +281,7 @@ long randomSeed(unsigned long seed);
 #define SWD_DIO           PTA(2)
 
 /* Interrupts */
+#define PMC_IRQ           6
 #define I2C0_IRQ          8
 #define I2C_IRQ           9
 #define SPI_IRQ           10
