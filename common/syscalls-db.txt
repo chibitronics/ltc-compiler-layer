@@ -274,3 +274,6 @@ c | canonicalizePin | canonicalizePin,canonicalisePin
 
 # We've got this function, might as well expose it
 c | MurmurHash3_x86_32 | MurmurHash3_x86_32,murmur3
+
+# Allow us to enable the timer interrupt
+c | enableTimer | enableLptmr
