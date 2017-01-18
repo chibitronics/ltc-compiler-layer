@@ -279,7 +279,7 @@ uint32_t getSyscallABI(void);
 void *getSyscallAddr(uint32_t sysCallNum);
 void hookSysTick(void (*newHook)(void));
 
-void attachFastInterrupt(int irq, void (*func)(void));
+void attachFastInterrupt(int irq, int (*func)(void));
 void detachFastInterrupt(int irq);
 
 void setSerialSpeed(uint32_t speed);
