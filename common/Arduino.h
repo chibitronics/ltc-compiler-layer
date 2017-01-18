@@ -277,7 +277,9 @@ static inline long map(long x, long in_min, long in_max, long out_min, long out_
 #define SWD_DIO           PTA(2)
 
 /* Interrupts */
-#define I2C_IRQ           8
+#define I2C0_IRQ          8
+#define I2C_IRQ           9
+#define SPI_IRQ           10
 #define SERIAL_IRQ        12
 #define ADC_IRQ           15
 #define PWM0_IRQ          17
@@ -285,5 +287,6 @@ static inline long map(long x, long in_min, long in_max, long out_min, long out_
 #define LPTMR_IRQ         28
 #define PORTA_IRQ         30
 #define PORTB_IRQ         31
+#define NOT_AN_INTERRUPT  -1
 
 #endif /* __ARDUINO_KOSAGI_H__ */
