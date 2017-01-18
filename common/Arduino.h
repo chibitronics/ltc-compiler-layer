@@ -47,6 +47,10 @@ int putchar(int c);
 long int strtol(const char *nptr, char **endptr, int base);
 unsigned long int strtoul(const char *nptr, char **endptr, int base);
 
+void enableTimer(int timer_number);
+int canonicalizePin(int pin);
+int canonicalisePin(int pin);
+
 #ifdef __cplusplus
 };
 #endif
