@@ -107,12 +107,21 @@ void delayMicroseconds(unsigned int usecs);
 /* Math */
 #define DEG_TO_RAD 0.017453292519943295769236907684886
 #define RAD_TO_DEG 57.295779513082320876798154814105
+#define M_PI       3.14159265358979323846  /* pi */
+#define M_PI_2     1.57079632679489661923  /* pi/2 */
+#define M_PI_4     0.78539816339744830962  /* pi/4 */
 #define min(a,b) ((a)<(b)?(a):(b))
 #define max(a,b) ((a)>(b)?(a):(b))
+#define abs(x) ((x)>0?(x):-(x))
+#define pow(base, exponent) (exp(log2(base) * exponent))
+#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
+#define round(x)     ((x)>=0?(long)((x)+0.5):(long)((x)-0.5))
+#define radians(deg) ((deg)*DEG_TO_RAD)
+#define degrees(rad) ((rad)*RAD_TO_DEG)
+#define sq(x) ((x)*(x))
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern int abs(int x);
 
 int serialCanGetChar(void);
 int serialGetChar(void);
@@ -125,12 +134,10 @@ double sin(double rad);
 double atan2(double y, double x);
 double log2(double rad);
 double exp(double x);
-double pow(double base, double exponent);
 double sqrt(double x);
-
-# define M_PI               3.14159265358979323846  /* pi */
-# define M_PI_2             1.57079632679489661923  /* pi/2 */
-# define M_PI_4             0.78539816339744830962  /* pi/4 */
+static inline long map(long x, long in_min, long in_max, long out_min, long out_max) {
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
 
 uint32_t getOsVersion(void);
 uint32_t getHwVersion(void);
@@ -229,10 +236,6 @@ static inline long random(long max) {
 }
 #endif
 long randomSeed(unsigned long seed);
-
-static inline long map(long x, long in_min, long in_max, long out_min, long out_max) {
-  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-}
 
 /* Bits and Bytes */
 #define lowByte(w) ((uint8_t) ((w) & 0xff))
