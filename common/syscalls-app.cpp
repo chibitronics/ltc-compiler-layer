@@ -904,6 +904,26 @@ extern "C" {
     void murmur3(void) {
       asm("svc #157");
     }
+    __attribute__((naked))
+    void enableLptmr(void) {
+      asm("svc #158");
+    }
+    __attribute__((naked))
+    void enableTimer(void) {
+      asm("svc #158");
+    }
+    __attribute__((naked))
+    void enableInterrupt(void) {
+      asm("svc #159");
+    }
+    __attribute__((naked))
+    void disableInterrupt(void) {
+      asm("svc #160");
+    }
+    __attribute__((naked))
+    void setInterruptPriority(void) {
+      asm("svc #161");
+    }
 };
   __attribute__((naked))
   void pinMode(int pin, enum pin_mode mode) {
