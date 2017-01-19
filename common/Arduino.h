@@ -113,7 +113,9 @@ void delayMicroseconds(unsigned int usecs);
 #define min(a,b) ((a)<(b)?(a):(b))
 #define max(a,b) ((a)>(b)?(a):(b))
 #define abs(x) ((x)>0?(x):-(x))
-#define pow(base, exponent) (exp(log2(base) * exponent))
+#define pow(base, exponent) (exp(log(base) * exponent))
+#define log2(base) (log(x) / log(2))
+#define log10(base) (log(x) / log(10))
 #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 #define round(x)     ((x)>=0?(long)((x)+0.5):(long)((x)-0.5))
 #define radians(deg) ((deg)*DEG_TO_RAD)
@@ -132,7 +134,7 @@ double cos(double rad);
 double tan(double rad);
 double sin(double rad);
 double atan2(double y, double x);
-double log2(double rad);
+double log(double rad);
 double exp(double x);
 double sqrt(double x);
 static inline long map(long x, long in_min, long in_max, long out_min, long out_max) {
