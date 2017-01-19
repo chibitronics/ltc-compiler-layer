@@ -51,6 +51,7 @@ void enableTimer(int timer_number);
 int canonicalizePin(int pin);
 int canonicalisePin(int pin);
 
+void analogReadResolution(int bits);
 #ifdef __cplusplus
 };
 #endif
@@ -70,7 +71,6 @@ int digitalRead(int pin);
 void analogWrite(int pin, int value);
 void analogReference(enum analog_reference_type type);
 int analogRead(int pin);
-void analogReadResolution(int bits);
 
 /* Interrupt handling */
 void attachInterrupt(int irq, void (*func)(void), enum irq_mode mode);
