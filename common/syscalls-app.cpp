@@ -585,11 +585,11 @@ extern "C" {
       asm("svc #64");
     }
     __attribute__((naked))
-    void log2(void) {
+    void log(void) {
       asm("svc #65");
     }
     __attribute__((naked))
-    void log2f(void) {
+    void logf(void) {
       asm("svc #65");
     }
     __attribute__((naked))
