@@ -124,7 +124,7 @@ c | qfp_fsin | sin,sinf
 c | qfp_ftan | tan,tanf
 c | qfp_fatan2 | atan2,atan2f
 c | qfp_fexp | exp,fexp
-c | qfp_fln | log2,log2f
+c | qfp_fln | log,logf
 c | qfp_fsqrt_fast | sqrt,sqrtf
 
 
