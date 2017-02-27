@@ -6,18 +6,10 @@ ADD_CFLAGS =
 ADD_LFLAGS =
 EXTRA_DIST =
 
-CC         = $(shell which cc)
-CXX        = $(shell which c++)
-PKG        = $(shell which pkg-config)
-OBJCOPY    = $(shell which objcopy)
-
-ifneq ($(strip $(LIBS)),)
-PKG_CFLAGS = $(shell $(PKG) $(LIBS) --cflags)
-PKG_LFLAGS = $(shell $(PKG) $(LIBS) --libs)
-else
-PKG_CFLAGS =
-PKG_LFLAGS =
-endif
+TRGT      ?=
+CC         = $(TRGT)gcc
+CXX        = $(TRGT)g++
+OBJCOPY    = $(TRGT)objcopy
 
 DESTDIR ?= /usr
 PREFIX ?= $(DESTDIR)
@@ -25,7 +17,7 @@ PREFIX ?= $(DESTDIR)
 LDSCRIPT = ../common/KL02Z32-app.ld
 DBG_CFLAGS = -ggdb -g -DDEBUG -Wall
 DBG_LFLAGS = -ggdb -g -Wall
-CFLAGS     = $(ADD_CFLAGS) $(PKG_CFLAGS) \
+CFLAGS     = $(ADD_CFLAGS) \
              -DVERSION=\"$(VERSION)\" -DPACKAGE=\"$(PACKAGE)\" \
              -DPREFIX=\"$(PREFIX)\" -DDESTDIR=\"$(DESTDIR)\" -DARDUINO=160 \
              -I. -I../common -Iash -Iash/internals \
@@ -35,7 +27,7 @@ CFLAGS     = $(ADD_CFLAGS) $(PKG_CFLAGS) \
              -ffunction-sections -fdata-sections -fno-common \
              -fomit-frame-pointer -falign-functions=16 -nostdlib -Os
 CXXFLAGS   = $(CFLAGS) -std=c++11 -fno-rtti -fno-exceptions
-LFLAGS     = $(ADD_LFLAGS) $(PKG_LFLAGS) $(CFLAGS) \
+LFLAGS     = $(ADD_LFLAGS) $(CFLAGS) \
              -nostartfiles -nostdlib -nodefaultlibs \
              -Wl,-Map=$(PROJECT).map,--gc-sections \
              -Wl,--cref,--no-warn-mismatch,--script=$(LDSCRIPT),--build-id=none
