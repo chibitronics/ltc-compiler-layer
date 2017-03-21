@@ -430,7 +430,7 @@ static THD_FUNCTION(usb_worker_thread, arg) {
 }
 
 __attribute__((section(".ramtext")))
-static void usb_phy_fast_isr(void)
+static int usb_phy_fast_isr(void)
 {
   /* Note: We can't use ANY ChibiOS threads here.
    * This thread may interrupt the SysTick handler, which would cause
@@ -445,14 +445,16 @@ static void usb_phy_fast_isr(void)
 
   /* Clear all pending interrupts on this port. */
   writel(0xffffffff, PORTB_ISFR);
+  return 0;
 }
 
 /* Called when the PHY is disconnected, to prevent ChibiOS from
  * overwriting areas of memory that haven't been initialized yet.
  */
-static void usb_phy_fast_isr_disabled(void) {
+static int usb_phy_fast_isr_disabled(void) {
 
   writel(0xffffffff, PORTB_ISFR);
+  return 0;
 }
 
 __attribute__((section(".ramtext")))
