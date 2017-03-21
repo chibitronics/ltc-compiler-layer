@@ -168,9 +168,9 @@ x | digitalRead | int | int pin | pin
 x | analogWrite | void | int pin, int value | pin, value
 x | analogReference | void | enum analog_reference_type type | type
 x | analogRead | int | int pin | pin
-x | attachInterrupt | void | int irq, void (*func)(void), enum irq_mode mode | irq, func, mode
+c | attachInterrupt | attachInterruptChibi
 c | attachFastInterrupt
-x | detachInterrupt | void | int irq | irq
+c | detachInterrupt | detachInterruptChibi
 c | detachFastInterrupt
 x | tone | void | int pin, unsigned int frequency, unsigned long duration | pin, frequency, duration
 x | noTone | void | int pin | pin
@@ -199,9 +199,10 @@ x | randomSeed | long | unsigned long seed | seed
 
 
 # I2C stuff
-c | i2cTransceive
-c | i2cSetupSlave
-
+# Former 2cTransceive
+r
+# Former i2cSetupSlave
+r
 
 # Former USB stuff
 # former usbSetup
@@ -271,6 +272,7 @@ c | getGitVersion
 c | digitalPinToInterrupt
 c | analogReadResolution
 c | canonicalizePin | canonicalizePin,canonicalisePin
+c | pinToPort
 
 # We've got this function, might as well expose it
 c | MurmurHash3_x86_32 | MurmurHash3_x86_32,murmur3
@@ -282,3 +284,7 @@ c | enableTimer | enableLptmr
 c | enableInterrupt
 c | disableInterrupt
 c | setInterruptPriority
+
+# Nice-to-have calls
+c | chThdCreateFromHeap
+c | errorCondition
