@@ -721,20 +721,28 @@ extern "C" {
       asm("svc #87");
     }
     __attribute__((naked))
+    void attachInterruptChibi(void) {
+      asm("svc #94");
+    }
+    __attribute__((naked))
+    void attachInterrupt(void) {
+      asm("svc #94");
+    }
+    __attribute__((naked))
     void attachFastInterrupt(void) {
       asm("svc #95");
     }
     __attribute__((naked))
+    void detachInterruptChibi(void) {
+      asm("svc #96");
+    }
+    __attribute__((naked))
+    void detachInterrupt(void) {
+      asm("svc #96");
+    }
+    __attribute__((naked))
     void detachFastInterrupt(void) {
       asm("svc #97");
-    }
-    __attribute__((naked))
-    void i2cTransceive(void) {
-      asm("svc #111");
-    }
-    __attribute__((naked))
-    void i2cSetupSlave(void) {
-      asm("svc #112");
     }
     __attribute__((naked))
     void createThread(void) {
@@ -897,32 +905,44 @@ extern "C" {
       asm("svc #156");
     }
     __attribute__((naked))
-    void MurmurHash3_x86_32(void) {
+    void pinToPort(void) {
       asm("svc #157");
+    }
+    __attribute__((naked))
+    void MurmurHash3_x86_32(void) {
+      asm("svc #158");
     }
     __attribute__((naked))
     void murmur3(void) {
-      asm("svc #157");
+      asm("svc #158");
     }
     __attribute__((naked))
     void enableLptmr(void) {
-      asm("svc #158");
-    }
-    __attribute__((naked))
-    void enableTimer(void) {
-      asm("svc #158");
-    }
-    __attribute__((naked))
-    void enableInterrupt(void) {
       asm("svc #159");
     }
     __attribute__((naked))
-    void disableInterrupt(void) {
+    void enableTimer(void) {
+      asm("svc #159");
+    }
+    __attribute__((naked))
+    void enableInterrupt(void) {
       asm("svc #160");
     }
     __attribute__((naked))
-    void setInterruptPriority(void) {
+    void disableInterrupt(void) {
       asm("svc #161");
+    }
+    __attribute__((naked))
+    void setInterruptPriority(void) {
+      asm("svc #162");
+    }
+    __attribute__((naked))
+    void chThdCreateFromHeap(void) {
+      asm("svc #163");
+    }
+    __attribute__((naked))
+    void errorCondition(void) {
+      asm("svc #164");
     }
 };
   __attribute__((naked))
@@ -948,14 +968,6 @@ extern "C" {
   __attribute__((naked))
   int analogRead(int pin) {
     asm("svc #93");
-  }
-  __attribute__((naked))
-  void attachInterrupt(int irq, void (*func)(void), enum irq_mode mode) {
-    asm("svc #94");
-  }
-  __attribute__((naked))
-  void detachInterrupt(int irq) {
-    asm("svc #96");
   }
   __attribute__((naked))
   void tone(int pin, unsigned int frequency, unsigned long duration) {
