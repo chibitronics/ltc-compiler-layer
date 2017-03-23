@@ -19,10 +19,12 @@ static enum {
 void eeprom_flush(void *arg) {
   (void)arg;
 
-  flashErase(((uint32_t)&flash_area) / 1024, 1);
-  flashWrite((uint8_t *)flash_backing, (const uint8_t *)&flash_area,
-             sizeof(flash_backing));
-  flash_state = STATE_CLEAN;
+  if (flash_state != STATE_CLEAN) {
+    flashErase(((uint32_t)&flash_area) / 1024, 1);
+    flashWrite((uint8_t *)flash_backing, (const uint8_t *)&flash_area,
+               sizeof(flash_backing));
+    flash_state = STATE_CLEAN;
+  }
 }
 
 uint8_t eeprom_read_byte(uint8_t *index) {

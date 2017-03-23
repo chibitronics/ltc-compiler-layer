@@ -53,6 +53,10 @@ extern "C" {
       asm("svc #0");
     }
     __attribute__((naked))
+    void do_nothing(void) {
+      asm("svc #0");
+    }
+    __attribute__((naked))
     void getSyscallABI(void) {
       asm("svc #1");
     }
@@ -193,11 +197,19 @@ extern "C" {
       asm("svc #22");
     }
     __attribute__((naked))
+    void qfp_int2float(void) {
+      asm("svc #22");
+    }
+    __attribute__((naked))
     void __aeabi_i2d(void) {
       asm("svc #23");
     }
     __attribute__((naked))
     void __aeabi_l2d(void) {
+      asm("svc #23");
+    }
+    __attribute__((naked))
+    void qfp_int2double(void) {
       asm("svc #23");
     }
     __attribute__((naked))
@@ -209,11 +221,19 @@ extern "C" {
       asm("svc #24");
     }
     __attribute__((naked))
+    void qfp_uint2float(void) {
+      asm("svc #24");
+    }
+    __attribute__((naked))
     void __aeabi_ui2d(void) {
       asm("svc #25");
     }
     __attribute__((naked))
     void __aeabi_ul2d(void) {
+      asm("svc #25");
+    }
+    __attribute__((naked))
+    void qfp_uint2double(void) {
       asm("svc #25");
     }
     __attribute__((naked))
@@ -225,11 +245,19 @@ extern "C" {
       asm("svc #26");
     }
     __attribute__((naked))
+    void qfp_float2int(void) {
+      asm("svc #26");
+    }
+    __attribute__((naked))
     void __aeabi_d2iz(void) {
       asm("svc #27");
     }
     __attribute__((naked))
     void __aeabi_d2lz(void) {
+      asm("svc #27");
+    }
+    __attribute__((naked))
+    void qfp_double2int(void) {
       asm("svc #27");
     }
     __attribute__((naked))
@@ -241,6 +269,10 @@ extern "C" {
       asm("svc #28");
     }
     __attribute__((naked))
+    void qfp_float2uint(void) {
+      asm("svc #28");
+    }
+    __attribute__((naked))
     void __aeabi_d2uiz(void) {
       asm("svc #29");
     }
@@ -249,7 +281,15 @@ extern "C" {
       asm("svc #29");
     }
     __attribute__((naked))
+    void qfp_double2uint(void) {
+      asm("svc #29");
+    }
+    __attribute__((naked))
     void __aeabi_cfcmpeq(void) {
+      asm("svc #30");
+    }
+    __attribute__((naked))
+    void qfp_cfcmpeq(void) {
       asm("svc #30");
     }
     __attribute__((naked))
@@ -257,7 +297,15 @@ extern "C" {
       asm("svc #31");
     }
     __attribute__((naked))
+    void qfp_cdcmpeq(void) {
+      asm("svc #31");
+    }
+    __attribute__((naked))
     void __aeabi_cfcmple(void) {
+      asm("svc #32");
+    }
+    __attribute__((naked))
+    void qfp_cfcmple(void) {
       asm("svc #32");
     }
     __attribute__((naked))
@@ -265,7 +313,15 @@ extern "C" {
       asm("svc #33");
     }
     __attribute__((naked))
+    void qfp_cdcmple(void) {
+      asm("svc #33");
+    }
+    __attribute__((naked))
     void __aeabi_cfrcmple(void) {
+      asm("svc #34");
+    }
+    __attribute__((naked))
+    void qfp_cfrcmple(void) {
       asm("svc #34");
     }
     __attribute__((naked))
@@ -273,7 +329,15 @@ extern "C" {
       asm("svc #35");
     }
     __attribute__((naked))
+    void qfp_cdrcmple(void) {
+      asm("svc #35");
+    }
+    __attribute__((naked))
     void __aeabi_fcmpeq(void) {
+      asm("svc #36");
+    }
+    __attribute__((naked))
+    void qfp_cmpeq(void) {
       asm("svc #36");
     }
     __attribute__((naked))
@@ -281,7 +345,15 @@ extern "C" {
       asm("svc #37");
     }
     __attribute__((naked))
+    void qfp_cmpeqd(void) {
+      asm("svc #37");
+    }
+    __attribute__((naked))
     void __aeabi_fcmplt(void) {
+      asm("svc #38");
+    }
+    __attribute__((naked))
+    void qfp_cmplt(void) {
       asm("svc #38");
     }
     __attribute__((naked))
@@ -289,7 +361,15 @@ extern "C" {
       asm("svc #39");
     }
     __attribute__((naked))
+    void qfp_cmpltd(void) {
+      asm("svc #39");
+    }
+    __attribute__((naked))
     void __aeabi_fcmple(void) {
+      asm("svc #40");
+    }
+    __attribute__((naked))
+    void qfp_cmple(void) {
       asm("svc #40");
     }
     __attribute__((naked))
@@ -297,7 +377,15 @@ extern "C" {
       asm("svc #41");
     }
     __attribute__((naked))
+    void qfp_cmpled(void) {
+      asm("svc #41");
+    }
+    __attribute__((naked))
     void __aeabi_fcmpge(void) {
+      asm("svc #42");
+    }
+    __attribute__((naked))
+    void qfp_cmpge(void) {
       asm("svc #42");
     }
     __attribute__((naked))
@@ -305,7 +393,15 @@ extern "C" {
       asm("svc #43");
     }
     __attribute__((naked))
+    void qfp_cmpged(void) {
+      asm("svc #43");
+    }
+    __attribute__((naked))
     void __aeabi_fcmpgt(void) {
+      asm("svc #44");
+    }
+    __attribute__((naked))
+    void qfp_cmpgt(void) {
       asm("svc #44");
     }
     __attribute__((naked))
@@ -313,7 +409,15 @@ extern "C" {
       asm("svc #45");
     }
     __attribute__((naked))
+    void qfp_cmpgtd(void) {
+      asm("svc #45");
+    }
+    __attribute__((naked))
     void __aeabi_fcmpun(void) {
+      asm("svc #46");
+    }
+    __attribute__((naked))
+    void qfp_cmpun(void) {
       asm("svc #46");
     }
     __attribute__((naked))
@@ -321,7 +425,15 @@ extern "C" {
       asm("svc #47");
     }
     __attribute__((naked))
+    void qfp_cmpund(void) {
+      asm("svc #47");
+    }
+    __attribute__((naked))
     void __aeabi_fadd(void) {
+      asm("svc #48");
+    }
+    __attribute__((naked))
+    void qfp_fadd(void) {
       asm("svc #48");
     }
     __attribute__((naked))
@@ -329,7 +441,15 @@ extern "C" {
       asm("svc #49");
     }
     __attribute__((naked))
+    void qfp_dadd(void) {
+      asm("svc #49");
+    }
+    __attribute__((naked))
     void __aeabi_fdiv(void) {
+      asm("svc #50");
+    }
+    __attribute__((naked))
+    void qfp_fdiv_fast(void) {
       asm("svc #50");
     }
     __attribute__((naked))
@@ -337,7 +457,15 @@ extern "C" {
       asm("svc #51");
     }
     __attribute__((naked))
+    void qfp_ddiv_fast(void) {
+      asm("svc #51");
+    }
+    __attribute__((naked))
     void __aeabi_fmul(void) {
+      asm("svc #52");
+    }
+    __attribute__((naked))
+    void qfp_fmul(void) {
       asm("svc #52");
     }
     __attribute__((naked))
@@ -345,7 +473,15 @@ extern "C" {
       asm("svc #53");
     }
     __attribute__((naked))
+    void qfp_dmul(void) {
+      asm("svc #53");
+    }
+    __attribute__((naked))
     void __aeabi_frsub(void) {
+      asm("svc #54");
+    }
+    __attribute__((naked))
+    void qfp_frsub(void) {
       asm("svc #54");
     }
     __attribute__((naked))
@@ -353,7 +489,15 @@ extern "C" {
       asm("svc #55");
     }
     __attribute__((naked))
+    void qfp_drsub(void) {
+      asm("svc #55");
+    }
+    __attribute__((naked))
     void __aeabi_fsub(void) {
+      asm("svc #56");
+    }
+    __attribute__((naked))
+    void qfp_fsub(void) {
       asm("svc #56");
     }
     __attribute__((naked))
@@ -361,11 +505,23 @@ extern "C" {
       asm("svc #57");
     }
     __attribute__((naked))
+    void qfp_dsub(void) {
+      asm("svc #57");
+    }
+    __attribute__((naked))
     void float2str(void) {
       asm("svc #58");
     }
     __attribute__((naked))
+    void qfp_float2str(void) {
+      asm("svc #58");
+    }
+    __attribute__((naked))
     void str2float(void) {
+      asm("svc #59");
+    }
+    __attribute__((naked))
+    void qfp_str2float(void) {
       asm("svc #59");
     }
     __attribute__((naked))
@@ -377,11 +533,19 @@ extern "C" {
       asm("svc #60");
     }
     __attribute__((naked))
+    void qfp_fcos(void) {
+      asm("svc #60");
+    }
+    __attribute__((naked))
     void sin(void) {
       asm("svc #61");
     }
     __attribute__((naked))
     void sinf(void) {
+      asm("svc #61");
+    }
+    __attribute__((naked))
+    void qfp_fsin(void) {
       asm("svc #61");
     }
     __attribute__((naked))
@@ -393,11 +557,19 @@ extern "C" {
       asm("svc #62");
     }
     __attribute__((naked))
+    void qfp_ftan(void) {
+      asm("svc #62");
+    }
+    __attribute__((naked))
     void atan2(void) {
       asm("svc #63");
     }
     __attribute__((naked))
     void atan2f(void) {
+      asm("svc #63");
+    }
+    __attribute__((naked))
+    void qfp_fatan2(void) {
       asm("svc #63");
     }
     __attribute__((naked))
@@ -409,11 +581,19 @@ extern "C" {
       asm("svc #64");
     }
     __attribute__((naked))
-    void log2(void) {
+    void qfp_fexp(void) {
+      asm("svc #64");
+    }
+    __attribute__((naked))
+    void log(void) {
       asm("svc #65");
     }
     __attribute__((naked))
-    void log2f(void) {
+    void logf(void) {
+      asm("svc #65");
+    }
+    __attribute__((naked))
+    void qfp_fln(void) {
       asm("svc #65");
     }
     __attribute__((naked))
@@ -422,6 +602,10 @@ extern "C" {
     }
     __attribute__((naked))
     void sqrtf(void) {
+      asm("svc #66");
+    }
+    __attribute__((naked))
+    void qfp_fsqrt_fast(void) {
       asm("svc #66");
     }
     __attribute__((naked))
@@ -453,6 +637,10 @@ extern "C" {
       asm("svc #73");
     }
     __attribute__((naked))
+    void chsnprintf(void) {
+      asm("svc #73");
+    }
+    __attribute__((naked))
     void ltoa(void) {
       asm("svc #74");
     }
@@ -473,7 +661,15 @@ extern "C" {
       asm("svc #78");
     }
     __attribute__((naked))
+    void simple_strtol(void) {
+      asm("svc #78");
+    }
+    __attribute__((naked))
     void strtoul(void) {
+      asm("svc #79");
+    }
+    __attribute__((naked))
+    void simple_strtoul(void) {
       asm("svc #79");
     }
     __attribute__((naked))
@@ -489,11 +685,23 @@ extern "C" {
       asm("svc #81");
     }
     __attribute__((naked))
+    void putchar(void) {
+      asm("svc #81");
+    }
+    __attribute__((naked))
     void serialGetChar(void) {
       asm("svc #82");
     }
     __attribute__((naked))
+    void getchar(void) {
+      asm("svc #82");
+    }
+    __attribute__((naked))
     void serialCanGetChar(void) {
+      asm("svc #83");
+    }
+    __attribute__((naked))
+    void cangetchar(void) {
       asm("svc #83");
     }
     __attribute__((naked))
@@ -513,44 +721,28 @@ extern "C" {
       asm("svc #87");
     }
     __attribute__((naked))
+    void attachInterruptChibi(void) {
+      asm("svc #94");
+    }
+    __attribute__((naked))
+    void attachInterrupt(void) {
+      asm("svc #94");
+    }
+    __attribute__((naked))
     void attachFastInterrupt(void) {
       asm("svc #95");
     }
     __attribute__((naked))
+    void detachInterruptChibi(void) {
+      asm("svc #96");
+    }
+    __attribute__((naked))
+    void detachInterrupt(void) {
+      asm("svc #96");
+    }
+    __attribute__((naked))
     void detachFastInterrupt(void) {
       asm("svc #97");
-    }
-    __attribute__((naked))
-    void map(void) {
-      asm("svc #108");
-    }
-    __attribute__((naked))
-    void i2cTransceive(void) {
-      asm("svc #111");
-    }
-    __attribute__((naked))
-    void i2cSetupSlave(void) {
-      asm("svc #112");
-    }
-    __attribute__((naked))
-    void usbSetup(void) {
-      asm("svc #113");
-    }
-    __attribute__((naked))
-    void usbSend(void) {
-      asm("svc #114");
-    }
-    __attribute__((naked))
-    void usbReceive(void) {
-      asm("svc #115");
-    }
-    __attribute__((naked))
-    void usbAttach(void) {
-      asm("svc #116");
-    }
-    __attribute__((naked))
-    void usbDetach(void) {
-      asm("svc #117");
     }
     __attribute__((naked))
     void createThread(void) {
@@ -680,6 +872,78 @@ extern "C" {
     void suspendThreadTimeoutS(void) {
       asm("svc #149");
     }
+    __attribute__((naked))
+    void hookSoftPwm(void) {
+      asm("svc #150");
+    }
+    __attribute__((naked))
+    void getOsVersion(void) {
+      asm("svc #151");
+    }
+    __attribute__((naked))
+    void getHwVersion(void) {
+      asm("svc #152");
+    }
+    __attribute__((naked))
+    void getGitVersion(void) {
+      asm("svc #153");
+    }
+    __attribute__((naked))
+    void digitalPinToInterrupt(void) {
+      asm("svc #154");
+    }
+    __attribute__((naked))
+    void analogReadResolution(void) {
+      asm("svc #155");
+    }
+    __attribute__((naked))
+    void canonicalizePin(void) {
+      asm("svc #156");
+    }
+    __attribute__((naked))
+    void canonicalisePin(void) {
+      asm("svc #156");
+    }
+    __attribute__((naked))
+    void pinToPort(void) {
+      asm("svc #157");
+    }
+    __attribute__((naked))
+    void MurmurHash3_x86_32(void) {
+      asm("svc #158");
+    }
+    __attribute__((naked))
+    void murmur3(void) {
+      asm("svc #158");
+    }
+    __attribute__((naked))
+    void enableLptmr(void) {
+      asm("svc #159");
+    }
+    __attribute__((naked))
+    void enableTimer(void) {
+      asm("svc #159");
+    }
+    __attribute__((naked))
+    void enableInterrupt(void) {
+      asm("svc #160");
+    }
+    __attribute__((naked))
+    void disableInterrupt(void) {
+      asm("svc #161");
+    }
+    __attribute__((naked))
+    void setInterruptPriority(void) {
+      asm("svc #162");
+    }
+    __attribute__((naked))
+    void chThdCreateFromHeap(void) {
+      asm("svc #163");
+    }
+    __attribute__((naked))
+    void errorCondition(void) {
+      asm("svc #164");
+    }
 };
   __attribute__((naked))
   void pinMode(int pin, enum pin_mode mode) {
@@ -706,36 +970,12 @@ extern "C" {
     asm("svc #93");
   }
   __attribute__((naked))
-  void attachInterrupt(int irq, void (*func)(void), enum irq_mode mode) {
-    asm("svc #94");
-  }
-  __attribute__((naked))
-  void detachInterrupt(int irq) {
-    asm("svc #96");
-  }
-  __attribute__((naked))
   void tone(int pin, unsigned int frequency, unsigned long duration) {
     asm("svc #98");
   }
   __attribute__((naked))
   void noTone(int pin) {
     asm("svc #99");
-  }
-  __attribute__((naked))
-  void shiftOut(int dataPin, int clockPin, int bitOrder, uint8_t val) {
-    asm("svc #100");
-  }
-  __attribute__((naked))
-  uint8_t shiftIn(int dataPin, int clockPin, int bitOrder) {
-    asm("svc #101");
-  }
-  __attribute__((naked))
-  unsigned long pulseIn(int pin, uint8_t state, unsigned long timeout) {
-    asm("svc #102");
-  }
-  __attribute__((naked))
-  unsigned long pulseInLong(int pin, uint8_t state, unsigned long timeout) {
-    asm("svc #103");
   }
   __attribute__((naked))
   unsigned long millis(void) {

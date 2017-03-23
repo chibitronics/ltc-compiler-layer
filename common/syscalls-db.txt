@@ -8,6 +8,7 @@
 #    C - C++ constructor
 #    D - C++ destructor
 #    m - C++ member function
+#    r - Reserved (deprecated)
 #
 # c fields (standard C function):
 # type | osname | [aliases]
@@ -16,6 +17,10 @@
 # x fields (standard C++ function):
 # type | name | return type | arguments | names
 # e.g. int digitalRead(int pin) -> "x | digitalRead | int | int pin | pin"
+#
+# r fields (Reserved):
+# type
+# Used to disable old syscalls, or reserve numbers for newer ones.
 
 # Functions we must implement, but shouldn't do anything.
 c | do_nothing | __aeabi_atexit,__cxa_atexit,atexit,_atexit,__cxa_finalize,__aeabi_d2f,__aeabi_f2d,__aeabi_h2f,__aeabi_h2f_alt,__aeabi_f2h,__aeabi_f2h_alt,__aeabi_d2h,__aeabi_d2h_alt
@@ -119,7 +124,7 @@ c | qfp_fsin | sin,sinf
 c | qfp_ftan | tan,tanf
 c | qfp_fatan2 | atan2,atan2f
 c | qfp_fexp | exp,fexp
-c | qfp_fln | log2,log2f
+c | qfp_fln | log,logf
 c | qfp_fsqrt_fast | sqrt,sqrtf
 
 
@@ -163,16 +168,20 @@ x | digitalRead | int | int pin | pin
 x | analogWrite | void | int pin, int value | pin, value
 x | analogReference | void | enum analog_reference_type type | type
 x | analogRead | int | int pin | pin
-x | attachInterrupt | void | int irq, void (*func)(void), enum irq_mode mode | irq, func, mode
+c | attachInterrupt | attachInterruptChibi
 c | attachFastInterrupt
-x | detachInterrupt | void | int irq | irq
+c | detachInterrupt | detachInterruptChibi
 c | detachFastInterrupt
 x | tone | void | int pin, unsigned int frequency, unsigned long duration | pin, frequency, duration
 x | noTone | void | int pin | pin
-x | shiftOut | void | int dataPin, int clockPin, int bitOrder, uint8_t val | dataPin, clockPin, bitOrder, val
-x | shiftIn | uint8_t | int dataPin, int clockPin, int bitOrder | dataPin, clockPin, bitOrder
-x | pulseIn | unsigned long | int pin, uint8_t state, unsigned long timeout | pin, state, timeout
-x | pulseInLong | unsigned long | int pin, uint8_t state, unsigned long timeout | pin, state, timeout
+# Former shiftOut
+r
+# Former shiftIn
+r
+# Former pulseIn
+r
+# Former pulseInLong
+r
 
 
 # Arduino time management
@@ -183,22 +192,29 @@ x | delayMicroseconds | void | unsigned int usecs | usecs
 
 
 # Arduino math
-c | map
+# Former map
+r
 x | random | long | long min, long max | min, max
 x | randomSeed | long | unsigned long seed | seed
 
 
 # I2C stuff
-c | i2cTransceive
-c | i2cSetupSlave
+# Former 2cTransceive
+r
+# Former i2cSetupSlave
+r
 
-
-# USB stuff
-c | usbSetup
-c | usbSend
-c | usbReceive
-c | usbAttach
-c | usbDetach
+# Former USB stuff
+# former usbSetup
+r
+# former usbSend
+r
+# former usbReceive
+r
+# former usbAttach
+r
+# former usbDetach
+r
 
 
 # ChibiOS wrapper calls
@@ -243,3 +259,32 @@ c | hookSysTick
 c | resumeThreadI
 c | suspendThreadS
 c | suspendThreadTimeoutS
+
+# Allow the user to hook the softPWM callback
+c | hookSoftPwm
+
+# Get OS and hardware revision
+c | getOsVersion
+c | getHwVersion
+c | getGitVersion
+
+# More Arduino IO stuff
+c | digitalPinToInterrupt
+c | analogReadResolution
+c | canonicalizePin | canonicalizePin,canonicalisePin
+c | pinToPort
+
+# We've got this function, might as well expose it
+c | MurmurHash3_x86_32 | MurmurHash3_x86_32,murmur3
+
+# Allow us to enable the timer interrupt
+c | enableTimer | enableLptmr
+
+# Interrupt hacks
+c | enableInterrupt
+c | disableInterrupt
+c | setInterruptPriority
+
+# Nice-to-have calls
+c | chThdCreateFromHeap
+c | errorCondition

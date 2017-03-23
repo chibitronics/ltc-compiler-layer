@@ -1,12 +1,16 @@
 #include "Arduino.h"
 #include "Serial.h"
+#include "ChibiOS.h"
 
 HardwareSerial Serial;
 
 HardwareSerial::HardwareSerial() {
 }
 
-void HardwareSerial::begin(unsigned long a, uint8_t b) {
+void HardwareSerial::begin(unsigned long speed, uint8_t flags) {
+
+  (void)flags;
+  setSerialSpeed(speed);
   return;
 }
 

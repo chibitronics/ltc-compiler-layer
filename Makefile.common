@@ -39,10 +39,10 @@ DIST_FILES = Makefile .version version.sh install.sh \
 
 CSOURCES   = $(wildcard *.c) $(wildcard ../common/*.c)
 CPPSOURCES = $(wildcard *.cpp ../common/*.cpp)
-ASOURCES   = $(wildcard *.s ../common/*.s)
+ASOURCES   = $(wildcard *.S ../common/*.S)
 COBJS      = $(addprefix $(OBJ_DIR)/, $(notdir $(CSOURCES:.c=.o)))
 CXXOBJS    = $(addprefix $(OBJ_DIR)/, $(notdir $(CPPSOURCES:.cpp=.o)))
-AOBJS      = $(addprefix $(OBJ_DIR)/, $(notdir $(ASOURCES:.s=.o)))
+AOBJS      = $(addprefix $(OBJ_DIR)/, $(notdir $(ASOURCES:.S=.o)))
 OBJECTS    = $(COBJS) $(CXXOBJS) $(AOBJS)
 VPATH = . ../common
 
@@ -92,7 +92,7 @@ $(OBJ_DIR)/%.o: %.cpp
 	$(QUIET) echo "  CXX      $<	$(notdir $@)"
 	$(QUIET) $(CXX) -c $< $(CXXFLAGS) -o $@ -MMD
 
-$(OBJ_DIR)/%.o: %.s
+$(OBJ_DIR)/%.o: %.S
 	$(QUIET) echo "  AS       $<	$(notdir $@)"
 	$(QUIET) $(CC) -x assembler-with-cpp -c $< $(CFLAGS) -o $@ -MMD
 

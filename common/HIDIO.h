@@ -24,7 +24,18 @@
 
 #include "HID.h"
 
-class HIDIO_ : public Stream
+typedef struct {
+  InterfaceDescriptor dif;
+  EndpointDescriptor  in;
+  EndpointDescriptor  out;
+} WebUSBDescriptor;
+
+typedef struct {
+  uint8_t scheme;
+  const char* url;
+} WebUSBURL;
+
+class HIDIO_ : public PluggableUSBModule, public Stream
 {
 private:
 
@@ -34,11 +45,28 @@ private:
    * we are by looking at _bufferOffset.
    */
   uint8_t _buffer[8];
+  uint8_t epType[2];
   int _bufferSize;
   int _bufferOffset;
+	const WebUSBURL* urls;
+	uint8_t numUrls;
+	uint8_t landingPage;
+	const uint8_t* allowedOrigins;
+  uint8_t numAllowedOrigins;
+
+  bool VendorControlRequest(USBSetup& setup);
+  int  SendBOSDescriptor(void);
+  int  SendMSDescriptor(void);
+
+protected:
+  int getInterface(uint8_t* interfaceCount);
+  int getDescriptor(USBSetup& setup);
+  bool setup(USBSetup& setup);
+  uint8_t getShortName(char* name);
 
 public:
-  HIDIO_(void);
+  HIDIO_(const WebUSBURL* urls, uint8_t numUrls, uint8_t landingPage,
+         const uint8_t* allowedOrigins, uint8_t numAllowedOrigins);
   void begin(void);
   void end(void);
   size_t write(void *buffer, int count);
@@ -51,10 +79,5 @@ public:
   int peek(void);
   void flush(void);
 };
-
-#ifdef DONT_DEFINE_HIDIO_OBJECT
-extern
-#endif
-HIDIO_ HIDIO;
 
 #endif /* HIDIO */

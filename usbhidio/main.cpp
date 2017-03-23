@@ -2,6 +2,15 @@
 #include "HIDIO.h"
 #include "Adafruit_NeoPixel.h"
 
+const WebUSBURL URLS[] = {
+  { 1, "esplanade.xobs.io" },
+  { 0, "localhost:8000" },
+};
+
+const uint8_t ALLOWED_ORIGINS[] = { 1, 2 };
+
+HIDIO_ HIDIO(URLS, 2, 1, ALLOWED_ORIGINS, 2);
+
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(1, LED_BUILTIN_RGB,
                                             NEO_GRB + NEO_KHZ800);
 int loops;

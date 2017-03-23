@@ -1,15 +1,18 @@
 #define USB_VID 0x1209
-#define USB_PID 0x9317
+#define USB_PID 0xC1B1
 
 #define BUFFER_SIZE 8
 #define NUM_BUFFERS 4
 #define EP_INTERVAL_MS 10
 
-#include "USBCore.h"
+#define GRAINUUM_EXTRA \
+  thread_reference_t phyThread; \
+  THD_WORKING_AREA(waThread, 128);
 
-#include "usbmac.h"
-#include "usbphy.h"
-#include "usblink.h"
+#include "USBCore.h"
+#include "ChibiOS.h"
+
+#include "grainuum.h"
 #include "PluggableUSB.h"
 #include "kl02.h"
 #include "memio.h"
@@ -19,6 +22,11 @@
 #define PCR_IRQC_FALLING_EDGE       0xA
 #define PCR_IRQC_EITHER_EDGE        0xB
 #define PCR_IRQC_LOGIC_ONE          0xC
+
+static GRAINUUM_BUFFER(usb_buffer, 4);
+static void (*resumeThreadIPtr)(thread_reference_t *trp, msg_t *msg);
+static void (*lockFromISR)();
+static void (*unlockFromISR)();
 
 struct usb_link_private {
 	int config_num;
@@ -32,29 +40,27 @@ static uint8_t rx_buffer_head;
 static uint8_t rx_buffer_tail;
 static thread_t *waiting_read_threads[8];
 
-static struct USBPHY usbPhy = {
+static struct GrainuumUSB usbPhy = {
   NULL,
   0,
 
-  /* PTB4 */
+  /* PTB1 */
   /*.usbdpIAddr =*/ FGPIOB_PDIR,
   /*.usbdpSAddr =*/ FGPIOB_PSOR,
   /*.usbdpCAddr =*/ FGPIOB_PCOR,
   /*.usbdpDAddr =*/ FGPIOB_PDDR,
-  /*.usbdpShift =*/ 2,
+  /*.usbdpShift =*/ 1,
 
-  /* PTB3? */
+  /* PTB2 */
   /*.usbdnIAddr =*/ FGPIOB_PDIR,
   /*.usbdnSAddr =*/ FGPIOB_PSOR,
   /*.usbdnCAddr =*/ FGPIOB_PCOR,
   /*.usbdnDAddr =*/ FGPIOB_PDDR,
-  /*.usbdnShift =*/ 1,
+  /*.usbdnShift =*/ 2,
 
-  /*.usbdpMask  =*/ (1 << 2),
-  /*.usbdnMask  =*/ (1 << 1),
+  /*.usbdpMask  =*/ (1 << 1),
+  /*.usbdnMask  =*/ (1 << 2),
 };
-
-static struct USBMAC usbMac;
 
 const u16 STRING_LANGUAGE[2] = {
   (3<<8) | (2+2),
@@ -75,21 +81,18 @@ const u8 STRING_MANUFACTURER[] = USB_MANUFACTURER;
 
 //  DEVICE DESCRIPTOR
 static const DeviceDescriptor USB_DeviceDescriptor =
-  D_DEVICE(0x00,0x00,0x00,8,USB_VID,USB_PID,0x100,IMANUFACTURER,IPRODUCT,ISERIAL,1);
+  D_DEVICE(0x00,0x00,0x00,8,USB_VID,USB_PID,0x100,IMANUFACTURER,IPRODUCT,0,1);
 
 uint8_t _initEndpoints[USB_ENDPOINTS] =
 {
   0,                      // Control Endpoint
-
-  EP_TYPE_INTERRUPT_IN,   // CDC_ENDPOINT_ACM
-  EP_TYPE_INTERRUPT_IN,        // CDC_ENDPOINT_IN
-  EP_TYPE_INTERRUPT_OUT,       // CDC_ENDPOINT_OUT
-
   // Following endpoints are automatically initialized to 0
 };
 
 static uint8_t usb_data_buffer[128];
 static uint16_t usb_data_buffer_position;
+static const void *usb_data_buffer_ptr;
+static uint32_t usb_data_buffer_ptr_len = 0;
 
 /* Arduino routines call this function to send packets over USB.
  * Our system is a pull-rather-than-push, so use this to fill up a
@@ -106,6 +109,12 @@ int USB_SendControl(u8 flags, const void* d, int len) {
   usb_data_buffer_position += len;
 
   return true;
+}
+
+int USB_SendEntireControl(const void *d, int len) {
+  usb_data_buffer_ptr = d;
+  usb_data_buffer_ptr_len = len;
+  return len;
 }
 
 static int USB_SendConfiguration(int maxlen) {
@@ -151,25 +160,30 @@ static int USB_SendStringDescriptor(const uint8_t *string_P,
   return usb_data_buffer_position;
 }
 
-static int get_class_descriptor(struct USBLink *link,
+static int get_class_descriptor(struct GrainuumUSB *usb,
                                 const void *setup_ptr,
                                 const void **data) {
-
-  (void)link;
+  (void)usb;
   USBSetup *setup = (USBSetup *)setup_ptr;
   usb_data_buffer_position = 0;
   *data = (void *)usb_data_buffer;
+  usb_data_buffer_ptr = NULL;
+  usb_data_buffer_ptr_len = 0;
 
   PluggableUSB().setup(*setup);
 
+  if (usb_data_buffer_ptr) {
+    *data = usb_data_buffer_ptr;
+    return usb_data_buffer_ptr_len;
+  }
   return usb_data_buffer_position;
 }
 
-static int get_device_descriptor(struct USBLink *link,
+static int get_device_descriptor(struct GrainuumUSB *usb,
                                  const void *setup_ptr,
                                  const void **data) {
 
-  (void)link;
+  (void)usb;
   USBSetup *setup = (USBSetup *)setup_ptr;
   uint8_t t = setup->wValueH;
   int desc_length = 0;
@@ -178,6 +192,7 @@ static int get_device_descriptor(struct USBLink *link,
 
   usb_data_buffer_position = 0;
   *data = (void *)usb_data_buffer;
+  usb_data_buffer_ptr = 0;
 
   if ((setup->bmRequestType & REQUEST_DIRECTION) == REQUEST_HOSTTODEVICE)
     return 0;
@@ -185,15 +200,24 @@ static int get_device_descriptor(struct USBLink *link,
   if (USB_CONFIGURATION_DESCRIPTOR_TYPE == t)
       return USB_SendConfiguration(setup->wLength);
 
-#ifdef PLUGGABLE_USB_ENABLED
+  /* See if the PluggableUSB module will handle this request */
   ret = PluggableUSB().getDescriptor(*setup);
   if (ret) {
-    if (ret > 0)
+    if (ret > 0) {
+      if (usb_data_buffer_ptr) {
+        *data = usb_data_buffer_ptr;
+        return usb_data_buffer_ptr_len;
+      }
       return usb_data_buffer_position;
+    }
     return 0;
   }
-#endif
 
+  if ((setup->wValueH == 0) && (setup->wIndex == 0) && (setup->wLength == 2)) {
+    static const uint8_t okay[] = {0, 0};
+    *data = okay;
+    return sizeof(okay);
+  }
   switch (t) {
   case USB_DEVICE_DESCRIPTOR_TYPE:
     desc_addr = (const uint8_t*)&USB_DeviceDescriptor;
@@ -209,11 +233,9 @@ static int get_device_descriptor(struct USBLink *link,
     else if (setup->wValueL == IMANUFACTURER)
       return USB_SendStringDescriptor(STRING_MANUFACTURER, setup->wLength);
     else if (setup->wValueL == ISERIAL) {
-#ifdef PLUGGABLE_USB_ENABLED
-      char name[ISERIAL_MAX_LEN];
+      char name[ISERIAL_MAX_LEN] = {};
       PluggableUSB().getShortName(name);
       return USB_SendStringDescriptor((uint8_t*)name, setup->wLength);
-#endif
     }
     else
       return false;
@@ -242,22 +264,23 @@ static int get_device_descriptor(struct USBLink *link,
   return desc_length;
 }
 
-static int get_descriptor(struct USBLink *link,
+static int get_descriptor(struct GrainuumUSB *usb,
                           const void *setup_ptr,
                           const void **data) {
   USBSetup *setup = (USBSetup *)setup_ptr;
 
   if ((setup->bmRequestType & REQUEST_TYPE) == REQUEST_STANDARD)
-    return get_device_descriptor(link, setup_ptr, data);
-  else
-    return get_class_descriptor(link, setup_ptr, data);
+    return get_device_descriptor(usb, setup_ptr, data);
+  else 
+    return get_class_descriptor(usb, setup_ptr, data);
+  return 0;
 }
 
-static void * get_usb_rx_buffer(struct USBLink *link,
+static void * get_usb_rx_buffer(struct GrainuumUSB *usb,
                                 uint8_t epNum,
                                 int32_t *size)
 {
-  (void)link;
+  (void)usb;
   (void)epNum;
 
   if (size)
@@ -265,11 +288,11 @@ static void * get_usb_rx_buffer(struct USBLink *link,
   return rx_buffer[rx_buffer_head];
 }
 
-static int send_data_finished(struct USBLink *link, uint8_t epNum, const void *data)
+static int send_data_finished(struct GrainuumUSB *usb,
+                              int result)
 {
-  (void)link;
-  (void)epNum;
-  (void)data;
+  (void)usb;
+  (void)result;
 
   return 0;
 }
@@ -279,7 +302,7 @@ int USB_Send(u8 ep, const void* d, int len) {
 
   int ret;
 
-  while ((ret = usbMacSendData(&usbMac, ep & 0x7, d, len)) < 0)
+  while ((ret = grainuumSendData(&usbPhy, ep & 0x7, d, len)) < 0)
     threadSleep(ST2MS(1));
 
   return ret;
@@ -339,12 +362,12 @@ void USB_Flush(uint8_t ep) {
     return;
 }
 
-static int received_data(struct USBLink *link,
+static int received_data(struct GrainuumUSB *usb,
                          uint8_t epNum,
                          uint32_t bytes,
                          const void *data)
 {
-  (void)link;
+  (void)usb;
   (void)data;
 
   rx_buffer_sizes[rx_buffer_head] = bytes;
@@ -359,21 +382,92 @@ static int received_data(struct USBLink *link,
   return 0;
 }
 
-static void set_config_num(struct USBLink *link, int configNum)
+static void set_config_num(struct GrainuumUSB *usb, int configNum)
 {
-	struct usb_link_private *priv = (struct usb_link_private *)link->data;
+	struct usb_link_private *priv = (struct usb_link_private *)usb->cfg->data;
 	priv->config_num = configNum;
 }
 
-static struct USBLink usbLink = {
+static struct GrainuumConfig usbConfig = {
   /*.getDescriptor     = */ get_descriptor,
+  /*.setConfigNum      = */ set_config_num,
   /*.getReceiveBuffer  = */ get_usb_rx_buffer,
   /*.receiveData       = */ received_data,
-  /*.sendData          = */ send_data_finished,
-  /*.setConfigNum      = */ set_config_num,
+  /*.sendDataStarted   = */ NULL,
+  /*.sendDataFinished  = */ send_data_finished,
   /*.data              = */ &link_priv,
-  /*.mac               = */ NULL,
+  /*.usb               = */ NULL
 };
+
+static int usb_phy_process_next_event(struct GrainuumUSB *usb) {
+  if (!GRAINUUM_BUFFER_IS_EMPTY(usb_buffer)) {
+    uint8_t *in_ptr = GRAINUUM_BUFFER_TOP(usb_buffer);
+
+    // Advance to the next packet (allowing us to be reentrant)
+    GRAINUUM_BUFFER_REMOVE(usb_buffer);
+
+    // Process the current packet
+    grainuumProcess(usb, in_ptr);
+
+    return 1;
+  }
+
+  return 0;
+}
+
+static THD_FUNCTION(usb_worker_thread, arg) {
+
+  struct GrainuumUSB *usb = (struct GrainuumUSB *)arg;
+
+  setThreadName("USB poll thread");
+  while (1) {
+    suspendThreadTimeout(&usb->phyThread, ST2MS(5));
+    while (!GRAINUUM_BUFFER_IS_EMPTY(usb_buffer))
+      usb_phy_process_next_event(usb);
+  }
+
+  return;
+}
+
+__attribute__((section(".ramtext")))
+static int usb_phy_fast_isr(void)
+{
+  /* Note: We can't use ANY ChibiOS threads here.
+   * This thread may interrupt the SysTick handler, which would cause
+   * Major Problems if we called OSAL_IRQ_PROLOGUE().
+   * To get around this, we simply examine the buffer every time SysTick
+   * exits (via CH_CFG_SYSTEM_TICK_HOOK), and wake up the thread from
+   * within the SysTick context.
+   * That way, this function is free to preempt EVERYTHING without
+   * interfering with the timing of the system.
+   */
+  grainuumCaptureI(&usbPhy, GRAINUUM_BUFFER_ENTRY(usb_buffer));
+
+  /* Clear all pending interrupts on this port. */
+  writel(0xffffffff, PORTB_ISFR);
+  return 0;
+}
+
+/* Called when the PHY is disconnected, to prevent ChibiOS from
+ * overwriting areas of memory that haven't been initialized yet.
+ */
+static int usb_phy_fast_isr_disabled(void) {
+
+  writel(0xffffffff, PORTB_ISFR);
+  return 0;
+}
+
+__attribute__((section(".ramtext")))
+void grainuumReceivePacket(struct GrainuumUSB *usb)
+{
+  GRAINUUM_BUFFER_ADVANCE(usb_buffer);
+
+  if (usb->phyThread) {
+    lockFromISR();
+    resumeThreadIPtr(&usb->phyThread, 0);
+    unlockFromISR();
+  }
+}
 
 /*
  * ==============================================================
@@ -659,14 +753,50 @@ static inline void NVIC_EnableIRQ(IRQn_Type IRQn)
   NVIC->ISER[0] = (uint32_t)(1UL << (((uint32_t)(int32_t)IRQn) & 0x1FUL));
 }
 
+void grainuumConnectPre(struct GrainuumUSB *usb)
+{
+  (void)usb;
+  /* Hook our GPIO IRQ */
+  attachFastInterrupt(PORTB_IRQ, usb_phy_fast_isr);
+}
+
+void grainuumDisconnectPre(struct GrainuumUSB *usb)
+{
+  (void)usb;
+  hookSysTick(NULL);
+}
+
+void grainuumDisconnectPost(struct GrainuumUSB *usb)
+{
+  (void)usb;
+  attachFastInterrupt(PORTB_IRQ, usb_phy_fast_isr_disabled);
+}
+
 static uint8_t usb_started = 0;
 int usbStart(void) {
 
   if (usb_started)
     return 0;
 
-  usbMacInit(&usbMac, &usbLink);
-  usbPhyInit(&usbPhy, &usbMac);
+  resumeThreadIPtr = (void (*)(thread_t**, msg_t*)) getSyscallAddr(147);
+  lockFromISR = (void (*)()) getSyscallAddr(132);
+  unlockFromISR = (void (*)()) getSyscallAddr(133);
+
+  GRAINUUM_BUFFER_INIT(usb_buffer);
+  attachFastInterrupt(PORTB_IRQ, usb_phy_fast_isr_disabled);
+
+  /* First batch of stickers reported ABI 1.  The pins were swapped on that version. */
+  if (getSyscallABI() == 1) {
+    usbPhy.usbdpShift = 2;
+    usbPhy.usbdnShift = 1;
+    usbPhy.usbdpMask  = (1 << 2);
+    usbPhy.usbdnMask  = (1 << 1);
+  }
+  grainuumDisconnect(&usbPhy);
+  grainuumInit(&usbPhy, &usbConfig);
+
+  createThread(usbPhy.waThread, sizeof(usbPhy.waThread),
+               127, usb_worker_thread, &usbPhy);
 
   /* Enable the IRQ and mux as GPIO with slow slew rate */
   writel(0x000B0104, PORTB_PCR1);
@@ -686,8 +816,8 @@ int usbStart(void) {
 
   pinMode(LED_BUILTIN, OUTPUT);
 
-  delay(200);
-  usbPhyAttach(&usbPhy);
+  delay(1000);
+  grainuumConnect(&usbPhy);
 
   usb_started = 1;
   return 0;

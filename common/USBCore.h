@@ -77,6 +77,7 @@
 #define USB_ENDPOINT_DESCRIPTOR_TYPE           5
 #define USB_DEVICE_QUALIFIER                   6
 #define USB_OTHER_SPEED_CONFIGURATION          7
+#define USB_BOS_DESCRIPTOR_TYPE                15
 
 // usb_20.pdf Table 9.6 Standard Feature Selectors
 #define DEVICE_REMOTE_WAKEUP                   1
@@ -127,6 +128,12 @@
 
 #define MSC_SUBCLASS_SCSI						0x06 
 #define MSC_PROTOCOL_BULK_ONLY					0x50 
+
+#define MS_OS_20_REQUEST_DESCRIPTOR 0x07
+
+#define WEBUSB_REQUEST_GET_ALLOWED_ORIGINS		0x01
+#define WEBUSB_REQUEST_GET_URL	0x02
+#define WEBUSB_URL 0x03
 
 //	Device
 typedef struct {
@@ -272,9 +279,73 @@ typedef struct
 	EndpointDescriptor			out;
 } __attribute__((packed)) MSCDescriptor;
 
+typedef struct
+{
+    uint8_t  len;
+    uint8_t  stype;
+    uint16_t clen;
+    uint8_t  numCaps;
+} __attribute__((packed)) BOSDescriptor;
+
+typedef struct
+{
+	uint8_t  bLength;       				/* Size of this descriptor. Must be set to 24. */
+	uint8_t  bDescriptorType;     			/* DEVICE CAPABILITY descriptor type ([USB31] Table 9-6). */
+	uint8_t  bDevCapabilityType;			/* PLATFORM capability type ([USB31] Table 9-14). */
+	uint8_t  bReserved;              		/* This field is reserved and shall be set to zero.  */
+	uint8_t  PlatformCapabilityUUID[16]; 	/* Must be set to {3408b638-09a9-47a0-8bfd-a0768815b665}. */
+	uint16_t bcdVersion;					/* Protocol version supported. Must be set to 0x0100. */
+	uint8_t  bVendorCode;					/* bRequest value used for issuing WebUSB requests. */
+	uint8_t  iLandingPage;					/* URL descriptor index of the device’s landing page. */
+} __attribute__((packed)) WebUSBPlatformCapabilityDescriptor;
+
+typedef struct
+{
+	uint8_t  bLength;
+	uint8_t  bDescriptorType;
+	uint8_t  bDevCapabilityType;
+	uint8_t  bReserved;
+	uint8_t  PlatformCapabilityUUID[16];
+	uint32_t dwWindowsVersion;
+	uint16_t wMSOSDescriptorSetTotalLength;
+	uint8_t  bMS_VendorCode;
+	uint8_t  bAltEnumCode;
+} __attribute__((packed)) MicrosoftOs2p0PlatformCapabilityDescriptor;
+
+typedef struct
+{
+// Header
+uint32_t dwLength;
+uint16_t  bcdVersion;
+uint16_t  wIndex;
+uint8_t  bCount;
+uint8_t  bReserved1[7];
+// Function Section 1
+uint8_t  bFirstInterfaceNumber;
+uint8_t  bReserved2;
+uint8_t  bCompatibleID[8];
+uint8_t  bSubCompatibleID[8];
+uint8_t  bReserved3[6];
+} __attribute__((packed)) MicrosoftCompatIDDescriptor;
+
+typedef struct
+{
+// Header
+uint32_t dwLength;
+uint16_t  bcdVersion;
+uint16_t  wIndex;
+uint16_t  wCount;
+// Custom Property Section 1
+uint32_t dwSize;
+uint32_t dwPropertyDataType;
+uint16_t  wPropertyNameLength;
+uint16_t  bPropertyName[20];
+uint32_t dwPropertyDataLength;
+uint16_t  bPropertyData[39];
+} __attribute__((packed))  MicrosoftExtPropertiesDescriptor;
 
 #define D_DEVICE(_class,_subClass,_proto,_packetSize0,_vid,_pid,_version,_im,_ip,_is,_configs) \
-	{ 18, 1, 0x200, _class,_subClass,_proto,_packetSize0,_vid,_pid,_version,_im,_ip,_is,_configs }
+	{ 18, 1, 0x210, _class,_subClass,_proto,_packetSize0,_vid,_pid,_version,_im,_ip,_is,_configs }
 
 #define D_CONFIG(_totalLength,_interfaces) \
 	{ 9, 2, _totalLength,_interfaces, 1, 0, USB_CONFIG_BUS_POWERED | USB_CONFIG_REMOTE_WAKEUP, USB_CONFIG_POWER_MA(100) }
@@ -294,7 +365,25 @@ typedef struct
 #define D_CDCCS(_subtype,_d0,_d1)	{ 5, 0x24, _subtype, _d0, _d1 }
 #define D_CDCCS4(_subtype,_d0)		{ 4, 0x24, _subtype, _d0 }
 
+#define D_BOS(_len, _ncaps) {sizeof(BOSDescriptor), 0x0f, (_len), _ncaps}
+#define D_WEBUSB(_vendorcode, _urlindex) \
+	{ sizeof(WebUSBPlatformCapabilityDescriptor), 0x10 /* DEVICE_CAPABILITY */, 0x05 /* PLATFORM */, 0, \
+	0x38, 0xB6, 0x08, 0x34, 0xA9, 0x09, 0xA0, 0x47, \
+	0x8B, 0xFD, 0xA0, 0x76, 0x88, 0x15, 0xB6, 0x65, \
+	0x0100, (_vendorcode), (_urlindex) \
+	}
+
+#define D_MSOS2p0(_descSize, _vendorCode) { \
+	sizeof(MicrosoftOs2p0PlatformCapabilityDescriptor), 0x10/* DEVICE_CAPABILITY */, 0x05/* PLATFORM */, 0x00, \
+	0xdf, 0x60, 0xdd, 0xd8, 0x89, 0x45, 0xc7, 0x4c, \
+	0x9c, 0xd2, 0x65, 0x9d, 0x9e, 0x64, 0x8a, 0x9f, \
+	/*0x00000603*/ 0x06030000, \
+	(_descSize) /* length of MS OS 2.0 descriptor set */, \
+	(_vendorCode), 0 \
+}
+
 int USB_RecvWait(uint8_t ep, void *data, int len);
+int USB_SendEntireControl(const void *d, int len);
 
 extern "C" {
   struct USBPHY;

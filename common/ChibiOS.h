@@ -274,12 +274,12 @@ void lockSystemFromISR(void);
 void unlockSystem();
 void unlockSystemFromISR(void);
 
-void getSyscallABI(void);
+uint32_t getSyscallABI(void);
 
 void *getSyscallAddr(uint32_t sysCallNum);
 void hookSysTick(void (*newHook)(void));
 
-void attachFastInterrupt(int irq, void (*func)(void));
+void attachFastInterrupt(int irq, int (*func)(void));
 void detachFastInterrupt(int irq);
 
 void setSerialSpeed(uint32_t speed);
@@ -290,6 +290,13 @@ bool mutexTryLock(mutex_t *mp);
 void mutexUnlock(mutex_t *mp);
 
 void setThreadName(const char *name);
+
+void MurmurHash3_x86_32(const void * key, int len, uint32_t seed, void * out);
+void murmur3(const void * key, int len, uint32_t seed, void * out);
+
+void enableInterrupt(int irq);
+void disableInterrupt(int irq);
+void setInterruptPriority(int irq, int priority);
 
 #ifdef __cplusplus
 };

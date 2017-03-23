@@ -40,6 +40,7 @@ extern "C" {
   /* AVR-compatible wrappers */
   extern uint8_t eeprom_read_byte(uint8_t *index);
   extern uint8_t eeprom_write_byte(uint8_t *index, uint8_t val);
+  extern void eeprom_flush(void *ignored);
 
   /* Esplanade Syscalls */
   extern int8_t flashErase(uint32_t sectorOffset, uint16_t sectorCount);
@@ -146,6 +147,7 @@ struct EEPROMClass{
     uint8_t read( int idx )              { return EERef( idx ); }
     void write( int idx, uint8_t val )   { (EERef( idx )) = val; }
     void update( int idx, uint8_t val )  { EERef( idx ).update( val ); }
+    void flush()                         { eeprom_flush(NULL); }
 
     //STL and C++11 iteration capability.
     EEPtr begin()                        { return 0x00; }

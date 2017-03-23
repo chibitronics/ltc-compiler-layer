@@ -20,7 +20,6 @@ void init(void);
 void runCallbacks(void);
 void loop(void);
 
-typedef uint32_t size_t;
 size_t strlen(const char *s);
 void *malloc(size_t size);
 void free(void *ptr);
@@ -37,12 +36,22 @@ int strncmp(const char *s1, const char *s2, size_t n);
 void *memmove(void *dest, const void *src, size_t n);
 void *memset(void *s, int c, size_t n);
 float atof(const char *nptr);
-int atoi(const char *nptr);
+int gtoi(const char *nptr);
 long atol(const char *nptr);
-int printf(const char *format, ...);
+int getchar(void);
 int printf(const char *format, ...);
 int snprintf(char *str, size_t size, const char *format, ...);
+int putchar(int c);
+int cangetchar(void);
+int putchar(int c);
+long int strtol(const char *nptr, char **endptr, int base);
+unsigned long int strtoul(const char *nptr, char **endptr, int base);
 
+void enableTimer(int timer_number);
+int canonicalizePin(int pin);
+int canonicalisePin(int pin);
+
+void analogReadResolution(int bits);
 #ifdef __cplusplus
 };
 #endif
@@ -98,12 +107,23 @@ void delayMicroseconds(unsigned int usecs);
 /* Math */
 #define DEG_TO_RAD 0.017453292519943295769236907684886
 #define RAD_TO_DEG 57.295779513082320876798154814105
+#define M_PI       3.14159265358979323846  /* pi */
+#define M_PI_2     1.57079632679489661923  /* pi/2 */
+#define M_PI_4     0.78539816339744830962  /* pi/4 */
 #define min(a,b) ((a)<(b)?(a):(b))
 #define max(a,b) ((a)>(b)?(a):(b))
+#define abs(x) ((x)>0?(x):-(x))
+#define pow(base, exponent) (exp(log(base) * exponent))
+#define log2(base) (log(x) / log(2))
+#define log10(base) (log(x) / log(10))
+#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
+#define round(x)     ((x)>=0?(long)((x)+0.5):(long)((x)-0.5))
+#define radians(deg) ((deg)*DEG_TO_RAD)
+#define degrees(rad) ((rad)*RAD_TO_DEG)
+#define sq(x) ((x)*(x))
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern int abs(int x);
 
 int serialCanGetChar(void);
 int serialGetChar(void);
@@ -113,9 +133,17 @@ int serialPutChar(int c);
 double cos(double rad);
 double tan(double rad);
 double sin(double rad);
-long map(long value, long fromLow, long fromHigh, long toLow, long toHigh);
-double pow(double base, double exponent);
+double atan2(double y, double x);
+double log(double rad);
+double exp(double x);
 double sqrt(double x);
+static inline long map(long x, long in_min, long in_max, long out_min, long out_max) {
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+uint32_t getOsVersion(void);
+uint32_t getHwVersion(void);
+const char * getGitVersion(void);
 #ifdef __cplusplus
 };
 #endif
@@ -227,32 +255,39 @@ long randomSeed(unsigned long seed);
 #define A1 0x81
 #define A2 0x82
 #define A3 0x83
-#define A4 0x84
-#define A5 0x85 /* Temperature sensor */
-#define A6 0x86 /* Voltage sensor */
-#define A7 0x87 /* VDD voltage value */
-#define A8 0x88 /* VCC voltage value */
+#define A4 0x84 /* Actually a digital pin */
+#define A5 0x85 /* Actually a digital pin */
+#define A6 0x86 /* Temperature sensor */
+#define A7 0x87 /* Voltage sensor */
+#define A8 0x88 /* VDD voltage value */
+#define A9 0x89 /* VCC voltage value */
+#define A10 0x8a /* Audio pin */
 
 /* Digital pins */
-#define D0 0x00
-#define D1 0x01
+#define D0 0xa0
+#define D1 0xa1
+#define D2 0xa2
+#define D3 0xa3
+#define D4 0xa4
+#define D5 0xa5
 
-#define LED_BUILTIN       PTA(12)
-#define LED_A2            LED_BUILTIN
-#define BUTTON_A1         PTA(9)
-#define BUTTON_REC        PTB(1) /* Silkscreened as "Rec" */
-#define BUTTON_A3         PTB(13)
-#define LED_BUILTIN_RGB   PTA(6)
+#define LED_BUILTIN       32
+#define LED_BUILTIN_RGB   33
 
-#define LED_BUILTIN_RED   PTA(5)
-#define LED_BUILTIN_GREEN PTB(6)
-#define UART_TX           PTB(3)
-#define UART_RX           PTB(4)
-#define SWD_CLK           PTA(0)
-#define SWD_DIO           PTA(2)
+#define LED_BUILTIN_RED   34
+#define LED_BUILTIN_GREEN 35
+#define AUDIO_IN          36
+#define UART_TX           37
+#define UART_RX           38
+#define SWD_CLK           39
+#define SWD_DIO           40
+#define RST_LEVEL         41
 
 /* Interrupts */
-#define I2C_IRQ           8
+#define PMC_IRQ           6
+#define I2C0_IRQ          8
+#define I2C_IRQ           9
+#define SPI_IRQ           10
 #define SERIAL_IRQ        12
 #define ADC_IRQ           15
 #define PWM0_IRQ          17
@@ -260,5 +295,6 @@ long randomSeed(unsigned long seed);
 #define LPTMR_IRQ         28
 #define PORTA_IRQ         30
 #define PORTB_IRQ         31
+#define NOT_AN_INTERRUPT  -1
 
 #endif /* __ARDUINO_KOSAGI_H__ */

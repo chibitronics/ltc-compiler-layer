@@ -10,6 +10,7 @@ sub generate_files {
   my @cxx_member_methods;
   my @cxx_constructors;
   my @cxx_destructors;
+  my @reserved;
   my @table;
 
   if (@$syscalls >= 256) {
@@ -21,8 +22,16 @@ sub generate_files {
     unshift(@$call, $idx);
 
     if ($call->[1] eq "c") {
+      my ($call_name) = ($call->[2]);
       if (defined($call->[3])) {
         my @subcalls = split(/\s*,\s*/, $call->[3]);
+
+        # Add an alias for the syscall name, to avoid confusion
+        if (!grep(/^$call_name$/, @subcalls)) {
+          push(@subcalls, $call_name);
+        }
+
+        # For each alias, add it to the list of C calls
         for my $sc(@subcalls) {
           my @new_call = @$call;
           $new_call[3] = $sc;
@@ -44,6 +53,10 @@ sub generate_files {
     push (@cxx_member_methods, $call) if ($call->[1] eq "m");
     push (@cxx_constructors, $call) if ($call->[1] eq "C");
     push (@cxx_destructors, $call) if ($call->[1] eq "D");
+    if ($call->[1] eq "r") {
+      push (@reserved, $call);
+      $idx++;
+    }
   }
 
   print $app_fh "#include \"Arduino-types.h\"\n";
