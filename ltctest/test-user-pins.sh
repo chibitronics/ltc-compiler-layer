@@ -2,9 +2,11 @@
 gpio_dir=/sys/class/gpio
 status_green=32
 status_red=33
-mode=34
-reset_in=35
-all_pins="0 1 2 3 4 5 ${status_green} ${status_red} ${mode} ${reset_in}"
+reset_pulse=34
+reset_level=35
+servo_pwm=36
+light_sensor=37
+all_pins="0 1 2 3 4 5 ${status_green} ${status_red} ${reset_pulse} ${reset_level}"
 test_program=/tmp/ltctest.wav
 uart=/dev/ttyAMA0
 baud=9600
@@ -19,19 +21,41 @@ pin_to_gpio() {
 		4) echo 5 ;;
 		5) echo 6 ;;
 		${status_green}) echo 13 ;;
-		${status_red}) echo 12 ;;
-		${mode}) echo 23 ;;
-		${reset_in}) echo 18 ;;
+		${status_red}) echo 8 ;;
+		${reset_pulse}) echo 23 ;;
+		${reset_level}) echo 18 ;;
+		${servo_pwm}) echo 12 ;;
+		${light_sensor}) echo 2 ;;
 		*) echo "Unrecognized pin: ${pin_num}" ; exit 1; ;;
 	esac
+}
+
+setup_pwm() {
+	# Without the "sleep", this behaves very oddly.
+	gpio -g mode $(pin_to_gpio ${servo_pwm}) pwm; sleep .3
+	gpio -g pwm $(pin_to_gpio ${servo_pwm}) 200
+	gpio pwm-ms; sleep .3
+	gpio pwmc 192; sleep .3
+	gpio pwmr 2000; sleep .3
+}
+
+setup_light_sensor() {
+	export_pin ${light_sensor}
+	pin_num=$(pin_to_gpio ${light_sensor})
+	echo in > ${gpio_dir}/gpio${pin_num}/direction
+	echo both > ${gpio_dir}/gpio${pin_num}/edge
 }
 
 pulse_range_pin() {
 	pin_num="$1"
 	case "${pin_num}" in
-		0|1|2|3) echo 1024 ;;
-		4|5) echo 560 ;;
-		rgb) echo 465 ;;
+		# Pulse is at 500 Hz, but we read both edges.  With
+		# the scheduler overhead, it comes to 1039.
+		0|1|2|3) echo 1039 ;;
+
+		# Again, we sample both edges
+		4|5) echo 662 ;;
+		rgb) echo 812 ;;
 		room) echo 0 ;;
 		*) echo "???" ;;
 	esac
@@ -81,10 +105,10 @@ get_value() {
 }
 
 enter_programming_mode() {
-	set_output ${reset_in}
-	set_low ${reset_in}
+	set_output ${reset_level}
+	set_low ${reset_level}
 	sleep .5
-	set_input ${reset_in}
+	set_input ${reset_level}
 }
 
 wait_for_green_on() {
@@ -101,17 +125,19 @@ wait_for_green_off() {
 	done
 }
 
-pulse_range() {
+pulse_count() {
 	center=$(pulse_range_pin "$1")
 	range="$2"
-	before=$(grep 'pinctrl-bcm2835   2 ' /proc/interrupts  | awk '{print $2}')
+	before=$(grep 'pinctrl-bcm2835   2 ' /proc/interrupts)
 	sleep 1
 	after=$(grep 'pinctrl-bcm2835   2 ' /proc/interrupts | awk '{print $2}')
+	before=$(echo "${before}" | awk '{print $2}')
+
 	difference=$((${after}-${before}))
 	ub=$((${center} + ${range}))
 	lb=$((${center} - ${range}))
 
-	range_val="${lb} <= ${difference} <= ${ub}"
+	range_val="${lb} <= ${difference} <= ${ub} [${before} ${after}]"
 
 	[ ${difference} -lt ${ub} ] && [ ${difference} -gt ${lb} ]
 }
@@ -124,7 +150,8 @@ do
 	export_pin ${pin}
 done
 
-if ! pulse_range room 16
+setup_light_sensor
+if ! pulse_count room 16
 then
 	echo "Room too bright.  Shield test jig."
 	exit 1
@@ -133,7 +160,7 @@ fi
 # Start out by setting all pins low.
 # The bootloader does this, so we're not
 # really fighting it here.
-echo "Setting up pins..."
+echo "Setting up pins:"
 echo "    O: 0"
 set_output 0
 echo "    O: 1"
@@ -163,9 +190,9 @@ set_input ${status_green}
 echo "    I: R"
 set_input ${status_red}
 echo "    I: M"
-set_input ${mode}
+set_input ${reset_pulse}
 echo "    I: I"
-set_input ${reset_in}
+set_input ${reset_level}
 
 echo "Audio test:"
 echo "    Download mode"
@@ -191,7 +218,7 @@ fi
 # Check to see if serial is working.  Look for the string
 # 'test-running', and echo back 'q'.
 echo "Serial test:"
-stty -F ${uart} ${baud}
+stty -F ${uart} ${baud} -icrnl -imaxbel -opost -onlcr -isig -icanon -echo
 echo "    Receiving"
 grep -q test-running ${uart}
 echo "    Sending"
@@ -225,6 +252,7 @@ set_high 4
 set_low 5
 
 echo "PWM LED tests:"
+sleep .4
 for pin in $(seq 0 5)
 do
 	signal_pin=$(((${pin}+1)%6))
@@ -232,9 +260,11 @@ do
 	set_input ${pin}
 	set_output ${signal_pin}
 	set_low ${signal_pin}
-	if ! pulse_range ${pin} 128
+	if ! pulse_count ${pin} 128
 	then
-		echo "      Pulse out of range: ${range_val}"
+		echo "        Pulse out of range: ${range_val}"
+	else
+		echo "        Pulse is in range: ${range_val}"
 	fi
 	set_high ${signal_pin}
 
@@ -250,9 +280,11 @@ for color in Red Green Blue
 do
 	set_high 1
 	echo "    ${color}"
-	if ! pulse_range rgb 128
+	if ! pulse_count rgb 128
 	then
-		echo "Pulse out of range: ${range_val}"
+		echo "        Pulse out of range: ${range_val}"
+	else
+		echo "        Pulse is in range: ${range_val}"
 	fi
 	set_low 1
 
