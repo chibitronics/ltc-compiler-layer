@@ -10,6 +10,7 @@ all_pins="0 1 2 3 4 5 ${status_green} ${status_red} ${reset_pulse} ${reset_level
 test_program=/tmp/ltctest.wav
 uart=/dev/ttyAMA0
 baud=9600
+error_count=0
 
 pin_to_gpio() {
 	pin_num="$1"
@@ -263,6 +264,7 @@ do
 	if ! pulse_count ${pin} 128
 	then
 		echo "        Pulse out of range: ${range_val}"
+		error_count=$((${error_count} + 1))
 	else
 		echo "        Pulse is in range: ${range_val}"
 	fi
@@ -283,6 +285,7 @@ do
 	if ! pulse_count rgb 128
 	then
 		echo "        Pulse out of range: ${range_val}"
+		error_count=$((${error_count} + 1))
 	else
 		echo "        Pulse is in range: ${range_val}"
 	fi
@@ -292,4 +295,5 @@ do
 	set_low 0
 done
 
-echo "All tests passed.  Program with audio test."
+echo "All tests finished."
+exit ${error_count}
