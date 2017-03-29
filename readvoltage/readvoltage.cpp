@@ -12,7 +12,7 @@
 int calibrationValue;
 void setup() {
   // the chibitronics implementation always runs at 115200 regardless of the argument
-  Serial.begin(115200);
+  Serial.begin(9600);
 
   pinMode(A0, OUTPUT);
   digitalWrite(A0, LOW);   // A0 is the - reference
