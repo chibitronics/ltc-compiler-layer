@@ -71,7 +71,7 @@ void help()
 
 void setup()
 {
-    serialPort.begin(57600);
+    serialPort.begin(9600);
 
     serialPort.println(F("Arduino Shell"));
     serialPort.println(F("Copyright (c) 2015 Max Vilimpoc (https://github.com/nuket/arduino-shell), MIT licensed.\n"));
