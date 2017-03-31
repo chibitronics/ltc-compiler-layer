@@ -11,13 +11,13 @@ set_low 5
 
 echo "PWM LED tests:"
 sleep .4
+echo l > ${uart}
+
 for pin in $(seq 0 5)
 do
-	signal_pin=$(((${pin}+1)%6))
 	echo "    Pin A${pin}"
 	set_input ${pin}
-	set_output ${signal_pin}
-	set_low ${signal_pin}
+	echo ${pin} > ${uart}
 	if ! pulse_count ${pin} 128
 	then
 		echo "        Pulse out of range: ${range_val}"
@@ -25,10 +25,7 @@ do
 	else
 		echo "        Pulse is in range: ${range_val}"
 	fi
-	set_high ${signal_pin}
-
-	set_output ${pin}
-	set_low ${pin}
 done
+echo q > ${uart}
 
 exit ${error_count}

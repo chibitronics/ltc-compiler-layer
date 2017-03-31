@@ -13,10 +13,10 @@ baud=9600
 error_count=0
 
 plunger_servo_up_level=97
-plunger_servo_down_level=130
+plunger_servo_down_level=140
 
 pin_to_gpio() {
-	pin_num="$1"
+	local pin_num="$1"
 	case "${pin_num}" in
 		0|0a|0b) echo 4 ;;
 		1|1a|1b) echo 17 ;;
@@ -45,13 +45,13 @@ setup_pwm() {
 
 setup_light_sensor() {
 	export_pin ${light_sensor}
-	pin_num=$(pin_to_gpio ${light_sensor})
+	local pin_num=$(pin_to_gpio ${light_sensor})
 	echo in > ${gpio_dir}/gpio${pin_num}/direction
 	echo both > ${gpio_dir}/gpio${pin_num}/edge
 }
 
 pulse_range_pin() {
-	pin_num="$1"
+	local pin_num="$1"
 	case "${pin_num}" in
 		# Pulse is at 500 Hz, but we read both edges.  With
 		# the scheduler overhead, it comes to 1039.
@@ -66,7 +66,7 @@ pulse_range_pin() {
 }
 
 export_pin() {
-	pin_num=$(pin_to_gpio "$1")
+	local pin_num=$(pin_to_gpio "$1")
 	if [ -e "${gpio_dir}/gpio${pin_num}" ]
 	then
 		echo ${pin_num} > /sys/class/gpio/unexport
@@ -79,33 +79,33 @@ export_pin() {
 }
 
 set_input() {
-	pin_num=$(pin_to_gpio "$1")
+	local pin_num=$(pin_to_gpio "$1")
 	echo "in" > ${gpio_dir}/gpio${pin_num}/direction
 }
 
 set_output() {
-	pin_num=$(pin_to_gpio "$1")
+	local pin_num=$(pin_to_gpio "$1")
 	echo "out" > ${gpio_dir}/gpio${pin_num}/direction
 }
 
 set_low() {
-	pin_num=$(pin_to_gpio "$1")
+	local pin_num=$(pin_to_gpio "$1")
 	echo 0 > ${gpio_dir}/gpio${pin_num}/value
 }
 
 set_high() {
-	pin_num=$(pin_to_gpio "$1")
+	local pin_num=$(pin_to_gpio "$1")
 	echo 1 > ${gpio_dir}/gpio${pin_num}/value
 }
 
 get_value() {
-	pin_num=$(pin_to_gpio "$1")
+	local pin_num=$(pin_to_gpio "$1")
 	set_input "$1"
 	if [ $(cat ${gpio_dir}/gpio${pin_num}/value) = 0 ]
 	then
-		return 0
+		return 1
 	fi
-	return 1
+	return 0
 }
 
 enter_programming_mode() {

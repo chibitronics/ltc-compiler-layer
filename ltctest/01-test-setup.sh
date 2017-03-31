@@ -15,6 +15,8 @@ then
 	exit 1
 fi
 
+setup_pwm
+
 # Start out by setting all pins low.
 # The bootloader does this, so we're not
 # really fighting it here.
