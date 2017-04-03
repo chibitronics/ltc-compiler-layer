@@ -102,7 +102,7 @@ get_value() {
 enter_programming_mode() {
 	set_output ${reset_level}
 	set_low ${reset_level}
-	sleep .5
+	sleep 1
 	set_input ${reset_level}
 }
 
