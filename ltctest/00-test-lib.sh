@@ -7,7 +7,7 @@ reset_level=35
 servo_pwm=36
 light_sensor=37
 all_pins="0 1 2 3 4 5 ${status_green} ${status_red} ${reset_pulse} ${reset_level}"
-test_program=/tmp/ltctest.wav
+test_program=ltctest.wav
 uart=/dev/ttyAMA0
 baud=9600
 error_count=0
@@ -32,15 +32,6 @@ pin_to_gpio() {
 		${light_sensor}) echo 2 ;;
 		*) echo "Unrecognized pin: ${pin_num}" ; exit 1; ;;
 	esac
-}
-
-setup_pwm() {
-	# Without the "sleep", this behaves very oddly.
-	gpio -g mode $(pin_to_gpio ${servo_pwm}) pwm; sleep .3
-	move_plunger_up
-	gpio pwm-ms; sleep .3
-	gpio pwmc 192; sleep .3
-	gpio pwmr 2000; sleep .3
 }
 
 setup_light_sensor() {
@@ -103,9 +94,9 @@ get_value() {
 	set_input "$1"
 	if [ $(cat ${gpio_dir}/gpio${pin_num}/value) = 0 ]
 	then
-		return 1
+		return 0
 	fi
-	return 0
+	return 1
 }
 
 enter_programming_mode() {
@@ -115,17 +106,43 @@ enter_programming_mode() {
 	set_input ${reset_level}
 }
 
+reset_board() {
+	set_input ${reset_pulse}
+	set_output ${reset_level}
+	set_low ${reset_level}
+	sleep .005
+	set_input ${reset_level}
+}
+
+wait_for_banner() {
+	grep -q "LTC factory test is running" ${uart}
+}
+
 wait_for_green_on() {
-	until ! get_value ${status_green} && get_value ${status_red}
+	until get_value ${status_green}
 	do
-		sleep 1
+		sleep 0.1
 	done
 }
 
 wait_for_green_off() {
-	until get_value ${status_green} && get_value ${status_red}
+	until ! get_value ${status_green}
 	do
-		sleep 1
+		sleep 0.1
+	done
+}
+
+wait_for_red_on() {
+	until get_value ${status_red}
+	do
+		sleep 0.1
+	done
+}
+
+wait_for_red_off() {
+	until ! get_value ${status_red}
+	do
+		sleep 0.1
 	done
 }
 
@@ -146,15 +163,20 @@ pulse_count() {
 	[ ${difference} -lt ${ub} ] && [ ${difference} -gt ${lb} ]
 }
 
-move_plunger_up() {
-	gpio -g pwm $(pin_to_gpio ${servo_pwm}) ${plunger_servo_up_level}
-}
-
-move_plunger_down() {
-	gpio -g pwm $(pin_to_gpio ${servo_pwm}) $((${plunger_servo_down_level}-10))
-	for i in $(seq $((${plunger_servo_down_level}-9)) ${plunger_servo_down_level})
-	do
-		sleep .1
-		gpio -g pwm $(pin_to_gpio ${servo_pwm}) $i
-	done
-}
+#move_plunger_up() {
+#	if [ ! -e /dev/pi-blaster ]
+#	then
+#		echo "Failed to move plunger: is pi-blaster running?"
+#		return 1
+#	fi
+#	echo $(pin_to_gpio ${servo_pwm})=0.048 > /dev/pi-blaster
+#}
+#
+#move_plunger_down() {
+#	gpio -g pwm $(pin_to_gpio ${servo_pwm}) $((${plunger_servo_down_level}-10))
+#	for i in $(seq $((${plunger_servo_down_level}-9)) ${plunger_servo_down_level})
+#	do
+#		sleep .1
+#		gpio -g pwm $(pin_to_gpio ${servo_pwm}) $i
+#	done
+#}

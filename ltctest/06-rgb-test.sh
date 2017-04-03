@@ -1,14 +1,16 @@
 #!/bin/sh -e
 
 source ./00-test-lib.sh
+reset_board
+wait_for_banner
 
 echo "RGB LED tests:"
-set_output 1
-set_low 1
+echo w > ${uart}
 
 for color in Red Green Blue
 do
-	set_high 1
+	# Send the color name to the UART, selecting it.
+	echo ${color} | cut -c 1 > ${uart}
 	echo "    ${color}"
 	if ! pulse_count rgb 128
 	then
@@ -17,10 +19,7 @@ do
 	else
 		echo "        Pulse is in range: ${range_val}"
 	fi
-	set_low 1
-
-	# Turn off the last remaining pin from the PWM test.
-	set_low 0
 done
 
+echo q > ${uart}
 exit ${error_count}

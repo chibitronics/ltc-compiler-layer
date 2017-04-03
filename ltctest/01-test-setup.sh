@@ -15,7 +15,8 @@ then
 	exit 1
 fi
 
-setup_pwm
+# Set up UART to 9600 baud
+stty -F ${uart} ${baud} -icrnl -imaxbel -opost -onlcr -isig -icanon -echo
 
 # Start out by setting all pins low.
 # The bootloader does this, so we're not

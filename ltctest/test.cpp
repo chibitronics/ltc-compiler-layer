@@ -61,8 +61,8 @@ static void test_connectivity(void) {
   for (i = 0; i < ARRAY_SIZE(test_pins); i++)
     pinMode(test_pins[i], INPUT);
 
-  printf("Enter 0-%d to test a particular pad\r\n", ARRAY_SIZE(test_pins));
   while (1) {
+    printf("Enter 0-%d to test a particular pad\r\n", ARRAY_SIZE(test_pins));
     int c = getchar();
 
     if (c == 'q')
@@ -70,18 +70,23 @@ static void test_connectivity(void) {
 
     if ((c - '0' >= 0) && (c - '0' <= 9)) {
       int pin = c - '0';
+      if (pin >= ARRAY_SIZE(test_pins))
+        continue;
+      printf("Testing pin %d (%c, 0x%02x) High", pin, c, test_pins[pin]);
 
       // Now wait for it to go high
       while (digitalRead(test_pins[pin]) != HIGH)
         delay(1);
 
       // Clear the green light, to acknowlege receipt
+      printf("  Low");
       green_off();
 
       // Wait for it to go low again
       while (digitalRead(test_pins[pin]) != LOW)
         delay(1);
 
+      printf("\r\n");
       // Light the green light, to finish this pin.
       green_on();
     }
@@ -97,10 +102,6 @@ static void test_leds(void) {
   while (1) {
     char c = getchar();
 
-    // Deconfigure all pins, in case we're exiting.
-    for (i = 0; i <= 5; i++)
-      pinMode(i, INPUT);
-
     switch (c) {
     case '0':
     case '1':
@@ -110,41 +111,50 @@ static void test_leds(void) {
     case '5':
       pin = c - '0';
 
+      // Deconfigure all pins first.
+      for (i = 0; i <= 5; i++)
+        pinMode(i, INPUT);
+
       // Create a 50% duty cycle, for the detector to see.
       pinMode(pin, OUTPUT);
       analogWrite(pin, 128);
       break;
 
     case 'q':
+      // Deconfigure all pins just before exiting.
+      for (i = 0; i <= 5; i++)
+        pinMode(i, INPUT);
+
       return;
     }
   }
 }
 
 static void test_rgb(void) {
-  static const int signal_pin = 1;
-  pinMode(signal_pin, INPUT);
+  int c;
 
-  // Wait for pin 0 to go high, indicating we can test.
-  while (digitalRead(signal_pin) != HIGH)
-      delay(1);
-  set_led(255, 0, 0);
-  while (digitalRead(signal_pin) != LOW)
-      delay(1);
+  printf("Enter 'r', 'g', 'b', or 'q' to quit\r\n");
 
-  while (digitalRead(signal_pin) != HIGH)
-      delay(1);
-  set_led(0, 255, 0);
-  while (digitalRead(signal_pin) != LOW)
-      delay(1);
-
-  while (digitalRead(signal_pin) != HIGH)
-      delay(1);
-  set_led(0, 0, 255);
-  while (digitalRead(signal_pin) != LOW)
-      delay(1);
-
-  set_led(0, 0, 0);
+  while (1) {
+    switch (c = getchar()) {
+    case 'R':
+    case 'r':
+      set_led(128, 0, 0);
+      break;
+    case 'G':
+    case 'g':
+      set_led(0, 128, 0);
+      break;
+    case 'B':
+    case 'b':
+      set_led(0, 0, 128);
+      break;
+    case 'Q':
+    case 'q':
+      set_led(0, 0, 0);
+      return;
+    }
+  }
 }
 
 struct ltc_test {
@@ -167,6 +177,18 @@ static void test_green_led(void) {
   green_on();
 }
 
+static void test_serial(void) {
+  while (1) {
+    if (cangetchar()) {
+      char c = getchar();
+      if (c == 'q')
+        return;
+    }
+    printf("LtC serial test\r\n");
+    delay(50);
+  }
+}
+
 static struct ltc_test ltc_tests[] = {
   {
     .function = test_leds,
@@ -177,6 +199,11 @@ static struct ltc_test ltc_tests[] = {
     .function = test_rgb,
     .shortcut = 'w',
     .description = "Test WS2812b RGB LED",
+  },
+  {
+    .function = test_serial,
+    .shortcut = 's',
+    .description = "Test serial",
   },
   {
     .function = test_connectivity,
