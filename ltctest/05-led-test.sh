@@ -14,6 +14,8 @@ set_input 5
 echo "PWM LED tests:"
 echo l > ${uart}
 
+grep -q "PWM LED test" ${uart}
+
 for pin in $(seq 0 5)
 do
 	echo "    Pin A${pin}"

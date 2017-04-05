@@ -7,6 +7,9 @@ wait_for_banner
 echo "RGB LED tests:"
 echo w > ${uart}
 
+# Wait for the board to enter RGB test mode
+grep -q "RGB LED test" ${uart}
+
 for color in Red Green Blue
 do
 	# Send the color name to the UART, selecting it.

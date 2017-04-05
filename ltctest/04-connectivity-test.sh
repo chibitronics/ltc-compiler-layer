@@ -10,7 +10,7 @@ pin_num=0
 
 # Enter the pin test mode and wait for the response
 echo 'c' > ${uart}
-grep -q ' test a particular pad' ${uart}
+grep -q 'Connectivity test' ${uart}
 
 for pin in 0a 1a 2 3a 4 5 0b 1b 3b
 do
