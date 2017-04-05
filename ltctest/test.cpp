@@ -62,14 +62,17 @@ static void test_connectivity(void) {
     pinMode(test_pins[i], INPUT);
 
   while (1) {
-    printf("Enter 0-%d to test a particular pad\r\n", ARRAY_SIZE(test_pins));
+    printf("Connectivity test.  Enter 0-%d to test a particular pad, or 'q' to quit.\r\n", ARRAY_SIZE(test_pins));
+    if (!cangetchar())
+      continue;
+
     int c = getchar();
 
     if (c == 'q')
       break;
 
     if ((c - '0' >= 0) && (c - '0' <= 9)) {
-      int pin = c - '0';
+      unsigned int pin = c - '0';
       if (pin >= ARRAY_SIZE(test_pins))
         continue;
       printf("Testing pin %d (%c, 0x%02x) High", pin, c, test_pins[pin]);
@@ -97,9 +100,10 @@ static void test_leds(void) {
   unsigned int i;
   int pin;
 
-  printf("Enter 0-5 to enable 50% PWM.  Enter 'q' to quit.\r\n");
-
   while (1) {
+    printf("PWM LED test.  Enter 0-5 to enable 50% PWM.  Enter 'q' to quit.\r\n");
+    if (!cangetchar())
+      continue;
     char c = getchar();
 
     switch (c) {
@@ -133,9 +137,12 @@ static void test_leds(void) {
 static void test_rgb(void) {
   int c;
 
-  printf("Enter 'r', 'g', 'b', or 'q' to quit\r\n");
 
   while (1) {
+    printf("RGB LED test.  Enter 'r', 'g', 'b', or 'q' to quit\r\n");
+    if (!cangetchar())
+      continue;
+
     switch (c = getchar()) {
     case 'R':
     case 'r':
