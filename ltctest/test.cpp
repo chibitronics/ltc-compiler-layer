@@ -29,13 +29,32 @@ struct pixels {
   uint8_t b;
 } __attribute__((packed));
 
-static void set_led(int r, int g, int b) {
-  struct pixels pixel;
+static void set_led(int r, int g, int b, int is_onboard) {
+  struct pixels pixels[3];
+  unsigned int i;
 
-  pixel.r = r;
-  pixel.g = g;
-  pixel.b = b;
-  ledShow(LED_BUILTIN_RGB, &pixel, 1);
+  if (is_onboard) {
+    pixels[0].r = r;
+    pixels[0].g = g;
+    pixels[0].b = b;
+    for (i = 1; i < ARRAY_SIZE(pixels); i++) {
+      pixels[i].r = 0;
+      pixels[i].g = 0;
+      pixels[i].b = 0;
+    }
+  }
+  else {
+    pixels[0].r = 0;
+    pixels[0].g = 0;
+    pixels[0].b = 0;
+    for (i = 1; i < ARRAY_SIZE(pixels); i++) {
+      pixels[i].r = r;
+      pixels[i].g = g;
+      pixels[i].b = b;
+    }
+  }
+
+  ledShow(LED_BUILTIN_RGB, pixels, ARRAY_SIZE(pixels));
 }
 
 static void green_on(void) {
@@ -63,8 +82,10 @@ static void test_connectivity(void) {
 
   while (1) {
     printf("Connectivity test.  Enter 0-%d to test a particular pad, or 'q' to quit.\r\n", ARRAY_SIZE(test_pins));
-    if (!cangetchar())
+    if (!cangetchar()) {
+      delay(50);
       continue;
+    }
 
     int c = getchar();
 
@@ -102,8 +123,10 @@ static void test_leds(void) {
 
   while (1) {
     printf("PWM LED test.  Enter 0-5 to enable 50% PWM.  Enter 'q' to quit.\r\n");
-    if (!cangetchar())
+    if (!cangetchar()) {
+      delay(50);
       continue;
+    }
     char c = getchar();
 
     switch (c) {
@@ -137,28 +160,35 @@ static void test_leds(void) {
 static void test_rgb(void) {
   int c;
 
-
   while (1) {
-    printf("RGB LED test.  Enter 'r', 'g', 'b', or 'q' to quit\r\n");
-    if (!cangetchar())
+    printf("RGB LED test.  Enter 'r', 'g', 'b', 'R', 'G', 'B', or 'q' to quit\r\n");
+    if (!cangetchar()) {
+      delay(50);
       continue;
+    }
 
     switch (c = getchar()) {
-    case 'R':
     case 'r':
-      set_led(128, 0, 0);
+      set_led(128, 0, 0, 1);
+      break;
+    case 'g':
+      set_led(0, 128, 0, 1);
+      break;
+    case 'b':
+      set_led(0, 0, 128, 1);
+      break;
+    case 'R':
+      set_led(128, 0, 0, 0);
       break;
     case 'G':
-    case 'g':
-      set_led(0, 128, 0);
+      set_led(0, 128, 0, 0);
       break;
     case 'B':
-    case 'b':
-      set_led(0, 0, 128);
+      set_led(0, 0, 128, 0);
       break;
     case 'Q':
     case 'q':
-      set_led(0, 0, 0);
+      set_led(0, 0, 0, 1);
       return;
     }
   }
@@ -166,7 +196,7 @@ static void test_rgb(void) {
 
 struct ltc_test {
   void (*function)(void);
-  char shortcut;
+  char shortcut[4];	// FOURCC code used to prevent noise from starting tests
   const char *description;
 };
 
@@ -196,51 +226,126 @@ static void test_serial(void) {
   }
 }
 
-static struct ltc_test ltc_tests[] = {
+// define this to turn on "fourcc", which uses four
+// characters to define a command rather than one.
+//#define USE_FOURCC
+
+// define this to enable reduplication, where the
+// command is repeated twice to ensure it's
+// received correctly.
+//#define REDUPLICATION
+
+static const struct ltc_test ltc_tests[] = {
   {
     .function = test_leds,
-    .shortcut = 'l',
+#ifdef REDUPLICATION
+    .shortcut = {'!','l','!','l'},
+#else
+    .shortcut = {'l','e','d','s'},
+#endif
     .description = "White LED output test",
   },
   {
     .function = test_rgb,
-    .shortcut = 'w',
+#ifdef REDUPLICATION
+    .shortcut = {'!','w','!','w'},
+#else
+    .shortcut = {'w','r','g','b'},
+#endif
     .description = "Test WS2812b RGB LED",
   },
   {
     .function = test_serial,
-    .shortcut = 's',
+#ifdef REDUPLICATION
+    .shortcut = {'!','u','!','u'},
+#else
+    .shortcut = {'u','a','r','t'},
+#endif
     .description = "Test serial",
   },
   {
     .function = test_connectivity,
-    .shortcut = 'c',
+#ifdef REDUPLICATION
+    .shortcut = {'!','c','!','c'},
+#else
+    .shortcut = {'c','o','n','n'},
+#endif
     .description = "Test MCU ball connectivity",
   },
   {
     .function = test_red_led,
-    .shortcut = 'r',
-    .description = "Test red status LED",
+#ifdef REDUPLICATION
+    .shortcut = {'!','r','!','r'},
+#else
+    .shortcut = {'r','e','d','l'},
+#endif
+    .description = "Test red error status LED",
   },
   {
     .function = test_green_led,
-    .shortcut = 'g',
+#ifdef REDUPLICATION
+    .shortcut = {'!','g','!','g'},
+#else
+    .shortcut = {'g','r','e','n'},
+#endif
     .description = "Test green status LED",
   }
 };
 
+#ifdef USE_FOURCC
+static int fourcc_matches(const char fourcc_buffer[4],
+                          const char check_value[4],
+                          uint8_t offset) {
+  unsigned int i;
+  for (i = 0; i < sizeof(fourcc_buffer); i++)
+    if (fourcc_buffer[i] != check_value[(offset + i) & 3])
+      return 0;
+  return 1;
+}
+#endif
+
 __attribute__((noreturn))
 static void uart_menu(void) {
   uint32_t i;
+  char fourcc_buffer[4] = {};
+  uint8_t fourcc_ptr = 0;
 
   setSerialSpeed(9600);
 
+  // Drain the UART buffer before printing the first banner.
+  while (cangetchar())
+    (void)getchar();
+
   while (1) {
+    printf("LTC factory test is running.  Available tests:\r\n");
+    for (i = 0; i < ARRAY_SIZE(ltc_tests); i++)
+      printf("    %c"
+#ifdef USE_FOURCC
+"%c%c%c"
+#endif
+              ": %s\r\n",
+              ltc_tests[i].shortcut[0],
+#ifdef USE_FOURCC
+              ltc_tests[i].shortcut[1],
+              ltc_tests[i].shortcut[2],
+              ltc_tests[i].shortcut[3],
+#endif
+              ltc_tests[i].description);
+    delay(50);
     if (cangetchar()) {
-      char c = getchar();
+#ifdef USE_FOURCC
+      fourcc_buffer[fourcc_ptr++] = getchar();
+      fourcc_ptr &= 3;
+#else
+      fourcc_buffer[fourcc_ptr] = getchar();
+#endif
 
       for (i = 0; i < ARRAY_SIZE(ltc_tests); i++) {
-        if (ltc_tests[i].shortcut == c) {
+#ifdef USE_FOURCC
+        if (fourcc_matches(ltc_tests[i].shortcut, fourcc_buffer, fourcc_ptr)) {
+#else
+        if (ltc_tests[i].shortcut[0] == fourcc_buffer[fourcc_ptr]) {
+#endif
           // Drain the UART buffer before running the test.
           while (cangetchar())
             (void)getchar();
@@ -251,12 +356,6 @@ static void uart_menu(void) {
         }
       }
     }
-    printf("LTC factory test is running.  Available tests:\r\n");
-    for (i = 0; i < ARRAY_SIZE(ltc_tests); i++)
-      printf("    %c: %s\r\n",
-              ltc_tests[i].shortcut,
-              ltc_tests[i].description);
-    delay(50);
   }
 }
 
@@ -268,7 +367,7 @@ void setup(void) {
 
   // Ensure the LED is off.  The OS should have done this already,
   // but make sure anyway.
-  set_led(0, 0, 0);
+  set_led(0, 0, 0, 1);
 
   // Enter the UART "menu", which never returns.
   uart_menu();
