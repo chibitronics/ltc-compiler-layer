@@ -85,7 +85,27 @@ static void test_connectivity(void) {
       break;
 
     if ((c - '0' >= 0) && (c - '0' <= 9)) {
-      unsigned int pin = c - '0';
+      unsigned int pin;
+      if (c == '0')
+        pin = 0;
+      else if (c == '1')
+        pin = 1;
+      else if (c == '2')
+        pin = 2;
+      else if (c == '3')
+        pin = 3;
+      else if (c == '4')
+        pin = 4;
+      else if (c == '5')
+        pin = 5;
+      else if (c == '6')
+        pin = 6;
+      else if (c == '7')
+        pin = 7;
+      else if (c == '8')
+        pin = 8;
+      else if (c == '9')
+        pin = 9;
       if (pin >= ARRAY_SIZE(test_pins))
         continue;
       printf("Testing pin %d (%c, 0x%02x) High", pin, c, test_pins[pin]);
