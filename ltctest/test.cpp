@@ -29,28 +29,20 @@ struct pixels {
   uint8_t b;
 } __attribute__((packed));
 
-static void set_led(int r, int g, int b, int is_onboard) {
+static void set_led(int r, int g, int b, unsigned int led_number) {
   struct pixels pixels[3];
   unsigned int i;
 
-  if (is_onboard) {
-    pixels[0].r = r;
-    pixels[0].g = g;
-    pixels[0].b = b;
-    for (i = 1; i < ARRAY_SIZE(pixels); i++) {
-      pixels[i].r = 0;
-      pixels[i].g = 0;
-      pixels[i].b = 0;
-    }
-  }
-  else {
-    pixels[0].r = 0;
-    pixels[0].g = 0;
-    pixels[0].b = 0;
-    for (i = 1; i < ARRAY_SIZE(pixels); i++) {
+  for (i = 0; i < ARRAY_SIZE(pixels); i++) {
+    if (i == led_number) {
       pixels[i].r = r;
       pixels[i].g = g;
       pixels[i].b = b;
+     }
+     else {
+      pixels[i].r = 0;
+      pixels[i].g = 0;
+      pixels[i].b = 0;
     }
   }
 
@@ -169,22 +161,22 @@ static void test_rgb(void) {
 
     switch (c = getchar()) {
     case 'r':
-      set_led(128, 0, 0, 1);
-      break;
-    case 'g':
-      set_led(0, 128, 0, 1);
-      break;
-    case 'b':
-      set_led(0, 0, 128, 1);
-      break;
-    case 'R':
       set_led(128, 0, 0, 0);
       break;
-    case 'G':
+    case 'g':
       set_led(0, 128, 0, 0);
       break;
-    case 'B':
+    case 'b':
       set_led(0, 0, 128, 0);
+      break;
+    case 'R':
+      set_led(128, 0, 0, 2);
+      break;
+    case 'G':
+      set_led(0, 128, 0, 2);
+      break;
+    case 'B':
+      set_led(0, 0, 128, 2);
       break;
     case 'Q':
     case 'q':
