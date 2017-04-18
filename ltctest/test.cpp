@@ -19,7 +19,7 @@ uint32_t test_pins[] = {
   PTA(7), // DIG1
   PTB(10), // ANA0(2)
   PTB(11), // ANA1(2)
-  PTB(4), // ANA3(2)
+  PTB(3), // ANA3(2)
 };
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(*x))
 
@@ -133,6 +133,10 @@ static void test_leds(void) {
   unsigned int i;
   int pin;
 
+  // Deconfigure all pins first.
+  for (i = 0; i <= 5; i++)
+    pinMode(i, OUTPUT);
+
   while (1) {
     printf("PWM LED test.  Enter 0-5 to enable 50% PWM.  Enter 'q' to quit.\r\n");
     if (!cangetchar()) {
@@ -152,10 +156,9 @@ static void test_leds(void) {
 
       // Deconfigure all pins first.
       for (i = 0; i <= 5; i++)
-        pinMode(i, INPUT);
+        digitalWrite(i, 0);
 
       // Create a 50% duty cycle, for the detector to see.
-      pinMode(pin, OUTPUT);
       analogWrite(pin, 128);
       break;
 
@@ -171,6 +174,11 @@ static void test_leds(void) {
 
 static void test_rgb(void) {
   int c;
+
+  for (c = 0; c <= 5; c++) {
+    pinMode(c, OUTPUT);
+    digitalWrite(c, 0);
+  }
 
   while (1) {
     printf("RGB LED test.  Enter 'r', 'g', 'b', 'R', 'G', 'B', or 'q' to quit\r\n");
@@ -201,6 +209,10 @@ static void test_rgb(void) {
     case 'Q':
     case 'q':
       set_led(0, 0, 0, 1);
+      for (c = 0; c <= 5; c++) {
+        pinMode(c, INPUT);
+        digitalWrite(c, 0);
+      }
       return;
     }
   }
