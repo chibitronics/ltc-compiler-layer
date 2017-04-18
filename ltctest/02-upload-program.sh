@@ -17,7 +17,14 @@ then
 		echo "        status_red is off when it should be on"
 	fi
 	echo "        Unable to enter download mode"
-	exit 1
+
+	enter_programming_mode
+	if get_value ${status_green} || ! get_value ${status_red}
+	then
+		echo "Tried again, and still failed to enter programming mode"
+		exit 1
+	fi
+	echo "Got it on the second try"
 fi
 
 echo "    Programming"
