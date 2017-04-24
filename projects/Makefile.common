@@ -32,7 +32,7 @@ LFLAGS     = $(ADD_LFLAGS) $(CFLAGS) \
              -Wl,-Map=$(PROJECT).map,--gc-sections \
              -Wl,--cref,--no-warn-mismatch,--script=$(LDSCRIPT),--build-id=none
 
-OBJ_DIR    = .obj/
+OBJ_DIR    = .obj
 
 CSOURCES   = $(wildcard *.c) $(wildcard ../../support/*.c)
 CPPSOURCES = $(wildcard *.cpp ../../support/*.cpp)
@@ -58,8 +58,6 @@ $(TARGET): $(OBJECTS) $(LDSCRIPT)
 	$(QUIET) $(CXX) $(OBJECTS) $(LFLAGS) -o $@
 	$(QUIET) echo "  OBJCOPY  $(PACKAGE).bin"
 	$(QUIET) $(OBJCOPY) -O binary $@ $(PACKAGE).bin
-	$(QUIET) echo "  SYMBOL   $(PACKAGE).symbol"
-	$(QUIET) $(OBJCOPY) --only-keep-debug $< $(PACKAGE).symbol 2> /dev/null
 
 $(DEBUG): CFLAGS += $(DBG_CFLAGS)
 $(DEBUG): LFLAGS += $(DBG_LFLAGS)
@@ -68,7 +66,7 @@ LFLAGS += $(DBG_LFLAGS)
 $(DEBUG): $(TARGET)
 
 $(OBJ_DIR):
-	$(QUIET) mkdir -p $(OBJ_DIR)
+	$(QUIET) mkdir $(OBJ_DIR)
 
 $(COBJS) : $(OBJ_DIR)/%.o : %.c Makefile
 	$(QUIET) echo "  CC       $<	$(notdir $@)"
@@ -85,7 +83,7 @@ $(OBJ_DIR)/%.o: %.S
 .PHONY: $(CLEAN) check
 
 check:
-	@echo "Dirname: " $(DIRNAME)
+	@echo Dirname: $(DIRNAME)
 
 $(CLEAN):
 	$(QUIET) rm -f $(wildcard $(OBJ_DIR)/*.d)
