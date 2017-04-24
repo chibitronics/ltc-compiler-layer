@@ -1,0 +1,19 @@
+#!/bin/sh
+# Wrapper around apache2-foreground
+# This checks for the "CORS_DOMAINS" variable and enables/disables
+# the Access-Control-Allow-Origin header depending on its presence.
+#
+# Launch the Docker image with:
+#     -e 'CORS_DOMAINS=*'
+if [ ! -z "${CORS_DOMAINS}" ]
+then
+    conffile=/etc/apache2/conf-enabled/cors.conf
+    echo "<IfModule mod_headers.c>" > ${conffile}
+    echo "    Header set Access-Control-Allow-Origin \"${CORS_DOMAINS}\"" >> ${conffile}
+    echo "    Header set Access-Control-Allow-Methods \"GET, OPTIONS\"" >> ${conffile}
+    echo "    Header set Access-Control-Allow-Headers \"origin, authorization, accept\"" >> ${conffile}
+    echo "</IfModule>" >> ${conffile}
+    a2enmod headers
+fi
+
+exec apache2-foreground "$@"
