@@ -1,5 +1,5 @@
-DIRNAME    = $(shell basename $(shell pwd))
-PACKAGE    = $(firstword $(subst -, , $(DIRNAME)))
+DIRNAME    = $(notdir $(realpath .))
+PACKAGE    = $(DIRNAME)
 LIBS       =
 VERSION    = v1.0
 ADD_CFLAGS =
@@ -82,7 +82,10 @@ $(OBJ_DIR)/%.o: %.S
 	$(QUIET) echo "  AS       $<	$(notdir $@)"
 	$(QUIET) $(CC) -x assembler-with-cpp -c $< $(CFLAGS) -o $@ -MMD
 
-.PHONY: $(CLEAN)
+.PHONY: $(CLEAN) check
+
+check:
+	@echo "Dirname: " $(DIRNAME)
 
 $(CLEAN):
 	$(QUIET) rm -f $(wildcard $(OBJ_DIR)/*.d)
