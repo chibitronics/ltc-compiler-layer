@@ -14,13 +14,13 @@ OBJCOPY    = $(TRGT)objcopy
 DESTDIR ?= /usr
 PREFIX ?= $(DESTDIR)
 
-LDSCRIPT = ../common/KL02Z32-app.ld
+LDSCRIPT = ../../support/KL02Z32-app.ld
 DBG_CFLAGS = -ggdb -g -DDEBUG -Wall
 DBG_LFLAGS = -ggdb -g -Wall
 CFLAGS     = $(ADD_CFLAGS) \
              -DVERSION=\"$(VERSION)\" -DPACKAGE=\"$(PACKAGE)\" \
              -DPREFIX=\"$(PREFIX)\" -DDESTDIR=\"$(DESTDIR)\" -DARDUINO=160 \
-             -I. -I../common -Iash -Iash/internals \
+             -I. -I../../support -Iash -Iash/internals \
              -fsingle-precision-constant -Wall -Wextra \
              -mcpu=cortex-m0plus -mfloat-abi=soft -mthumb \
              -DARDUINO_APP -fno-builtin \
@@ -37,14 +37,14 @@ DIST_FILES = Makefile .version version.sh install.sh \
              README.md AUTHORS COPYING ChangeLog.txt \
              $(wildcard *.c) $(wildcard *.h) $(EXTRA_DIST)
 
-CSOURCES   = $(wildcard *.c) $(wildcard ../common/*.c)
-CPPSOURCES = $(wildcard *.cpp ../common/*.cpp)
-ASOURCES   = $(wildcard *.S ../common/*.S)
+CSOURCES   = $(wildcard *.c) $(wildcard ../../support/*.c)
+CPPSOURCES = $(wildcard *.cpp ../../support/*.cpp)
+ASOURCES   = $(wildcard *.S ../../support/*.S)
 COBJS      = $(addprefix $(OBJ_DIR)/, $(notdir $(CSOURCES:.c=.o)))
 CXXOBJS    = $(addprefix $(OBJ_DIR)/, $(notdir $(CPPSOURCES:.cpp=.o)))
 AOBJS      = $(addprefix $(OBJ_DIR)/, $(notdir $(ASOURCES:.S=.o)))
 OBJECTS    = $(COBJS) $(CXXOBJS) $(AOBJS)
-VPATH = . ../common
+VPATH = . ../../support
 
 QUIET      = @
 
@@ -143,25 +143,5 @@ $(DDIST):
                  tar -czvf $(DIST_NAME) $(TARGET) > /dev/null
 	$(QUIET) mv $(CURR_PWD)/dist/$(DIST_NAME) $(CURR_PWD) && \
                  rm -rf dist
-
-$(INSTALL):
-	$(QUIET) echo "Installing $(TARGET)..."
-	$(QUIET) ./install.sh --target "$(TARGET)" --version "$(VERSION)" --prefix "$(PREFIX)" --dest-dir "$(DESTDIR)"
-
-$(UNINSTALL):
-	$(QUIET) echo "Uninstalling $(TARGET)..."
-	$(QUIET) ./uninstall.sh --target "$(TARGET)" --version "$(VERSION)" --prefix "$(PREFIX)" --dest-dir "$(DESTDIR)"
-
-# #RAI - Remove After Init, will be automatically removed after 'make init' executing
-$(INIT):                                                               #RAI
-	$(QUIET) rm -rf .git                                           #RAI
-	$(QUIET) git init                                              #RAI
-	$(QUIET) echo "" > AUTHORS                                     #RAI
-	$(QUIET) echo "" > README.md                                   #RAI
-	$(QUIET) echo "\n\n# Project-specific" >> .gitignore           #RAI
-	$(QUIET) echo "$(TARGET)" >> .gitignore                        #RAI
-	$(QUIET) sed -i '/#RAI/d' Makefile                             #RAI
-	$(QUIET) git add -A && git commit -am 'initial commit(empty)'  #RAI
-	$(QUIET) git tag v0.0                                          #RAI
 
 include $(wildcard $(OBJ_DIR)/*.d)
