@@ -33,9 +33,6 @@ LFLAGS     = $(ADD_LFLAGS) $(CFLAGS) \
              -Wl,--cref,--no-warn-mismatch,--script=$(LDSCRIPT),--build-id=none
 
 OBJ_DIR    = .obj/
-DIST_FILES = Makefile .version version.sh install.sh \
-             README.md AUTHORS COPYING ChangeLog.txt \
-             $(wildcard *.c) $(wildcard *.h) $(EXTRA_DIST)
 
 CSOURCES   = $(wildcard *.c) $(wildcard ../../support/*.c)
 CPPSOURCES = $(wildcard *.cpp ../../support/*.cpp)
@@ -44,22 +41,13 @@ COBJS      = $(addprefix $(OBJ_DIR)/, $(notdir $(CSOURCES:.c=.o)))
 CXXOBJS    = $(addprefix $(OBJ_DIR)/, $(notdir $(CPPSOURCES:.cpp=.o)))
 AOBJS      = $(addprefix $(OBJ_DIR)/, $(notdir $(ASOURCES:.S=.o)))
 OBJECTS    = $(COBJS) $(CXXOBJS) $(AOBJS)
-VPATH = . ../../support
+VPATH      = . ../../support
 
 QUIET      = @
 
 ALL        = all
 TARGET     = $(PACKAGE).elf
-DEBUG      = debug
-REBUILD    = rebuild
-DREBUILD   = drebuild
 CLEAN      = clean
-CHANGELOG  = ChangeLog.txt
-DISTCLEAN  = distclean
-DIST       = dist
-DDIST      = dailydist
-INSTALL    = install
-INIT       = init
 
 $(ALL): $(TARGET)
 
@@ -72,8 +60,6 @@ $(TARGET): $(OBJECTS) $(LDSCRIPT)
 	$(QUIET) $(OBJCOPY) -O binary $@ $(PACKAGE).bin
 	$(QUIET) echo "  SYMBOL   $(PACKAGE).symbol"
 	$(QUIET) $(OBJCOPY) --only-keep-debug $< $(PACKAGE).symbol 2> /dev/null
-
-
 
 $(DEBUG): CFLAGS += $(DBG_CFLAGS)
 $(DEBUG): LFLAGS += $(DBG_LFLAGS)
@@ -96,52 +82,11 @@ $(OBJ_DIR)/%.o: %.S
 	$(QUIET) echo "  AS       $<	$(notdir $@)"
 	$(QUIET) $(CC) -x assembler-with-cpp -c $< $(CFLAGS) -o $@ -MMD
 
-#$(OBJ_DIR)/crc16.o : CFLAGS += -O3
-
-.PHONY: $(CLEAN) $(DISTCLEAN) $(DIST) $(REBUILD) $(DREBUILD) $(INSTALL) \
-        $(CHANGELOG) $(INIT)
+.PHONY: $(CLEAN)
 
 $(CLEAN):
 	$(QUIET) rm -f $(wildcard $(OBJ_DIR)/*.d)
 	$(QUIET) rm -f $(wildcard $(OBJ_DIR)/*.o)
 	$(QUIET) rm -f $(TARGET) $(PACKAGE).bin $(PACKAGE).symbol
-
-$(DISTCLEAN): $(CLEAN)
-	$(QUIET) rm -rf $(OBJ_DIR) $(wildcard $(TARGET)-*.tar.gz)
-	$(QUIET) rm -f $(CHANGELOG)
-
-$(REBUILD):  $(CLEAN) $(TARGET)
-$(DREBUILD): $(CLEAN) $(DEBUG)
-
-$(CHANGELOG):
-	$(QUIET) if [ -d .git ] ; then \
-		git log `git tag`.. --pretty=format:"* %ad | %s%d [%an]" \
-		--date=short > $@ ; \
-	fi
-	$(QUIET) echo "" >> $@
-
-$(DIST): DIST_NAME = $(TARGET)-$(VERSION).tar.gz
-$(DIST): CURR_PWD  = $(shell pwd)
-$(DIST): $(CHANGELOG)
-$(DIST):
-	$(QUIET) echo "Making $(DIST_NAME)"
-	$(QUIET) mkdir $(CURR_PWD)/dist/$(TARGET) -p
-	$(QUIET) cp $(DIST_FILES) $(CURR_PWD)/dist/$(TARGET) -f
-	$(QUIET) cd $(CURR_PWD)/dist/ && \
-                 tar -czvf $(DIST_NAME) $(TARGET) > /dev/null
-	$(QUIET) mv $(CURR_PWD)/dist/$(DIST_NAME) $(CURR_PWD) && \
-                 rm -rf dist
-
-$(DDIST): DIST_NAME = $(TARGET)-$(VERSION)-$(shell date +%d%m%y).tar.gz
-$(DDIST): CURR_PWD  = $(shell pwd)
-$(DDIST): $(CHANGELOG)
-$(DDIST):
-	$(QUIET) echo "Making $(DIST_NAME)"
-	$(QUIET) mkdir $(CURR_PWD)/dist/$(TARGET) -p
-	$(QUIET) cp $(DIST_FILES) $(CURR_PWD)/dist/$(TARGET) -f
-	$(QUIET) cd $(CURR_PWD)/dist/ && \
-                 tar -czvf $(DIST_NAME) $(TARGET) > /dev/null
-	$(QUIET) mv $(CURR_PWD)/dist/$(DIST_NAME) $(CURR_PWD) && \
-                 rm -rf dist
 
 include $(wildcard $(OBJ_DIR)/*.d)
