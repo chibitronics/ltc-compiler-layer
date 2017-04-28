@@ -424,7 +424,7 @@ static THD_FUNCTION(usb_worker_thread, arg) {
 
   setThreadName("USB poll thread");
   while (1) {
-    suspendThreadTimeout(&usb->phyThread, ST2MS(5));
+    suspendThreadTimeout(&usb->phyThread, ST2MS(100));
     while (!GRAINUUM_BUFFER_IS_EMPTY(usb_buffer))
       usb_phy_process_next_event(usb);
   }
