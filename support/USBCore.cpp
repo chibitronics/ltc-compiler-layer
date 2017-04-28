@@ -401,10 +401,13 @@ static struct GrainuumConfig usbConfig = {
 
 static int usb_phy_process_next_event(struct GrainuumUSB *usb) {
   if (!GRAINUUM_BUFFER_IS_EMPTY(usb_buffer)) {
+
+    __disable_irq();
     uint8_t *in_ptr = GRAINUUM_BUFFER_TOP(usb_buffer);
 
     // Advance to the next packet (allowing us to be reentrant)
     GRAINUUM_BUFFER_REMOVE(usb_buffer);
+    __enable_irq();
 
     // Process the current packet
     grainuumProcess(usb, in_ptr);
