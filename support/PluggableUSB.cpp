@@ -19,10 +19,6 @@
 
 #include "USBAPI.h"
 #include "PluggableUSB.h"
-#define PLUGGABLE_USB_ENABLED
-
-#if defined(USBCON)
-#ifdef PLUGGABLE_USB_ENABLED
 
 extern uint8_t _initEndpoints[];
 
@@ -105,13 +101,9 @@ PluggableUSB_& PluggableUSB()
 	return obj;
 }
 
-PluggableUSB_::PluggableUSB_() : lastIf(CDC_ACM_INTERFACE + CDC_INTERFACE_COUNT),
-                                 lastEp(CDC_FIRST_ENDPOINT + CDC_ENPOINT_COUNT),
+PluggableUSB_::PluggableUSB_() : lastIf(0),
+                                 lastEp(1),
                                  rootNode(NULL)
 {
 	// Empty
 }
-
-#endif
-
-#endif /* if defined(USBCON) */

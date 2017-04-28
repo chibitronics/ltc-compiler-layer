@@ -29,7 +29,7 @@ HID_& HID()
 int HID_::getInterface(uint8_t* interfaceCount)
 {
 	*interfaceCount += 1; // uses 1
-	HIDDescriptor hidInterface = {
+	static HIDDescriptor hidInterface = {
 		D_INTERFACE(pluggedInterface, 2, USB_DEVICE_CLASS_HUMAN_INTERFACE, HID_SUBCLASS_NONE, HID_PROTOCOL_NONE),
 		D_HIDREPORT(descriptorSize),
 		D_ENDPOINT(USB_ENDPOINT_IN(pluggedEndpoint), USB_ENDPOINT_TYPE_INTERRUPT, USB_EP_SIZE, 10),
@@ -41,8 +41,17 @@ int HID_::getInterface(uint8_t* interfaceCount)
 int HID_::getDescriptor(USBSetup& setup)
 {
 	// Check if this is a HID Class Descriptor request
-	if (setup.bmRequestType != REQUEST_DEVICETOHOST_STANDARD_INTERFACE) { return 0; }
-	if (setup.wValueH != HID_REPORT_DESCRIPTOR_TYPE) { return 0; }
+	if ((USB_BOS_DESCRIPTOR_TYPE == setup.wValueH) && (setup.wValueL == 0) && (setup.wIndex == 0)) {
+		static BOSDescriptor bos = D_BOS(sizeof(BOSDescriptor), 0);
+		USB_SendControl(0, &bos, sizeof(bos));
+		return sizeof(bos);
+	}
+	else if (setup.bmRequestType != REQUEST_DEVICETOHOST_STANDARD_INTERFACE) {
+		return 0;
+	}
+	else if (setup.wValueH != HID_REPORT_DESCRIPTOR_TYPE) {
+		return 0;
+	}
 
 	// In a HID Class Descriptor wIndex cointains the interface number
 	if (setup.wIndex != pluggedInterface) { return 0; }

@@ -763,7 +763,7 @@ void grainuumConnectPre(struct GrainuumUSB *usb)
 void grainuumDisconnectPre(struct GrainuumUSB *usb)
 {
   (void)usb;
-  hookSysTick(NULL);
+//  hookSysTick(NULL);
 }
 
 void grainuumDisconnectPost(struct GrainuumUSB *usb)
@@ -792,6 +792,7 @@ int usbStart(void) {
     usbPhy.usbdpMask  = (1 << 2);
     usbPhy.usbdnMask  = (1 << 1);
   }
+
   grainuumDisconnect(&usbPhy);
   grainuumInit(&usbPhy, &usbConfig);
 
@@ -814,9 +815,7 @@ int usbStart(void) {
     NVIC_EnableIRQ(PINB_IRQn);
   }
 
-  pinMode(LED_BUILTIN, OUTPUT);
-
-  delay(1000);
+  delay(500);
   grainuumConnect(&usbPhy);
 
   usb_started = 1;

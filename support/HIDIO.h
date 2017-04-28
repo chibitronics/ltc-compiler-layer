@@ -24,17 +24,6 @@
 
 #include "HID.h"
 
-typedef struct {
-  InterfaceDescriptor dif;
-  EndpointDescriptor  in;
-  EndpointDescriptor  out;
-} WebUSBDescriptor;
-
-typedef struct {
-  uint8_t scheme;
-  const char* url;
-} WebUSBURL;
-
 class HIDIO_ : public PluggableUSBModule, public Stream
 {
 private:
