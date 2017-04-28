@@ -18,8 +18,8 @@
  http://www.arduino.cc/en/Tutorial/KeyboardButton
  */
 
- #include "Arduino.h"
- #include "Keyboard.h"
+#include "Arduino.h"
+#include "Keyboard.h"
 
 const int buttonPin = A1;          // input pin for pushbutton
 int previousButtonState = HIGH;   // for checking the state of a pushButton
