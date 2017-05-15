@@ -15,7 +15,7 @@ script:
 
 after_success:
   - if [ "$TRAVIS_BRANCH" = "master" ]; then
-    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD" &&
+    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD" https://index.docker.io/v1/ &&
     docker tag chibitronics/ltc-compiler-amd64:local chibitronics/ltc-compiler-amd64:latest &&
     docker push chibitronics/ltc-compiler-amd64:latest;
     fi
