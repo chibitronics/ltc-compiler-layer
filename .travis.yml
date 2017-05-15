@@ -6,15 +6,16 @@ services:
   - docker
 
 before_install:
-  - docker build -t chibitronics/ltc-compiler-amd64 .
-  - docker run --name ltc-compile-node -d -p 127.0.0.1:80:80 chibitronics/ltc-compiler-amd64
+  - docker build -t chibitronics/ltc-compiler-amd64:local .
+  - docker run --name ltc-compile-node -d -p 127.0.0.1:80:80 chibitronics/ltc-compiler-amd64:local
   - docker ps -a
 
 script:
-  - docker ps | grep ltc-compile-node
+  - docker ps | grep l tc-compile-node
 
 after_success:
   - if [ "$TRAVIS_BRANCH" = "master" ]; then
-    docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD" https://index.docker.io/v1/;
-    docker push chibitronics/ltc-compiler-amd64;
+    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD" &&
+    docker tag
+    docker push chibitronics/ltc-compiler-amd64:latest;
     fi
