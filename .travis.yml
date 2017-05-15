@@ -1,5 +1,7 @@
 sudo: required
 
+language: c
+
 services:
   - docker
 
@@ -12,8 +14,8 @@ script:
   - docker ps | grep ltc-compile-node
 
 after_success:
-  - echo Branch: ${TRAVIS_BRANCH}
   - if [ "$TRAVIS_BRANCH" == "master" ]; then
     docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
     docker push chibitronics/ltc-compiler-amd64;
     fi
+  - echo ${TRAVIS_BRANCH}
