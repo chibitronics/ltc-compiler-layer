@@ -12,8 +12,6 @@ before_install:
 
 script:
   - docker ps | grep ltc-compile-node
-
-after_success:
   - if [ "$TRAVIS_BRANCH" = "master" ]; then
     docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD" &&
     docker tag chibitronics/ltc-compiler-amd64:local chibitronics/ltc-compiler-amd64:latest &&
