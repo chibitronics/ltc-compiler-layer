@@ -214,7 +214,7 @@
 #if !defined(PORTA_BASE) /* Don't re-define these from another implementation */
 #define PORTA_BASE              ((unsigned long)0x40049000)
 #endif
-#define PORTA_PCR(x) (PORTA_PCR0 + (x * 4))
+#define PORTA_PCR(x) (PORTA_PCR0 + ((x) * 4))
 #define PORTA_PCR0 0x40049000 /* Pin Control Register n */
 #define PORTA_PCR1 0x40049004 /* Pin Control Register n */
 #define PORTA_PCR2 0x40049008 /* Pin Control Register n */
@@ -253,7 +253,7 @@
 #if !defined(PORTB_BASE) /* Don't re-define these from another implementation */
 #define PORTB_BASE              ((unsigned long)0x4004A000)
 #endif
-#define PORTB_PCR(x) (PORTB_PCR0 + (x * 4))
+#define PORTB_PCR(x) (PORTB_PCR0 + ((x) * 4))
 #define PORTB_PCR0 0x4004A000 /* Pin Control Register n */
 #define PORTB_PCR1 0x4004A004 /* Pin Control Register n */
 #define PORTB_PCR2 0x4004A008 /* Pin Control Register n */
