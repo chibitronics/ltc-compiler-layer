@@ -14,8 +14,7 @@ script:
   - docker ps | grep ltc-compile-node
 
 after_success:
-  - if [ "$TRAVIS_BRANCH" == "master" ]; then
-    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+  - if [ "$TRAVIS_BRANCH" = "master" ]; then
+    docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
     docker push chibitronics/ltc-compiler-amd64;
     fi
-  - echo ${TRAVIS_BRANCH}
