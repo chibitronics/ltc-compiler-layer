@@ -9,10 +9,114 @@
 #if !defined(TPM0_BASE) /* Don't re-define these from another implementation */
 #define TPM0_BASE               ((unsigned long)0x40038000)
 #endif
+#define TPM0_SC			0x40038000
+#define TPM0_SC_TOF			(1 << 7)
+#define TPM0_SC_TOIE			(1 << 6)
+#define TPM0_SC_CPWMS			(1 << 5)
+#define TPM0_SC_CMOD(x)			(((x) & 3) << 3)
+#define TPM0_SC_CMOD_MASK		(3 << 3)
+#define TPM0_SC_CMOD_SHIFT		3
+#define TPM0_SC_PS(x)			(((x) & 7) << 0)
+#define TPM0_SC_PS_MASK			(7 << 0)
+#define TPM0_SC_PS_SHIFT		7
+
+#define TPM0_CNT		0x40038004
+#define TPM0_CNT_COUNT(x)		(((x) & 65535) << 0)
+
+#define TPM0_MOD		0x40038008
+#define TPM0_MOD_MOD(x)			(((x) & 65535) << 0)
+
+#define TPM0_C0SC		0x4003800C
+#define TPM0_C0SC_CHF			(1 << 7)
+#define TPM0_C0SC_CHIE			(1 << 6)
+#define TPM0_C0SC_MSB			(1 << 5)
+#define TPM0_C0SC_MSA			(1 << 4)
+#define TPM0_C0SC_ELSB			(1 << 3)
+#define TPM0_C0SC_ELSA			(1 << 2)
+
+#define TPM0_C0V		0x40038010
+#define TPM0_C0V_VAL(x)			(((x) & 65535) << 0)
+
+#define TPM0_C1SC		0x40038014
+#define TPM0_C1SC_CHF			(1 << 7)
+#define TPM0_C1SC_CHIE			(1 << 6)
+#define TPM0_C1SC_MSB			(1 << 5)
+#define TPM0_C1SC_MSA			(1 << 4)
+#define TPM0_C1SC_ELSB			(1 << 3)
+#define TPM0_C1SC_ELSA			(1 << 2)
+
+#define TPM0_C1V		0x40038018
+#define TPM0_C1V_VAL(x)			(((x) & 65535) << 0)
+
+#define TPM0_STATUS		0x40038050
+#define TPM0_STATUS_TOF			(1 << 8)
+#define TPM0_STATUS_CH1F		(1 << 1)
+#define TPM0_STATUS_CH0F		(1 << 0)
+
+#define TPM0_CONF		0x40038084
+#define TPM0_CONF_TRGSEL(x)		(((x) & 15) << 24)
+#define TPM0_CONF_CROT			(1 << 18)
+#define TPM0_CONF_CSOO			(1 << 17)
+#define TPM0_CONF_CSOT			(1 << 16)
+#define TPM0_CONF_GTBEEN		(1 << 9)
+#define TPM0_CONF_DBGMODE(x)		(((x) & 3) << 6)
+#define TPM0_CONF_DOZEEN		(1 << 5)
 
 #if !defined(TPM1_BASE) /* Don't re-define these from another implementation */
 #define TPM1_BASE               ((unsigned long)0x40039000)
 #endif
+#define TPM1_SC			0x40039000
+#define TPM1_SC_TOF			(1 << 7)
+#define TPM1_SC_TOIE			(1 << 6)
+#define TPM1_SC_CPWMS			(1 << 5)
+#define TPM1_SC_CMOD(x)			(((x) & 3) << 3)
+#define TPM1_SC_CMOD_MASK		(3 << 3)
+#define TPM1_SC_CMOD_SHIFT		3
+#define TPM1_SC_PS(x)			(((x) & 7) << 0)
+#define TPM1_SC_PS_MASK			(7 << 0)
+#define TPM1_SC_PS_SHIFT		7
+
+#define TPM1_CNT		0x40039004
+#define TPM1_CNT_COUNT(x)		(((x) & 65535) << 0)
+
+#define TPM1_MOD		0x40039008
+#define TPM1_MOD_MOD(x)			(((x) & 65535) << 0)
+
+#define TPM1_C0SC		0x4003900C
+#define TPM1_C0SC_CHF			(1 << 7)
+#define TPM1_C0SC_CHIE			(1 << 6)
+#define TPM1_C0SC_MSB			(1 << 5)
+#define TPM1_C0SC_MSA			(1 << 4)
+#define TPM1_C0SC_ELSB			(1 << 3)
+#define TPM1_C0SC_ELSA			(1 << 2)
+
+#define TPM1_C0V		0x40039010
+#define TPM1_C0V_VAL(x)			(((x) & 65535) << 0)
+
+#define TPM1_C1SC		0x40039014
+#define TPM1_C1SC_CHF			(1 << 7)
+#define TPM1_C1SC_CHIE			(1 << 6)
+#define TPM1_C1SC_MSB			(1 << 5)
+#define TPM1_C1SC_MSA			(1 << 4)
+#define TPM1_C1SC_ELSB			(1 << 3)
+#define TPM1_C1SC_ELSA			(1 << 2)
+
+#define TPM1_C1V		0x40039018
+#define TPM1_C1V_VAL(x)			(((x) & 65535) << 0)
+
+#define TPM1_STATUS		0x40039050
+#define TPM1_STATUS_TOF			(1 << 8)
+#define TPM1_STATUS_CH1F		(1 << 1)
+#define TPM1_STATUS_CH0F		(1 << 0)
+
+#define TPM1_CONF		0x40039084
+#define TPM1_CONF_TRGSEL(x)		(((x) & 15) << 24)
+#define TPM1_CONF_CROT			(1 << 18)
+#define TPM1_CONF_CSOO			(1 << 17)
+#define TPM1_CONF_CSOT			(1 << 16)
+#define TPM1_CONF_GTBEEN		(1 << 9)
+#define TPM1_CONF_DBGMODE(x)		(((x) & 3) << 6)
+#define TPM1_CONF_DOZEEN		(1 << 5)
 
 #if !defined(ADC0_BASE) /* Don't re-define these from another implementation */
 #define ADC0_BASE               ((unsigned long)0x4003B000)
@@ -234,26 +338,6 @@
 #define FGPIOB_PTOR 0xF800004C /* Port Toggle Output Register */
 #define FGPIOB_PDIR 0xF8000050 /* Port Data Input Register */
 #define FGPIOB_PDDR 0xF8000054 /* Port Data Direction Register */
-
-/* TPM */
-#define TPM0_SC 0x40038000 /* Status and Control */
-#define TPM0_CNT 0x40038004 /* Counter */
-#define TPM0_MOD 0x40038008 /* Modulo */
-#define TPM0_C0SC 0x4003800C /* Channel Status and Control */
-#define TPM0_C0V 0x40038010 /* Channel Value */
-#define TPM0_C1SC 0x40038014 /* Channel Status and Control */
-#define TPM0_C1V 0x40038018 /* Channel Value */
-#define TPM0_STATUS 0x40038050 /* Capture and Compare Status */
-#define TPM0_CONF 0x40038084 /* Configuration */
-#define TPM1_SC 0x40039000 /* Status and Control */
-#define TPM1_CNT 0x40039004 /* Counter */
-#define TPM1_MOD 0x40039008 /* Modulo */
-#define TPM1_C0SC 0x4003900C /* Channel Status and Control */
-#define TPM1_C0V 0x40039010 /* Channel Value */
-#define TPM1_C1SC 0x40039014 /* Channel Status and Control */
-#define TPM1_C1V 0x40039018 /* Channel Value */
-#define TPM1_STATUS 0x40039050 /* Capture and Compare Status */
-#define TPM1_CONF 0x40039084 /* Configuration */
 
 /* Flash Translation (Layer|Engine) */
 #define FMC_PFB01CR 0x4001f004
