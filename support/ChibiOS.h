@@ -256,6 +256,8 @@ void resetTimer(virtual_timer_t *vtp);
 
 thread_t *createThread(void *wsp, size_t size,
                        tprio_t prio, tfunc_t pf, void *arg);
+thread_t *createThreadFromHeap(size_t size,
+                       tprio_t prio, tfunc_t pf, void *arg);
 msg_t suspendThread(thread_reference_t *trp);
 msg_t suspendThreadS(thread_reference_t *trp);
 msg_t suspendThreadTimeout(thread_reference_t *trp, systime_t timeout);
