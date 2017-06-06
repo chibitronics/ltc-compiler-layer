@@ -98,12 +98,6 @@ unsigned long pulseInLong(int pin, uint8_t state, unsigned long timeout
 #endif /* !ARDUINO_OS */
 );
 
-/* Time */
-unsigned long millis(void);
-unsigned long micros(void);
-void delay(unsigned long msecs);
-void delayMicroseconds(unsigned int usecs);
-
 /* Math */
 #define DEG_TO_RAD 0.017453292519943295769236907684886
 #define RAD_TO_DEG 57.295779513082320876798154814105
@@ -144,6 +138,15 @@ static inline long map(long x, long in_min, long in_max, long out_min, long out_
 uint32_t getOsVersion(void);
 uint32_t getHwVersion(void);
 const char * getGitVersion(void);
+
+long randomSeed(unsigned long seed);
+
+/* Time */
+unsigned long millis(void);
+unsigned long micros(void);
+void delay(unsigned long msecs);
+void delayMicroseconds(unsigned int usecs);
+
 #ifdef __cplusplus
 };
 #endif
@@ -229,15 +232,14 @@ static inline int toAscii(int c) {
   return c & 0x7f;
 }
 
-/* So Random */
 long random(long min, long max);
+
 #if !defined(ARDUINO_OS) && defined(__cplusplus)
 /* Non OS-version uses overloaded version */
 static inline long random(long max) {
   return random(0, max);
 }
 #endif
-long randomSeed(unsigned long seed);
 
 /* Bits and Bytes */
 #define lowByte(w) ((uint8_t) ((w) & 0xff))

@@ -945,59 +945,65 @@ extern "C" {
       asm("svc #164");
     }
 };
-  __attribute__((naked))
-  void pinMode(int pin, enum pin_mode mode) {
-    asm("svc #88");
-  }
-  __attribute__((naked))
-  void digitalWrite(int pin, int value) {
-    asm("svc #89");
-  }
-  __attribute__((naked))
-  int digitalRead(int pin) {
-    asm("svc #90");
-  }
-  __attribute__((naked))
-  void analogWrite(int pin, int value) {
-    asm("svc #91");
-  }
-  __attribute__((naked))
-  void analogReference(enum analog_reference_type type) {
-    asm("svc #92");
-  }
-  __attribute__((naked))
-  int analogRead(int pin) {
-    asm("svc #93");
-  }
-  __attribute__((naked))
-  void tone(int pin, unsigned int frequency, unsigned long duration) {
-    asm("svc #98");
-  }
-  __attribute__((naked))
-  void noTone(int pin) {
-    asm("svc #99");
-  }
-  __attribute__((naked))
-  unsigned long millis(void) {
-    asm("svc #104");
-  }
-  __attribute__((naked))
-  unsigned long micros(void) {
-    asm("svc #105");
-  }
-  __attribute__((naked))
-  void delay(unsigned long msecs) {
-    asm("svc #106");
-  }
-  __attribute__((naked))
-  void delayMicroseconds(unsigned int usecs) {
-    asm("svc #107");
-  }
-  __attribute__((naked))
-  long random(long min, long max) {
-    asm("svc #109");
-  }
-  __attribute__((naked))
-  long randomSeed(unsigned long seed) {
-    asm("svc #110");
-  }
+extern "C" {
+    __attribute__((naked))
+    void pinMode(int pin, enum pin_mode mode) {
+      asm("svc #88");
+    }
+    __attribute__((naked))
+    void digitalWrite(int pin, int value) {
+      asm("svc #89");
+    }
+    __attribute__((naked))
+    int digitalRead(int pin) {
+      asm("svc #90");
+    }
+    __attribute__((naked))
+    void analogWrite(int pin, int value) {
+      asm("svc #91");
+    }
+    __attribute__((naked))
+    void analogReference(enum analog_reference_type type) {
+      asm("svc #92");
+    }
+    __attribute__((naked))
+    int analogRead(int pin) {
+      asm("svc #93");
+    }
+    __attribute__((naked))
+    void tone(int pin, unsigned int frequency, unsigned long duration) {
+      asm("svc #98");
+    }
+    __attribute__((naked))
+    void noTone(int pin) {
+      asm("svc #99");
+    }
+    __attribute__((naked))
+    unsigned long millis(void) {
+      asm("svc #104");
+    }
+    __attribute__((naked))
+    unsigned long micros(void) {
+      asm("svc #105");
+    }
+    __attribute__((naked))
+    void delay(unsigned long msecs) {
+      asm("svc #106");
+    }
+    __attribute__((naked))
+    void delayMicroseconds(unsigned int usecs) {
+      asm("svc #107");
+    }
+    __attribute__((naked))
+    long random_c(long min, long max) {
+      asm("svc #109");
+    }
+    __attribute__((naked))
+    long random(long min, long max) {
+      asm("svc #109");
+    }
+    __attribute__((naked))
+    long randomSeed(unsigned long seed) {
+      asm("svc #110");
+    }
+};

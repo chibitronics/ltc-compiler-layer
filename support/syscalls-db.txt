@@ -4,6 +4,7 @@
 # fields:
 # Valid types:
 #    c - Standard C function
+#    P - Standard C function with full prototype data
 #    x - Standard C++ function
 #    C - C++ constructor
 #    D - C++ destructor
@@ -13,6 +14,10 @@
 # c fields (standard C function):
 # type | osname | [aliases]
 # One or more aliases can be specified.  Comma-delimited.
+#
+# P fields (standard C function with aliases and a prototype):
+# type | name | return type | arguments | names | [aliases]
+# e.g. int digitalRead(int pin) -> "C | digitalRead | int | int pin | readPin,doReadPin,findOutPinValue"
 #
 # x fields (standard C++ function):
 # type | name | return type | arguments | names
@@ -162,18 +167,18 @@ c | ledShow
 
 
 # Arduino IO
-x | pinMode | void | int pin, enum pin_mode mode | pin, mode
-x | digitalWrite | void | int pin, int value | pin, value
-x | digitalRead | int | int pin | pin
-x | analogWrite | void | int pin, int value | pin, value
-x | analogReference | void | enum analog_reference_type type | type
-x | analogRead | int | int pin | pin
+P | pinMode | void | int pin, enum pin_mode mode
+P | digitalWrite | void | int pin, int value
+P | digitalRead | int | int pin
+P | analogWrite | void | int pin, int value
+P | analogReference | void | enum analog_reference_type type
+P | analogRead | int | int pin
 c | attachInterrupt | attachInterruptChibi
 c | attachFastInterrupt
 c | detachInterrupt | detachInterruptChibi
 c | detachFastInterrupt
-x | tone | void | int pin, unsigned int frequency, unsigned long duration | pin, frequency, duration
-x | noTone | void | int pin | pin
+P | tone | void | int pin, unsigned int frequency, unsigned long duration
+P | noTone | void | int pin
 # Former shiftOut
 r
 # Former shiftIn
@@ -185,17 +190,17 @@ r
 
 
 # Arduino time management
-x | millis | unsigned long | void |
-x | micros | unsigned long | void |
-x | delay | void | unsigned long msecs | msecs
-x | delayMicroseconds | void | unsigned int usecs | usecs
+P | millis | unsigned long | void
+P | micros | unsigned long | void
+P | delay | void | unsigned long msecs
+P | delayMicroseconds | void | unsigned int usecs
 
 
 # Arduino math
 # Former map
 r
-x | random | long | long min, long max | min, max
-x | randomSeed | long | unsigned long seed | seed
+P | random | long | long min, long max | random_c
+P | randomSeed | long | unsigned long seed
 
 
 # I2C stuff
