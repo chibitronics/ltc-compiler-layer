@@ -5,6 +5,9 @@ void abort(void) {
   while(1);
 }
 
+#ifdef abs
+#undef abs
+#endif
 int abs(int x) { return (x > 0) ? x : -x; }
 
 void raise(void) {
