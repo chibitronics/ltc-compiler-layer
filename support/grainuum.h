@@ -165,8 +165,8 @@ struct usb_setup_packet {
   union {
     uint16_t wValue;
     struct {
-      uint8_t wValueH;
       uint8_t wValueL;
+      uint8_t wValueH;
     };
   };
   uint16_t wIndex;
@@ -322,13 +322,6 @@ struct GrainuumUSB {
   struct GrainuumConfig *cfg; /* Callbacks */
   int initialized;
 
-  /* USB D+ pin specification */
-  uint32_t usbdpIAddr;
-  uint32_t usbdpSAddr;
-  uint32_t usbdpCAddr;
-  uint32_t usbdpDAddr;
-  uint32_t usbdpShift;
-
   /* USB D- pin specification */
   uint32_t usbdnIAddr;
   uint32_t usbdnSAddr;
@@ -336,8 +329,15 @@ struct GrainuumUSB {
   uint32_t usbdnDAddr;
   uint32_t usbdnShift;
 
-  uint32_t usbdpMask;
+  /* USB D+ pin specification */
+  uint32_t usbdpIAddr;
+  uint32_t usbdpSAddr;
+  uint32_t usbdpCAddr;
+  uint32_t usbdpDAddr;
+  uint32_t usbdpShift;
+
   uint32_t usbdnMask;
+  uint32_t usbdpMask;
 
   uint32_t queued_size;
   uint32_t queued_epnum;

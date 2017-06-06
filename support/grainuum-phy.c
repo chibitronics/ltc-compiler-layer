@@ -81,6 +81,7 @@ void grainuum_receive_packet(struct GrainuumUSB *usb) {
 __attribute__((section(".ramtext")))
 void grainuumCaptureI(struct GrainuumUSB *usb, uint8_t *samples)
 {
+
   int ret;
 
   ret = usbPhyReadI(usb, samples);
