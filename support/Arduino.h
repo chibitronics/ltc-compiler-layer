@@ -4,6 +4,7 @@
 #include "Arduino-types.h"
 #include "WString.h"
 #include "Serial.h"
+#include "LTC.h"
 
 #define double float
 
