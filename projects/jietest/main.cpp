@@ -1,5 +1,4 @@
 #include "Arduino.h"
-#include "LTC.h"
 
 //  Love to Code
 

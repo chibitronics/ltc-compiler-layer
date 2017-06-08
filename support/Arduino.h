@@ -4,7 +4,6 @@
 #include "Arduino-types.h"
 #include "WString.h"
 #include "Serial.h"
-#include "LTC.h"
 
 #define double float
 
@@ -295,5 +294,7 @@ static inline long random(long max) {
 #define PORTA_IRQ         30
 #define PORTB_IRQ         31
 #define NOT_AN_INTERRUPT  -1
+
+#include "LTC.h"
 
 #endif /* __ARDUINO_KOSAGI_H__ */
