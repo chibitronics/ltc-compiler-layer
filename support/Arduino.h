@@ -52,13 +52,6 @@ int canonicalizePin(int pin);
 int canonicalisePin(int pin);
 
 void analogReadResolution(int bits);
-#ifdef __cplusplus
-};
-#endif
-#endif /* !ARDUINO_OS */
-
-/* Undef this, as there's no difference between the types of memory */
-#define PROGMEM
 
 /* Generic IO */
 void pinMode(int pin, enum pin_mode mode);
@@ -72,10 +65,6 @@ void analogWrite(int pin, int value);
 void analogReference(enum analog_reference_type type);
 int analogRead(int pin);
 
-/* Interrupt handling */
-void attachInterrupt(int irq, void (*func)(void), enum irq_mode mode);
-void detachInterrupt(int irq);
-
 /* Tone production */
 void tone(int pin, unsigned int frequency, unsigned long duration
 #if !defined(ARDUINO_OS) && defined(__cplusplus)
@@ -83,6 +72,48 @@ void tone(int pin, unsigned int frequency, unsigned long duration
 #endif /* !ARDUINO_OS */
 );
 void noTone(int pin);
+
+/* Time */
+unsigned long millis(void);
+unsigned long micros(void);
+void delay(unsigned long msecs);
+void delayMicroseconds(unsigned int usecs);
+
+/* Serial IO */
+int serialCanGetChar(void);
+int serialGetChar(void);
+int serialPutChar(int c);
+
+/* Trig and other math */
+double cos(double rad);
+double tan(double rad);
+double sin(double rad);
+double atan2(double y, double x);
+double log(double rad);
+double exp(double x);
+double sqrt(double x);
+static inline long map(long x, long in_min, long in_max, long out_min, long out_max) {
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+/* LtC APIs */
+uint32_t getOsVersion(void);
+uint32_t getHwVersion(void);
+const char * getGitVersion(void);
+
+long randomSeed(unsigned long seed);
+
+#ifdef __cplusplus
+};
+#endif
+#endif /* !ARDUINO_OS */
+
+/* Undef this, as there's no difference between the types of memory */
+#define PROGMEM
+
+/* Interrupt handling */
+void attachInterrupt(int irq, void (*func)(void), enum irq_mode mode);
+void detachInterrupt(int irq);
 
 /* Simple communication protocols */
 void shiftOut(int dataPin, int clockPin, int bitOrder, uint8_t val);
@@ -115,41 +146,6 @@ unsigned long pulseInLong(int pin, uint8_t state, unsigned long timeout
 #define radians(deg) ((deg)*DEG_TO_RAD)
 #define degrees(rad) ((rad)*RAD_TO_DEG)
 #define sq(x) ((x)*(x))
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-int serialCanGetChar(void);
-int serialGetChar(void);
-int serialPutChar(int c);
-
-/* Trig */
-double cos(double rad);
-double tan(double rad);
-double sin(double rad);
-double atan2(double y, double x);
-double log(double rad);
-double exp(double x);
-double sqrt(double x);
-static inline long map(long x, long in_min, long in_max, long out_min, long out_max) {
-  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-}
-
-uint32_t getOsVersion(void);
-uint32_t getHwVersion(void);
-const char * getGitVersion(void);
-
-long randomSeed(unsigned long seed);
-
-/* Time */
-unsigned long millis(void);
-unsigned long micros(void);
-void delay(unsigned long msecs);
-void delayMicroseconds(unsigned int usecs);
-
-#ifdef __cplusplus
-};
-#endif
 #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 #define round(x)     ((x)>=0?(long)((x)+0.5):(long)((x)-0.5))
 #define radians(deg) ((deg)*DEG_TO_RAD)
