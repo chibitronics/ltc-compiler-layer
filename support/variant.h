@@ -37,6 +37,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "Arduino.h"
+#include "LTC.h"
 
 #ifdef __cplusplus
 extern "C"{
