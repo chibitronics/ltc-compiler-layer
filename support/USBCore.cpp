@@ -5,10 +5,6 @@
 #define NUM_BUFFERS 4
 #define EP_INTERVAL_MS 10
 
-#define GRAINUUM_EXTRA \
-  thread_reference_t phyThread; \
-  THD_WORKING_AREA(waThread, 256); \
-
 #include "USBCore.h"
 #include "ChibiOS.h"
 
@@ -16,6 +12,9 @@
 #include "PluggableUSB.h"
 #include "kl02.h"
 #include "memio.h"
+
+static thread_reference_t phyThread;
+static THD_WORKING_AREA(waPhyThread, 192);
 
 static GRAINUUM_BUFFER(phy_buffer, 8);
 static void (*resumeThreadIPtr)(thread_reference_t *trp, msg_t *msg);
@@ -415,7 +414,7 @@ static THD_FUNCTION(usb_worker_thread, arg) {
 
   setThreadName("USB poll thread");
   while (1) {
-    suspendThreadTimeout(&usb->phyThread, ST2MS(10));
+    suspendThreadTimeout(&phyThread, ST2MS(10));
     while (!GRAINUUM_BUFFER_IS_EMPTY(phy_buffer))
       usb_phy_process_next_event(usb);
   }
@@ -456,9 +455,9 @@ void grainuumReceivePacket(struct GrainuumUSB *usb)
 {
   GRAINUUM_BUFFER_ADVANCE(phy_buffer);
 
-  if (usb->phyThread) {
+  if (phyThread) {
     lockFromISR();
-    resumeThreadIPtr(&usb->phyThread, 0);
+    resumeThreadIPtr(&phyThread, 0);
     unlockFromISR();
   }
 }
@@ -522,8 +521,8 @@ int usbStart(void) {
   grainuumDisconnect(&usbPhy);
   grainuumInit(&usbPhy, &usbConfig);
 
-  memset(usbPhy.waThread, 0xaaaaaaaa, sizeof(usbPhy.waThread));
-  createThread(usbPhy.waThread, sizeof(usbPhy.waThread),
+  memset(waPhyThread, 0xaa, sizeof(waPhyThread));
+  createThread(waPhyThread, sizeof(waPhyThread),
                127, usb_worker_thread, &usbPhy);
 
   /* Enable the IRQ and mux as GPIO with slow slew rate */
