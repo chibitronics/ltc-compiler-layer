@@ -76,8 +76,6 @@ void noTone(int pin);
 /* Time */
 unsigned long millis(void);
 unsigned long micros(void);
-void delay(unsigned long msecs);
-void delayMicroseconds(unsigned int usecs);
 
 /* Serial IO */
 int serialCanGetChar(void);
@@ -107,6 +105,10 @@ long randomSeed(unsigned long seed);
 };
 #endif
 #endif /* !ARDUINO_OS */
+
+/* Time functions that get patched in C code */
+void delay(unsigned long msecs);
+void delayMicroseconds(unsigned int usecs);
 
 /* Undef this, as there's no difference between the types of memory */
 #define PROGMEM
