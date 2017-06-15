@@ -1,14 +1,15 @@
 #include "Arduino.h"
 
-extern "C" void delay_c(unsigned long msecs);
-extern "C" void delayMicroseconds_c(unsigned int usecs);
-
+// The OS has a bug where sleeping for 0 causes a lockup.
+// Simply add 1 to the value to work around this.
+__attribute__((naked))
 void delay(unsigned long msecs) {
-  delay_c(msecs);
+  asm("add r0, #1");
+  asm("svc #106");
 }
 
+__attribute__((naked))
 void delayMicroseconds(unsigned int usecs) {
-  if (!usecs)
-    return;
-  delayMicroseconds_c(usecs);
+  asm("add r0, #1");
+  asm("svc #107");
 }
