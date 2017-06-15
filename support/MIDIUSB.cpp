@@ -14,7 +14,9 @@
 ** SOFTWARE.
 */
 
+#define DONT_DEFINE_USBMIDI_OBJECT
 #include "MIDIUSB.h"
+#undef DONT_DEFINE_USBMIDI_OBJECT
 
 #define MIDI_AC_INTERFACE 	pluggedInterface	// MIDI AC Interface
 #define MIDI_INTERFACE 		((uint8_t)(pluggedInterface+1))
@@ -34,12 +36,10 @@ struct ring_bufferMIDI
 
 ring_bufferMIDI midi_rx_buffer = {{0,0,0,0 }, 0, 0};
 
-MIDI_ MidiUSB;
-
 int MIDI_::getInterface(uint8_t* interfaceNum)
 {
 	interfaceNum[0] += 2;	// uses 2 interfaces
-	MIDIDescriptor _midiInterface =
+	const MIDIDescriptor _midiInterface =
 	{
 		D_IAD(MIDI_AC_INTERFACE, 2, MIDI_AUDIO, MIDI_AUDIO_CONTROL, 0),
 		D_INTERFACE(MIDI_AC_INTERFACE,0,MIDI_AUDIO,MIDI_AUDIO_CONTROL,0),
@@ -50,9 +50,9 @@ int MIDI_::getInterface(uint8_t* interfaceNum)
 		D_MIDI_INJACK(MIDI_JACK_EXT, 0x2),
 		D_MIDI_OUTJACK(MIDI_JACK_EMD, 0x3, 1, 2, 1),
 		D_MIDI_OUTJACK(MIDI_JACK_EXT, 0x4, 1, 1, 1),
-		D_MIDI_JACK_EP(USB_ENDPOINT_OUT(MIDI_ENDPOINT_OUT),USB_ENDPOINT_TYPE_BULK,MIDI_BUFFER_SIZE),
+		D_MIDI_JACK_EP(USB_ENDPOINT_OUT(MIDI_ENDPOINT_OUT),USB_ENDPOINT_TYPE_INTERRUPT,MIDI_BUFFER_SIZE),
 		D_MIDI_AC_JACK_EP(1, 1),
-		D_MIDI_JACK_EP(USB_ENDPOINT_IN(MIDI_ENDPOINT_IN),USB_ENDPOINT_TYPE_BULK,MIDI_BUFFER_SIZE),
+		D_MIDI_JACK_EP(USB_ENDPOINT_IN(MIDI_ENDPOINT_IN),USB_ENDPOINT_TYPE_INTERRUPT,MIDI_BUFFER_SIZE),
 		D_MIDI_AC_JACK_EP (1, 3)
 	};
 	return USB_SendControl(0, &_midiInterface, sizeof(_midiInterface));
