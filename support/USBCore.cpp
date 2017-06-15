@@ -77,7 +77,8 @@ uint8_t _initEndpoints[USB_ENDPOINTS] =
   // Following endpoints are automatically initialized to 0
 };
 
-static uint8_t usb_data_buffer[128];
+static uint8_t *usb_data_buffer;
+static uint32_t usb_data_buffer_size;
 static uint16_t usb_data_buffer_position;
 static const void *usb_data_buffer_ptr;
 static uint32_t usb_data_buffer_ptr_len = 0;
@@ -90,8 +91,10 @@ static uint32_t usb_data_buffer_ptr_len = 0;
 int USB_SendControl(u8 flags, const void* d, int len) {
 
   (void)flags;
-  if ((usb_data_buffer_position + (uint32_t)len) >= sizeof(usb_data_buffer))
-    return false;
+  if ((usb_data_buffer_position + (uint32_t)len) >= usb_data_buffer_size) {
+    usb_data_buffer_size = usb_data_buffer_position + len;
+    usb_data_buffer = (uint8_t *)realloc(usb_data_buffer, usb_data_buffer_size);
+  }
 
   memcpy(usb_data_buffer + usb_data_buffer_position, d, len);
   usb_data_buffer_position += len;
