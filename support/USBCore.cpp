@@ -526,8 +526,8 @@ int usbStart(void) {
                127, usb_worker_thread, &usbPhy);
 
   /* Enable the IRQ and mux as GPIO with slow slew rate */
-  writel(0x000B0104, PORTB_PCR1);
-  writel(0x000B0104, PORTB_PCR2);
+  writel(0x000A0104, PORTB_PCR1);
+  writel(0x00000104, PORTB_PCR2);
 
   /* Enable the PORTB IRQ, with the highest possible priority.*/
   {
