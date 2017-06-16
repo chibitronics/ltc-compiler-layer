@@ -192,8 +192,8 @@ r
 # Arduino time management
 P | millis | unsigned long | void
 P | micros | unsigned long | void
-P | delay | void | unsigned long msecs
-P | delayMicroseconds | void | unsigned int usecs
+P | delay | void | unsigned long msecs | delay_c
+P | delayMicroseconds | void | unsigned int usecs | delayMicroseconds_c
 
 
 # Arduino math
