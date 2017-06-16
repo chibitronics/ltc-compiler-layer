@@ -20,44 +20,16 @@ int pitch_octave(byte pitch) {
 
 void noteOn(byte channel, byte pitch, byte velocity) {
   tone(BUZZ_PIN, pitchFrequency[pitch]);
-
-  /*
-  Serial.print("Note On: ");
-  Serial.print(pitch_name(pitch));
-  Serial.print(pitch_octave(pitch));
-  Serial.print(", channel=");
-  Serial.print(channel);
-  Serial.print(", velocity=");
-  Serial.println(velocity);
-  */
 }
 
 void noteOff(byte channel, byte pitch, byte velocity) {
   noTone(BUZZ_PIN);
-  /*
-  Serial.print("Note Off: ");
-  Serial.print(pitch_name(pitch));
-  Serial.print(pitch_octave(pitch));
-  Serial.print(", channel=");
-  Serial.print(channel);
-  Serial.print(", velocity=");
-  Serial.println(velocity);
-  */
 }
 
 void controlChange(byte channel, byte control, byte value) {
-  /*
-  Serial.print("Control change: control=");
-  Serial.print(control);
-  Serial.print(", value=");
-  Serial.print(value);
-  Serial.print(", channel=");
-  Serial.println(channel);
-  */
 }
 
 void setup() {
-  //Serial.begin(115200);
 }
 
 void loop() {
@@ -89,18 +61,6 @@ void loop() {
         rx.byte3         //value
       );
       break;
-      
-    /*
-    default:
-      Serial.print("Unhandled MIDI message: ");
-      Serial.print(rx.header, HEX);
-      Serial.print("-");
-      Serial.print(rx.byte1, HEX);
-      Serial.print("-");
-      Serial.print(rx.byte2, HEX);
-      Serial.print("-");
-      Serial.println(rx.byte3, HEX);
-    */
   }
 }
 
