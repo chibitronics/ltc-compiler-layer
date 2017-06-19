@@ -9,6 +9,8 @@ It also provides a Makefile, and several example projects.
 Finally, it includes a Dockerfile image that sets up an Apache server that
 runs a Codebender-compatible API capable of servicing requests.
 
+[![Build Status](https://travis-ci.org/chibitronics/ltc-compiler-layer.svg?branch=master)](https://travis-ci.org/chibitronics/ltc-compiler-layer)
+
 Directory Structure
 -------------------
 
