@@ -6,6 +6,27 @@
 #define THREAD_MEMORY 64
 #define THREAD_PRIORITY 20
 
+void thread0_master(void *config);
+void thread1_master(void *config);
+void thread2_master(void *config);
+void thread3_master(void *config);
+void thread4_master(void *config);
+void thread5_master(void *config);
+
+void setup0(void);
+void setup1(void);
+void setup2(void);
+void setup3(void);
+void setup4(void);
+void setup5(void);
+
+void loop0(void);
+void loop1(void);
+void loop2(void);
+void loop3(void);
+void loop4(void);
+void loop5(void);
+
 void setup(void) {
   createThreadFromHeap(THD_WORKING_AREA_SIZE(THREAD_MEMORY), THREAD_PRIORITY,
                        thread0_master, NULL);
