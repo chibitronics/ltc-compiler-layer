@@ -84,7 +84,7 @@ static void grainuum_state_clear_tx(struct GrainuumState *state, int result)
   struct GrainuumUSB *usb = state->usb;
 
   /* If a thread is blocking, wake it up with a failure */
-  if (usb->cfg->sendDataFinished)
+  if (usb->cfg->sendDataFinished && state->packet_queued)
     usb->cfg->sendDataFinished(usb, result);
   state->data_out_left = 0;
   state->data_out_max = 0;
@@ -210,6 +210,18 @@ static int grainuum_state_send_data(struct GrainuumState *state,
   state->data_out = data;
 
   return 0;
+}
+
+void grainuumDropData(struct GrainuumUSB *usb)
+{
+  usb->state.packet_queued = 0;
+  usb->state.data_out = 0;
+  grainuumWriteQueue(usb, 0, NULL, 0);
+}
+
+int grainuumDataQueued(struct GrainuumUSB *usb)
+{
+  return (usb->state.data_out || usb->state.packet_queued);
 }
 
 int grainuumSendData(struct GrainuumUSB *usb, int epnum,

@@ -955,6 +955,10 @@ extern "C" {
       asm("svc #89");
     }
     __attribute__((naked))
+    int digitalRead_c(int pin) {
+      asm("svc #90");
+    }
+    __attribute__((naked))
     int digitalRead(int pin) {
       asm("svc #90");
     }
@@ -987,8 +991,16 @@ extern "C" {
       asm("svc #105");
     }
     __attribute__((naked))
+    void delay_c(unsigned long msecs) {
+      asm("svc #106");
+    }
+    __attribute__((naked))
     void delay(unsigned long msecs) {
       asm("svc #106");
+    }
+    __attribute__((naked))
+    void delayMicroseconds_c(unsigned int usecs) {
+      asm("svc #107");
     }
     __attribute__((naked))
     void delayMicroseconds(unsigned int usecs) {

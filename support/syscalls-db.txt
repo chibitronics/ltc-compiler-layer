@@ -169,7 +169,7 @@ c | ledShow
 # Arduino IO
 P | pinMode | void | int pin, enum pin_mode mode
 P | digitalWrite | void | int pin, int value
-P | digitalRead | int | int pin
+P | digitalRead | int | int pin | digitalRead_c
 P | analogWrite | void | int pin, int value
 P | analogReference | void | enum analog_reference_type type
 P | analogRead | int | int pin
@@ -192,8 +192,8 @@ r
 # Arduino time management
 P | millis | unsigned long | void
 P | micros | unsigned long | void
-P | delay | void | unsigned long msecs
-P | delayMicroseconds | void | unsigned int usecs
+P | delay | void | unsigned long msecs | delay_c
+P | delayMicroseconds | void | unsigned int usecs | delayMicroseconds_c
 
 
 # Arduino math

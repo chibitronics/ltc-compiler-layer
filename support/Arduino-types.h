@@ -26,10 +26,10 @@ enum analog_reference_type {
 
 enum irq_mode {
   LOW = 0,
-  CHANGE = 1,
-  RISING = 2,
-  FALLING = 3,
-  HIGH = 4,
+  HIGH = 1,
+  CHANGE = 2,
+  RISING = 3,
+  FALLING = 4,
 };
 
 enum pin_mode {

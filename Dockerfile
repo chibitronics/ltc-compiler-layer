@@ -1,5 +1,6 @@
 FROM php:7.1-apache
-#FROM armhf/php:7.1-apache # arch=armhf
+#FROM php:7.1-apache # arch=amd64
+#FROM arm32v7/php:7.1-apache # arch=armhf
 
 MAINTAINER Sean Cross <xobs@kosagi.com>
 

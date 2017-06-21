@@ -50,8 +50,24 @@
 #define GRAINUUM_EXTRA
 #endif /* GRAINUUM_EXTRA */
 
+#define GET_STATUS 0
+#define CLEAR_FEATURE 1
+#define SET_FEATURE 3
 #define SET_ADDRESS 5
+#define GET_DESCRIPTOR 6
+#define SET_DESCRIPTOR 7
+#define GET_CONFIGURATION 8
 #define SET_CONFIGURATION 9
+#define GET_INTERFACE 10
+#define SET_INTERFACE 11
+#define SYNC_FRAME 12
+
+#define GET_REPORT 1
+#define GET_IDLE 2
+#define GET_PROTOCOL 3
+#define SET_REPORT 9
+#define SET_IDLE 10
+#define SET_PROTOCOL 11
 
 enum usb_pids {
   USB_PID_RESERVED = 0xf0,
@@ -251,8 +267,12 @@ struct {                                                    \
   uint8_t  head;                                            \
   uint8_t  tail;                                            \
   uint8_t  padding;                                         \
-  uint8_t  buffer[(sz) * GRAINUUM_BUFFER_ELEMENT_SIZE];     \
-} name; uint8_t * name ## _head_ptr;
+  union {                                                   \
+    uint8_t  buffer[(sz) * GRAINUUM_BUFFER_ELEMENT_SIZE];   \
+    uint8_t  elements[sz][GRAINUUM_BUFFER_ELEMENT_SIZE];    \
+  };                                                        \
+} name __attribute__((aligned(4)));                         \
+uint8_t * name ## _head_ptr;
 #define GRAINUUM_BUFFER_INIT(name)                          \
   do {                                                      \
     (name).head = 0;                                        \
@@ -445,6 +465,28 @@ int grainuumInitialized(struct GrainuumUSB *usb);
  * @api
  */
 int grainuumSendData(struct GrainuumUSB *usb, int epnum, const void *data, int size);
+
+/**
+ * @brief   Clears the send buffer, if not empty.
+ * @note    If data has already been queued for the PHY, then
+ *          this will not prevent it from being sent.
+ *          This function is intended to be used to prevent
+ *          grainuumSendData() from returning -EAGAIN.
+ * @param[in] usb     pointer to the @p GrainuumUSB object.
+ * @api
+ */
+void grainuumDropData(struct GrainuumUSB *usb);
+
+/**
+ * @brief   Determines if data is already queued.
+ * @note    If data has been queued, then this will return
+ *          nonzero.  If this returns zero, then you can
+ *          trust grainuumSendData() will succeed.
+ * @param[in] usb     pointer to the @p GrainuumUSB object.
+ * @return            Nonzero if data is already queued.
+ * @api
+ */
+int grainuumDataQueued(struct GrainuumUSB *usb);
 
 /**
  * @brief   Process one received packet through the Grainuum state machine.
