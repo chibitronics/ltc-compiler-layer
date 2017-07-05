@@ -955,6 +955,10 @@ extern "C" {
       asm("svc #89");
     }
     __attribute__((naked))
+    int digitalRead_c(int pin) {
+      asm("svc #90");
+    }
+    __attribute__((naked))
     int digitalRead(int pin) {
       asm("svc #90");
     }

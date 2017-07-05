@@ -58,7 +58,6 @@ void pinMode(int pin, enum pin_mode mode);
 
 /* Digital IO */
 void digitalWrite(int pin, int value);
-int digitalRead(int pin);
 
 /* Analog IO */
 void analogWrite(int pin, int value);
@@ -109,6 +108,9 @@ long randomSeed(unsigned long seed);
 /* Time functions that get patched in C code */
 void delay(unsigned long msecs);
 void delayMicroseconds(unsigned int usecs);
+
+/* Digital IO (that gets patched) */
+int digitalRead(int pin);
 
 /* Undef this, as there's no difference between the types of memory */
 #define PROGMEM
