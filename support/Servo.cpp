@@ -133,7 +133,7 @@ static int timerFastISR(void)
   // Clear the TCF bit, which lets the timer continue.
   writel(LPTMR_CSR_TCF | LPTMR_CSR_TIE | LPTMR_CSR_TEN, LPTMR0_CSR);
 
-  return 0;
+  return 1;
 }
 
 static void init_isr(void)
