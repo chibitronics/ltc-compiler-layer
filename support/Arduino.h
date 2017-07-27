@@ -64,6 +64,10 @@ void analogWrite(int pin, int value);
 void analogReference(enum analog_reference_type type);
 int analogRead(int pin);
 
+/* Interrupt handling */
+void attachInterrupt(int irq, void (*func)(void), enum irq_mode mode);
+void detachInterrupt(int irq);
+
 /* Tone production */
 void tone(int pin, unsigned int frequency, unsigned long duration
 #if !defined(ARDUINO_OS) && defined(__cplusplus)
@@ -114,10 +118,6 @@ int digitalRead(int pin);
 
 /* Undef this, as there's no difference between the types of memory */
 #define PROGMEM
-
-/* Interrupt handling */
-void attachInterrupt(int irq, void (*func)(void), enum irq_mode mode);
-void detachInterrupt(int irq);
 
 /* Simple communication protocols */
 void shiftOut(int dataPin, int clockPin, int bitOrder, uint8_t val);
