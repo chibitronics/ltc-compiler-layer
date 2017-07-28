@@ -102,9 +102,6 @@ void Adafruit_NeoPixel::updateType(neoPixelType t) {
   }
 }
 
-extern "C" {
-  extern void ledShow(uint32_t pin, void *pixels, uint32_t num_leds);
-};
 void Adafruit_NeoPixel::show(void) {
 
   if(!pixels) return;
