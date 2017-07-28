@@ -87,6 +87,13 @@ static uint8_t active_servo_count;
 /* Decrement this for each servo we hit.  When it reaches 0, reset the cycle. */
 static uint32_t ticks_remaining = SERVO_COMPLETE_TICKS;
 
+// Provide the world with a running counter of the number of ticks that have
+// fired. This can be used to synchronize long-running processes that might
+// otherwise cause synchronization issues, such as LEDs that lock out the system.
+// Bit 0 is set to "1" if the servo timer is active.  Bits 1-7 are the timer.
+// Therefore, this value is nonzero only when servo code is active.
+volatile uint8_t servoTickCount = 0;
+
 #define NO_CHANNEL 0xff
 
 /************ static functions common to all instances ***********************/
@@ -133,6 +140,11 @@ static int timerFastISR(void)
   // Clear the TCF bit, which lets the timer continue.
   writel(LPTMR_CSR_TCF | LPTMR_CSR_TIE | LPTMR_CSR_TEN, LPTMR0_CSR);
 
+  // Increase the tick count, letting external modules (i.e. LEDs) know that
+  // it's safe to lock out the system for a time.
+  if (servoTickCount)
+    servoTickCount += 2;
+
   return 1;
 }
 
@@ -141,6 +153,9 @@ static void init_isr(void)
   // Don't re-init if things are already running
   if (active_servo_count)
     return;
+
+  // Indicate that servos are now active.
+  servoTickCount = 1;
 
   enableTimer(1);
   attachFastInterrupt(LPTMR_IRQ, timerFastISR);
@@ -158,6 +173,9 @@ static void deinit_isr(void)
 
   writel(0, LPTMR0_CSR);
   detachFastInterrupt(LPTMR_IRQ);
+
+  // Indicate that servos are now deactivated.
+  servoTickCount = 0;
 }
 
 /****************** end of static functions ******************************/
