@@ -192,8 +192,7 @@ void servo_move(void *arg)
 // To get around this, only display lights when the servo
 // pulse counter is incremented, meaning we have the most
 // time possible to draw LEDs.
-extern "C" void attachInterruptChibi(int irq, void (*func)(void), enum irq_mode mode);
-volatile int pulse_count;
+static int pulse_count;
 static void timerISR(void) {
     pulse_count++;
 }
@@ -270,7 +269,6 @@ void loop()
     RgbColor blended;
     uint8_t fadevalue;
     int i;
-    int last_pulse_count = pulse_count;
 
     for (i = 0; i < pixelCount; i++)
     {
@@ -300,10 +298,6 @@ void loop()
             config[i].state = 100;
     }
 
-    // Wait for the servos to move before updating the lights.
-    while (pulse_count == last_pulse_count)
-        ;
-    last_pulse_count = pulse_count;
     strip.show();
 
     delay(50);
