@@ -145,7 +145,7 @@ static int timerFastISR(void)
   if (servoTickCount)
     servoTickCount += 2;
 
-  return 1;
+  return 0;
 }
 
 static void init_isr(void)
