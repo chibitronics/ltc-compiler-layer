@@ -104,6 +104,9 @@ const char * getGitVersion(void);
 
 long randomSeed(unsigned long seed);
 
+/* Our function to drive WS2812b LEDs */
+void ledShow(uint32_t pin, void *pixels, uint32_t num_leds);
+
 #ifdef __cplusplus
 };
 #endif
