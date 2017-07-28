@@ -33,6 +33,7 @@
   -------------------------------------------------------------------------*/
 
 #include "Adafruit_NeoPixel.h"
+#include "ChibiOS.h"
 
 // Constructor when length, pin and type are known at compile-time:
 Adafruit_NeoPixel::Adafruit_NeoPixel(uint16_t n, uint8_t p, neoPixelType t) :
@@ -103,6 +104,7 @@ void Adafruit_NeoPixel::updateType(neoPixelType t) {
 }
 
 void Adafruit_NeoPixel::show(void) {
+  extern volatile uint8_t servoTickCount;
 
   if(!pixels) return;
 
@@ -116,6 +118,15 @@ void Adafruit_NeoPixel::show(void) {
   // endTime is a private member (rather than global var) so that mutliple
   // instances on different pins can be quickly issued in succession (each
   // instance doesn't delay the next).
+
+  // If the lptmr is running, wait for it to fire before updating LEDs.
+  // Otherwise, there will be glitches in the tone() or in the servo
+  // movement that could potentially be very bad.
+  if (servoTickCount) {
+    uint8_t last_tick_count = servoTickCount;
+    while (last_tick_count == servoTickCount)
+      yieldThread();
+  }
 
   ledShow(pin, (void *)pixels, numLEDs);
 
