@@ -125,7 +125,7 @@ void Adafruit_NeoPixel::show(void) {
   if (servoTickCount) {
     uint8_t last_tick_count = servoTickCount;
     while (last_tick_count == servoTickCount)
-      delay(1);
+      asm("wfi");
   }
 
   ledShow(pin, (void *)pixels, numLEDs);
