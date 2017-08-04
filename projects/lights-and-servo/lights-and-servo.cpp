@@ -200,7 +200,6 @@ static void timerISR(void) {
 void setup()
 {
     int i;
-    attachInterrupt(LPTMR_IRQ, timerISR, FALLING);
 
     strip.begin();
     strip.show();
