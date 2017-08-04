@@ -163,44 +163,9 @@ RgbColor rgb_b;
 int step = 0;
 int rate = 3;
 
-void servo_move(void *arg)
-{
-    (void)arg;
-    int pos;
-    while (1)
-    {
-        for (pos = 30; pos <= 62; pos += 1)
-        { // goes from 0 degrees to 180 degrees
-            // in steps of 1 degree
-            myservo.write(pos); // tell servo to go to position in variable 'pos'
-            delay(5);           // waits 15ms for the servo to reach the position
-        }
-        for (pos = 62; pos >= 30; pos -= 1)
-        {                       // goes from 180 degrees to 0 degrees
-            myservo.write(pos); // tell servo to go to position in variable 'pos'
-            delay(60);          // waits 15ms for the servo to reach the position
-        }
-    }
-}
-
-// This bit of magic prevents the skipping from happening.
-// Basically, the whole system is locked out when displaying
-// the LEDs.
-// Because of this, we run the risk of having the servo pulse
-// happen when the system is locked out.  If this happens, the
-// servo will "jump" to an undesirable position.
-// To get around this, only display lights when the servo
-// pulse counter is incremented, meaning we have the most
-// time possible to draw LEDs.
-static int pulse_count;
-static void timerISR(void) {
-    pulse_count++;
-}
-
 void setup()
 {
     int i;
-    attachInterrupt(LPTMR_IRQ, timerISR, FALLING);
 
     strip.begin();
     strip.show();
@@ -259,9 +224,6 @@ void setup()
     strip.show();
 
     myservo.attach(servo_pin); // attaches the servo on pin 0 to the servo object
-
-    // start the motor working on a separate thread
-    createThreadFromHeap(THD_WORKING_AREA_SIZE(32), 20, servo_move, NULL);
 }
 
 void loop()
