@@ -5,27 +5,39 @@
 
 #include "wave-table.h"
 
-// Define this to do some more math when generating a sample.
-#define USE_INTERPOLATION
+// Enable interpolation to make the output smoother.
+// Set to 0 to disable interpolation.
+// Note that some instruments don't support interpolation.
+#define INTERPOLATION_ENABLED 1
+
+// Sets the maximum value of the phase accumulator, which is
+// used to skip through the sample array.
+#define PHASEACC_MAX 16384L
+
+// An ltc voice 
+struct ltc_voice {
+  // The current note's frequency.
+  uint32_t frequency;
+
+  // A pointer to the currently-selected instrument.
+  const struct ltc_instrument *instrument;
+
+  // Keeps track of the phase in the instrument at the
+  // given frequency.
+  uint32_t phase_accumulator;
+};
 
 static int32_t next_sample;
 static volatile uint8_t sample_queued;
 
-// phase accumulator; this holds the current position in the sine wave of our sample
-// if you want to generate more than one note, you'll need a phase accumulator for
-// each note
-
-// the desired harmonics - normalised so that the proportion required is scaled from
-// 0 = minimum to 32767 = maximum
-//
-// Note that for perfect verisimiltude it would be necessary also to define the phase
-// relationships between the harmonics - but it turns out that the human ear is not
-// terribly good at discriminating phase within a waveform, which is why people put
-// up with mpeg-type compressed audio.
-
-// definitions
-
-#define SAMPLERATE 14000 /* Measured period of i2c0_stable_timer */
+// The system is running off of a 32.768 kHz crystal going through
+// a 1464x FLL multiplier, giving a system frequency of
+// 47.972352 MHz.
+// We set the PWM counter to 258, which gives a PWM period of 185.939 kHz.
+// Happily, 185.939 is evenly divisible by 13, giving us an actual sample
+// rate of 14303 kHz, assuming we delay 13 times.
+#define PWM_DELAY_LOOPS 13
+#define SAMPLE_RATE 14303
 
 int irq_counter = 0;
 int main_loop_counter = 0;
@@ -38,10 +50,16 @@ static int pwm0_stable_timer(void)
   irq_counter++;
 
   static int loops = 0;
-  if (loops++ >= 12) {
+  if (loops++ > PWM_DELAY_LOOPS) {
+    int32_t scaled_sample = next_sample + 130;
+    if (scaled_sample > 255)
+      scaled_sample = 255;
+    if (scaled_sample <= 0)
+      scaled_sample = 2;
+    writel(scaled_sample, TPM0_C1V);
+    writel(scaled_sample, TPM0_C0V);
+
     loops = 0;
-    writel(((next_sample + 127) & 0xff) + 2, TPM0_C1V);
-    writel(((next_sample + 127) & 0xff) + 2, TPM0_C0V);
     sample_queued = 0;
   }
 
@@ -83,74 +101,73 @@ static void prepare_pwm()
   attachFastInterrupt(PWM0_IRQ, pwm0_stable_timer);
 }
 
+static struct ltc_voice voice[2];
+
 void setup(void)
 {
+  voice[0].instrument = &sawtooth_instrument;
+  voice[1].instrument = &sawtooth_instrument;
+  
   prepare_pwm();
   enableInterrupt(PWM0_IRQ);
 }
 
-#define PHASEACC_MAX 256L
-
-uint32_t position;
-uint32_t distance;
-uint32_t v1, v2, v1_weight, v2_weight;
-
-int32_t get_sample(uint32_t *phaseacc, uint32_t freq)
+int32_t get_sample(struct ltc_voice *voice)
 {
-
   uint32_t period;
   int32_t output;
+  int32_t v1, v2, v1_weight, v2_weight;
 
   // calculate the phase accumulator distance
   // we divide the frequency by the sample rate to give us how much of a cycle occurs
   // between successive samples... assuming a frequency range of 20Hz-20kHz this would
   // be on the order of 0.0004 to 0.4, so we multiply it to give us a meaningful range
 
-  period = (freq * PHASEACC_MAX) / SAMPLERATE;
+  period = (voice->frequency * PHASEACC_MAX) / SAMPLE_RATE;
 
   // add this to the phase accumulator
-  *phaseacc += period;
+  voice->phase_accumulator += period;
 
   // wrap the phase accumulator around
-  *phaseacc &= (PHASEACC_MAX - 1);
+  voice->phase_accumulator &= (PHASEACC_MAX - 1);
 
   // and now get the sine output values for each of the allowed harmonics
   // to be elegant (and to improve the sound quality) we should really
   // interpolate between the current table entry and the next one by an amount
   // proportional to the position between the two entries, but this is just
   // an example so we won't bother for now
-  position = (*phaseacc * SINE_TABLE_SIZE) / PHASEACC_MAX;
+  uint32_t position = (voice->phase_accumulator * voice->instrument->length) / PHASEACC_MAX;
 
   // Interpolation happens because there are "gaps" that are between the phase
   // accumulator and the table.
-#ifdef USE_INTERPOLATION
-  // This is how far off we are.  I.e. the error.
-  distance = *phaseacc - ((position * PHASEACC_MAX) / SINE_TABLE_SIZE);
+  if (INTERPOLATION_ENABLED && (voice->instrument->flags & INSTRUMENT_CAN_INTERPOLATE))
+  {
+    // This is how far off we are.  I.e. the error.
+    int32_t distance = voice->phase_accumulator - ((position * PHASEACC_MAX) / voice->instrument->length);
 
-  // And this is how many "Gaps" there are total between two entries in the table
-  static uint32_t gap = PHASEACC_MAX / SINE_TABLE_SIZE;
+    // And this is how many "Gaps" there are total between two entries in the table
+    const int32_t gap = PHASEACC_MAX / voice->instrument->length;
 
-  v1 = sine_table[position];
-  position++;
-  if (position >= SINE_TABLE_SIZE)
-    position -= SINE_TABLE_SIZE;
-  v2 = sine_table[position];
+    v1 = voice->instrument->samples[position];
+    position++;
+    if (position >= voice->instrument->length)
+      position -= voice->instrument->length;
+    v2 = voice->instrument->samples[position];
 
-  v1_weight = gap - distance;
-  v2_weight = gap - v1_weight;
+    v1_weight = gap - distance;
+    v2_weight = gap - v1_weight;
 
-  output = ((v1 * v1_weight) + (v2 * v2_weight)) / gap;
-#else
-  output = sine_table[position];
-#endif
+    output = ((v1 * v1_weight) + (v2 * v2_weight)) / gap;
+  } else {
+    output = voice->instrument->samples[position];
+  }
 
   return output;
 }
 
 void loop(void)
 {
-  static uint32_t phaseacc_1 = 0;
-  static uint32_t phaseacc_2 = 0;
+
   static uint32_t freqs[] = {440, 495, 557, 660, 742};
   static uint32_t freq_num = 0;
   static uint32_t other_freq_num;
@@ -173,9 +190,12 @@ void loop(void)
     return;
   }
 
+
+  voice[0].frequency = freqs[freq_num];
+  voice[1].frequency = freqs[other_freq_num];
+  
   next_sample = 0;
-  //next_sample += get_sample(&phaseacc_1, 440);
-  next_sample += get_sample(&phaseacc_1, freqs[freq_num]) / 2;
-  next_sample += get_sample(&phaseacc_2, freqs[other_freq_num]) / 2;
+  next_sample += get_sample(&voice[0]);
+  next_sample += get_sample(&voice[1]);
   sample_queued = 1;
 }
