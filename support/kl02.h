@@ -59,7 +59,7 @@
 #define TPM0_CONF_CSOO			(1 << 17)
 #define TPM0_CONF_CSOT			(1 << 16)
 #define TPM0_CONF_GTBEEN		(1 << 9)
-#define TPM0_CONF_DBGMODE(x)		(((x) & 3) << 6)
+#define TPM0_CONF_DBGMODE		(3 << 6)
 #define TPM0_CONF_DOZEEN		(1 << 5)
 
 #if !defined(TPM1_BASE) /* Don't re-define these from another implementation */
