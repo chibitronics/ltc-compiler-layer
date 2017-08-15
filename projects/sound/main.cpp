@@ -14,22 +14,6 @@
 // used to skip through the sample array.
 #define PHASEACC_MAX 16384L
 
-// An ltc voice 
-struct ltc_voice {
-  // The current note's frequency.
-  uint32_t frequency;
-
-  // A pointer to the currently-selected instrument.
-  const struct ltc_instrument *instrument;
-
-  // Keeps track of the phase in the instrument at the
-  // given frequency.
-  uint32_t phase_accumulator;
-};
-
-static int32_t next_sample;
-static volatile uint8_t sample_queued;
-
 // The system is running off of a 32.768 kHz crystal going through
 // a 1464x FLL multiplier, giving a system frequency of
 // 47.972352 MHz.
@@ -39,17 +23,50 @@ static volatile uint8_t sample_queued;
 #define PWM_DELAY_LOOPS 13
 #define SAMPLE_RATE 14303
 
-int irq_counter = 0;
-int main_loop_counter = 0;
-int idle_loop_counter = 0;
+// The number of ticks that the sound system has gone through.
+// Overflows after about three days, at 14 kHz.
+volatile uint32_t global_tick_counter;
+
+// The next sample to be played, nominally between -128 and 127
+static int32_t next_sample;
+
+// Nonzero if a sample has been queued, zero if the sample buffer is empty.
+static volatile uint8_t sample_queued;
+
+// An ltc voice 
+struct ltc_voice {
+  // The current note's frequency.
+  uint32_t frequency;
+
+  // A pointer to the currently-selected instrument.
+  const struct ltc_instrument *instrument;
+
+  uint32_t attack_time;
+  uint32_t attack_level;
+  uint32_t delay_time;
+  uint32_t sustain_level;
+  uint32_t release_time;
+
+  // Keeps track of the phase in the instrument at the
+  // given frequency.
+  uint32_t phase_accumulator;
+
+  // The time when the note timer started.
+  uint32_t note_timer;
+
+  // What time the note was released
+  uint32_t release_timer;
+};
+
+static struct ltc_voice voice[2];
+
 static int pwm0_stable_timer(void)
 {
+  static int loops = 0;
+
   /* Reset the timer IRQ, to allow us to fire again next time */
   writel(TPM0_STATUS_CH1F | TPM0_STATUS_CH0F | TPM0_STATUS_TOF, TPM0_STATUS);
 
-  irq_counter++;
-
-  static int loops = 0;
   if (loops++ > PWM_DELAY_LOOPS) {
     int32_t scaled_sample = next_sample + 130;
     if (scaled_sample > 255)
@@ -61,6 +78,7 @@ static int pwm0_stable_timer(void)
 
     loops = 0;
     sample_queued = 0;
+    global_tick_counter++;
   }
 
   return 0;
@@ -101,15 +119,86 @@ static void prepare_pwm()
   attachFastInterrupt(PWM0_IRQ, pwm0_stable_timer);
 }
 
-static struct ltc_voice voice[2];
+static void setInstrument(struct ltc_voice *voice,
+                          const struct ltc_instrument *instrument,
+                          uint32_t attack_time, uint32_t attack_level,
+                          uint32_t delay_time,
+                          uint32_t sustain_level,
+                          uint32_t release_time)
+{
+  voice->instrument = instrument;
+  voice->attack_time = (attack_time * SAMPLE_RATE) / 1000;
+  voice->attack_level = attack_level;
+  voice->delay_time = (delay_time * SAMPLE_RATE) / 1000 + voice->attack_time;
+  voice->sustain_level = sustain_level;
+  voice->release_time = (release_time * SAMPLE_RATE) / 1000;
+}
 
 void setup(void)
 {
-  voice[0].instrument = &sawtooth_instrument;
-  voice[1].instrument = &sawtooth_instrument;
+  setInstrument(&voice[0],
+    &sawtooth_instrument,
+    450, 50,
+    250,
+    40,
+    50);
+
+  setInstrument(&voice[1],
+    &sine_instrument,
+    150, 50,
+    100,
+    40,
+    50);
   
   prepare_pwm();
   enableInterrupt(PWM0_IRQ);
+}
+
+// attack_time = 300
+// delay_time = 500
+// attack_level = 100
+// sustain_level = 70
+// note_timer = 300: pct = 100
+// note_timer = 500: pct = 70
+// note_timer = 400: pct = 85
+static int32_t processADSR(struct ltc_voice *voice, int32_t output)
+{
+  if (voice->note_timer < voice->attack_time) {
+    /* Attack phase */
+
+    /* Determine what percentage we'll adjust the note to */
+    int32_t pct = voice->note_timer * voice->attack_level / voice->attack_time;
+
+    /* Scale the note volume to the calcualted percentage */
+    output = output * pct / 100;
+  }
+  else if (voice->note_timer < voice->delay_time) {
+    /* Delay phase */
+
+    /* Determine what percentage we'll adjust the note to */
+    int32_t pct = voice->sustain_level + (voice->delay_time - voice->note_timer) * (voice->attack_level - voice->sustain_level) / (voice->delay_time - voice->attack_time);
+
+    /* Scale the note volume to the calcualted percentage */
+    output = output * pct / 100;
+  }
+  else if (voice->release_timer != 0) {
+    /* Release phase */
+
+    /* The note has expired */
+    if ((voice->note_timer - voice->release_timer) > voice->release_time)
+      return 0;
+
+    /* Determine what percentage we'll adjust the note to */
+    int32_t pct = (voice->note_timer - voice->release_timer) * voice->sustain_level / voice->release_time;
+
+    /* Scale the note volume to the calcualted percentage */
+    output = output * pct / 100;
+  }
+  else {
+    /* Sustain phase */
+    output = output * voice->sustain_level / 100;
+  }
+  return output;
 }
 
 int32_t get_sample(struct ltc_voice *voice)
@@ -162,38 +251,49 @@ int32_t get_sample(struct ltc_voice *voice)
     output = voice->instrument->samples[position];
   }
 
+  output = processADSR(voice, output);
+
+  voice->note_timer++;
   return output;
+}
+
+static void noteOn(struct ltc_voice *voice, uint32_t freq) {
+  voice->frequency = freq;
+  voice->note_timer = 0;
+  voice->release_timer = 0;
+}
+
+static void noteOff(struct ltc_voice *voice) {
+  voice->release_timer = voice->note_timer;
 }
 
 void loop(void)
 {
+  static uint16_t frequencies[] = {440, 466, 493, 523, 554, 587, 622, 659, 698, 739, 783, 830, 880};
 
-  static uint32_t freqs[] = {440, 495, 557, 660, 742};
-  static uint32_t freq_num = 0;
-  static uint32_t other_freq_num;
-
-  main_loop_counter++;
-  if (!(main_loop_counter & 0xffff)) {
-    freq_num++;
-    if (freq_num > 4)
-      freq_num = 0;
-  }
-
-  if (!(idle_loop_counter & 0xffff)) {
-    other_freq_num++;
-    if (other_freq_num > 4)
-      other_freq_num = 0;
-  }
-
+  // If a sample is still in the buffer, don't do anything.
   if (sample_queued) {
-    idle_loop_counter++;
     return;
   }
 
+  static int note_state;
+  static int current_note;
+  if ((global_tick_counter & 0x1fff) == 0) {
+    if (note_state) {
+      noteOff(&voice[0]);
+      noteOff(&voice[1]);
+      digitalWrite(2, 0);
+      current_note++;
+    }
+    else {
+      noteOn(&voice[0], frequencies[current_note % 12]);
+      noteOn(&voice[1], frequencies[(current_note + 5) % 12]);
+      digitalWrite(2, 1);
+      current_note++;
+    }
+    note_state = !note_state;
+  }
 
-  voice[0].frequency = freqs[freq_num];
-  voice[1].frequency = freqs[other_freq_num];
-  
   next_sample = 0;
   next_sample += get_sample(&voice[0]);
   next_sample += get_sample(&voice[1]);
