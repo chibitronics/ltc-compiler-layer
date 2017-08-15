@@ -33,7 +33,7 @@ int idle_loop_counter = 0;
 static int pwm0_stable_timer(void)
 {
   /* Reset the timer IRQ, to allow us to fire again next time */
-  writel(TPM0_STATUS_CH1F, TPM0_STATUS);
+  writel(TPM0_STATUS_CH1F | TPM0_STATUS_CH0F | TPM0_STATUS_TOF, TPM0_STATUS);
 
   irq_counter++;
 
@@ -41,29 +41,43 @@ static int pwm0_stable_timer(void)
   if (loops++ >= 12) {
     loops = 0;
     writel(((next_sample + 127) & 0xff) + 2, TPM0_C1V);
+    writel(((next_sample + 127) & 0xff) + 2, TPM0_C0V);
     sample_queued = 0;
   }
-
-//  writel((1 << 11), FGPIOB_PTOR);
 
   return 0;
 }
 
 static void prepare_pwm()
 {
+  // Write dummy values out, to configure PWM mux
   pinMode(0, OUTPUT);
   analogWrite(0, 63);
+  pinMode(1, OUTPUT);
+  analogWrite(1, 63);
 
-  writel(0, TPM0_SC); // Disable TPM0
+  // Disable TPM0, allowing us to configure it
+  writel(0, TPM0_SC);
+
+  // Also disable both channels, which are running from the
+  // calls to analogWrite() above
+  writel(0, TPM0_C0SC);
+  writel(0, TPM0_C1SC);
 
   // Configure the TPM to use the MCGFLLCLK (~32 MHz?)
   writel(readl(SIM_SOPT2) | (1 << 24), SIM_SOPT2);
+
   // We've picked pin 0, which is on TPM0_CH1
   writel(257, TPM0_MOD);
-  writel(100, TPM0_C1V);
-  writel(TPM0_C1SC_CHIE | TPM0_C1SC_MSB | TPM0_C1SC_ELSB, TPM0_C1SC);
-  writel(TPM0_SC_TOF | TPM0_SC_CMOD(1) | TPM0_SC_PS(0), TPM0_SC); // Enable TPM0
+  writel(0, TPM0_CNT);
 
+  writel(TPM0_C0SC_MSB | TPM0_C0SC_ELSB, TPM0_C0SC);
+  writel(TPM0_C1SC_MSB | TPM0_C1SC_ELSA, TPM0_C1SC);
+
+  writel(100, TPM0_C1V);
+  writel(100, TPM0_C0V);
+  writel(TPM0_CONF_TRGSEL(8) | TPM0_CONF_DBGMODE, TPM0_CONF);
+  writel(TPM0_SC_TOF | TPM0_SC_TOIE | TPM0_SC_CMOD(1) | TPM0_SC_PS(0), TPM0_SC); // Enable TPM0
 
   /* Enable the IRQ in the system-wide interrupt table */
   attachFastInterrupt(PWM0_IRQ, pwm0_stable_timer);
@@ -71,7 +85,6 @@ static void prepare_pwm()
 
 void setup(void)
 {
-  pinMode(1, OUTPUT); // Used for debugging
   prepare_pwm();
   enableInterrupt(PWM0_IRQ);
 }
