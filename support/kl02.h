@@ -150,6 +150,33 @@
 #define I2C1_FLT                0x40067006
 #define I2C1_RA                 0x40067007
 
+#define I2C_C1_WUEN  (1 << 1)
+#define I2C_C1_RSTA  (1 << 2)
+#define I2C_C1_TXAK  (1 << 3)
+#define I2C_C1_TX    (1 << 4)
+#define I2C_C1_MST   (1 << 5)
+#define I2C_C1_IICIE (1 << 6)
+#define I2C_C1_IICEN (1 << 7)
+
+#define I2C_S_RXAK   (1 << 0)
+#define I2C_S_IICIF  (1 << 1)
+#define I2C_S_SRW    (1 << 2)
+#define I2C_S_RAM    (1 << 3)
+#define I2C_S_ARBL   (1 << 4)
+#define I2C_S_BUSY   (1 << 5)
+#define I2C_S_IAAS   (1 << 6)
+#define I2C_S_TCF    (1 << 7)
+
+#define I2C_C2_RMEN  (1 << 3)
+#define I2C_C2_SBRC  (1 << 4)
+#define I2C_C2_HDRS  (1 << 5)
+#define I2C_C2_ADEXT (1 << 6)
+#define I2C_C2_GCAEN (1 << 7)
+
+#define I2C_FLT_STOPIE (1 << 5)
+#define I2C_FLT_STOPF  (1 << 6)
+#define I2C_FLT_SHEN   (1 << 7)
+
 #if !defined(UART0_BASE) /* Don't re-define these from another implementation */
 #define UART0_BASE              ((unsigned long)0x4006A000)
 #endif
