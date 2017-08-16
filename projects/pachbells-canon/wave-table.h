@@ -67,8 +67,7 @@ static const struct ltc_instrument triangle_instrument = {
 };
 
 static const int8_t square_table_samples[] = {
-    -128, -128, -128, -128, -128, -128, -128, -128, 
-127, 127, 127, 127, 127, 127, 127, 127, 
+    -128, 127, 
 };
 #define SQUARE_TABLE_SIZE (sizeof(square_table_samples))
 static const struct ltc_instrument square_instrument = {
