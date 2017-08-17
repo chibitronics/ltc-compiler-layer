@@ -1,3 +1,8 @@
+/* Hook up a speaker or headphones to pins 0 and 1.
+ * Touch pin 4 for "Previous Song"
+ * Touch pin 5 for "Next Song"
+ */
+
 #include "Arduino.h"
 #include "ChibiOS.h"
 #include "kl02.h"
