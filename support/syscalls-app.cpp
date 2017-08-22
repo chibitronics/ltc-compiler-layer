@@ -717,10 +717,6 @@ extern "C" {
       asm("svc #86");
     }
     __attribute__((naked))
-    void ledShow(void) {
-      asm("svc #87");
-    }
-    __attribute__((naked))
     void attachInterruptChibi(void) {
       asm("svc #94");
     }

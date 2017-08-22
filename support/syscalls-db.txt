@@ -162,8 +162,8 @@ c | malloc
 c | realloc
 
 
-# WS2812b (or whatever we have on the board)
-c | ledShow
+# Former WS2812b ledShow() (patched out due to hardware changes)
+r
 
 
 # Arduino IO
