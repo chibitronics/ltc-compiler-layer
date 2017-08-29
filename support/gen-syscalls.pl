@@ -102,7 +102,7 @@ sub generate_files {
 #        print $os_fh "extern uint32_t $sysname;\n";
 #        $seen_c_syscalls{$sysname} = 1;
 #      }
-      print $app_fh "    __attribute__((naked))\n";
+      print $app_fh "    __attribute__((naked,section(\".text\")))\n";
       print $app_fh "    void $name(void) {\n";
       print $app_fh "      asm(\"svc #$idx\");\n";
       print $app_fh "    }\n";
@@ -119,7 +119,7 @@ sub generate_files {
 
       $table[$idx] = $c_syscall;
 
-      print $app_fh "    __attribute__((naked))\n";
+      print $app_fh "    __attribute__((naked,section(\".text\")))\n";
       print $app_fh "    $rettype $name($args) {\n";
       print $app_fh "      asm(\"svc #$idx\");\n";
       print $app_fh "    }\n";
@@ -136,7 +136,7 @@ sub generate_files {
     $table[$idx] = $cxx_method;
 #    print $os_fh "extern uint32_t $name;\n";
 
-    print $app_fh "  __attribute__((naked))\n";
+    print $app_fh "  __attribute__((naked,section(\".text\")))\n";
     print $app_fh "  $rettype $name($args) {\n";
     print $app_fh "    asm(\"svc #$idx\");\n";
     print $app_fh "  }\n";
