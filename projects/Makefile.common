@@ -89,4 +89,6 @@ $(CLEAN):
 	$(QUIET) rm -f $(wildcard $(OBJ_DIR)/*.o)
 	$(QUIET) rm -f $(TARGET) $(PACKAGE).bin $(PACKAGE).symbol
 
+$(OBJ_DIR)/syscalls-app.o : CFLAGS += -fno-lto
+
 include $(wildcard $(OBJ_DIR)/*.d)
