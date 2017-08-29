@@ -3,7 +3,7 @@ use warnings;
 use strict;
 
 sub generate_files {
-  my ($syscalls, $os_fh, $app_fh) = @_;
+  my ($syscalls, $os_fh, $app_fh, $c_app_fh) = @_;
 
   my @c_syscalls;
   my @c_ext_syscalls;
@@ -92,39 +92,77 @@ sub generate_files {
   if (@c_syscalls) {
     my %seen_c_syscalls;
 
-    print $app_fh "extern \"C\" {\n";
+    print $c_app_fh ".syntax unified\n";
+    print $c_app_fh ".cpu cortex-m0plus\n";
+    print $c_app_fh ".fpu softvfp\n";
+    print $c_app_fh ".eabi_attribute 20, 1\n";
+    print $c_app_fh ".eabi_attribute 21, 1\n";
+    print $c_app_fh ".eabi_attribute 23, 3\n";
+    print $c_app_fh ".eabi_attribute 24, 1\n";
+    print $c_app_fh ".eabi_attribute 25, 1\n";
+    print $c_app_fh ".eabi_attribute 26, 1\n";
+    print $c_app_fh ".eabi_attribute 30, 4\n";
+    print $c_app_fh ".eabi_attribute 34, 0\n";
+    print $c_app_fh ".eabi_attribute 18, 4\n";
+    print $c_app_fh ".thumb\n";
+    print $c_app_fh ".syntax unified\n";
+    print $c_app_fh ".file   \"syscalls-app-c.S\"\n";
+    print $c_app_fh ".text\n";
+    print $c_app_fh "\n";
+    print $c_app_fh ".cfi_sections   .debug_frame\n";
+
     for my $c_syscall(@c_syscalls) {
       my ($idx, $code, $sysname, $name) = @$c_syscall;
 
       $table[$idx] = $c_syscall;
 
-#      if (!exists($seen_c_syscalls{$sysname})) {
-#        print $os_fh "extern uint32_t $sysname;\n";
-#        $seen_c_syscalls{$sysname} = 1;
-#      }
-      print $app_fh "    __attribute__((naked,section(\".text\")))\n";
-      print $app_fh "    void $name(void) {\n";
-      print $app_fh "      asm(\"svc #$idx\");\n";
-      print $app_fh "    }\n";
+      print $c_app_fh ".section	.text.$name,\"ax\",\%progbits\n";
+      print $c_app_fh ".align	1\n";
+      print $c_app_fh ".global	$name\n";
+      print $c_app_fh ".code	16\n";
+      print $c_app_fh ".thumb_func\n";
+      print $c_app_fh ".type	$name, %function\n";
+      print $c_app_fh "$name:\n";
+      print $c_app_fh ".cfi_startproc\n";
+      print $c_app_fh "@ Naked Function: prologue and epilogue provided by programmer.\n";
+      print $c_app_fh "@ args = 0, pretend = 0, frame = 0\n";
+      print $c_app_fh "@ frame_needed = 0, uses_anonymous_args = 0\n";
+      print $c_app_fh ".syntax divided\n";
+      print $c_app_fh "svc #$idx\n";
+      print $c_app_fh ".thumb\n";
+      print $c_app_fh ".syntax unified\n";
+      print $c_app_fh ".cfi_endproc\n";
+      print $c_app_fh ".size	$name, .-$name\n";
     }
-    print $app_fh "};\n";
   }
 
   if (@c_ext_syscalls) {
     my %seen_c_syscalls;
 
-    print $app_fh "extern \"C\" {\n";
     for my $c_syscall(@c_ext_syscalls) {
       my ($idx, $code, $sysname, $rettype, $args, $name) = @$c_syscall;
 
       $table[$idx] = $c_syscall;
 
-      print $app_fh "    __attribute__((naked,section(\".text\")))\n";
-      print $app_fh "    $rettype $name($args) {\n";
-      print $app_fh "      asm(\"svc #$idx\");\n";
-      print $app_fh "    }\n";
+      print $c_app_fh "/* $rettype $name($args) { */\n";
+      print $c_app_fh ".section	.text.$name,\"ax\",\%progbits\n";
+      print $c_app_fh ".align	1\n";
+      print $c_app_fh ".global	$name\n";
+      print $c_app_fh ".code	16\n";
+      print $c_app_fh ".thumb_func\n";
+      print $c_app_fh ".type	$name, %function\n";
+      print $c_app_fh "$name:\n";
+      print $c_app_fh ".cfi_startproc\n";
+      print $c_app_fh "@ Naked Function: prologue and epilogue provided by programmer.\n";
+      print $c_app_fh "@ args = 0, pretend = 0, frame = 0\n";
+      print $c_app_fh "@ frame_needed = 0, uses_anonymous_args = 0\n";
+      print $c_app_fh ".syntax divided\n";
+      print $c_app_fh "svc #$idx\n";
+      print $c_app_fh ".thumb\n";
+      print $c_app_fh ".syntax unified\n";
+      print $c_app_fh ".cfi_endproc\n";
+      print $c_app_fh ".size	$name, .-$name\n";
     }
-    print $app_fh "};\n";
   }
 
   for my $cxx_method(@cxx_methods) {
@@ -134,9 +172,8 @@ sub generate_files {
       $names = "";
     }
     $table[$idx] = $cxx_method;
-#    print $os_fh "extern uint32_t $name;\n";
 
-    print $app_fh "  __attribute__((naked,section(\".text\")))\n";
+    print $app_fh "  __attribute__((naked))\n";
     print $app_fh "  $rettype $name($args) {\n";
     print $app_fh "    asm(\"svc #$idx\");\n";
     print $app_fh "  }\n";
@@ -175,6 +212,7 @@ my @syscalls;
 
 open(my $os_syscalls_fh, '>', "syscalls-os.s") or die("Couldn't open syscalls-os.s: $!");
 open(my $app_syscalls_fh, '>', "syscalls-app.cpp") or die("Couldn't open syscalls-app.cpp: $!");
+open(my $c_app_syscalls_fh, '>', "syscalls-c-app.S") or die("Couldn't open syscalls-c-app.S: $!");
 
 # Read in the syscalls DB
 open(my $input_fh, '<', "syscalls-db.txt")
@@ -188,4 +226,4 @@ while (my $line = <$input_fh>) {
   push(@syscalls, \@fields);
 }
 
-generate_files(\@syscalls, $os_syscalls_fh, $app_syscalls_fh);
+generate_files(\@syscalls, $os_syscalls_fh, $app_syscalls_fh, $c_app_syscalls_fh);
