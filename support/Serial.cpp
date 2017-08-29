@@ -4,9 +4,6 @@
 
 HardwareSerial Serial;
 
-HardwareSerial::HardwareSerial() {
-}
-
 void HardwareSerial::begin(unsigned long speed, uint8_t flags) {
 
   (void)flags;

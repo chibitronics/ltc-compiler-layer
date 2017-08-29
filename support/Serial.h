@@ -13,7 +13,6 @@ class HardwareSerial : public Stream
     uint8_t have_next_byte;
 
   public:
-    inline HardwareSerial();
     void begin(unsigned long baud) { begin(baud, 0); }
     void begin(unsigned long, uint8_t);
     void end();
