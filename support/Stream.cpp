@@ -31,6 +31,8 @@
 int Stream::timedRead()
 {
   int c;
+  if (!_timeout)
+    setTimeout(PARSE_TIMEOUT);
   _startMillis = millis();
   do {
     c = read();
@@ -43,7 +45,9 @@ int Stream::timedRead()
 int Stream::timedPeek()
 {
   int c;
-  _startMillis = millis();
+  if (!_timeout)
+    setTimeout(PARSE_TIMEOUT);
+_startMillis = millis();
   do {
     c = peek();
     if (c >= 0) return c;
