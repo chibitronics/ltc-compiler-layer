@@ -54,3 +54,17 @@ size_t HardwareSerial::write(uint8_t c) {
 
   return serialPutChar(c);
 }
+
+// In order to prune out the HardwareSerial object when Serial
+// isn't used, we have a macro inside Serial.h that translates
+// all instances of "Serial" to (*(serialWrapper())).  That way,
+// if "Serial" is not used at all, the HardwareSerial object
+// will get optimized away.
+// This is to work around a C++ feature that says global objects
+// are always created.  We tried to use LTO to optimize away
+// the object, but couldn't get it to work with GCC 4.8 as used
+// by the Arduino project.
+HardwareSerial *serialWrapper(void) {
+  static HardwareSerial serial;
+  return &serial;
+}
