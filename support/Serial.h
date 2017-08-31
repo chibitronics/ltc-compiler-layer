@@ -1,6 +1,5 @@
 #ifndef __HARDWARE_SERIAL_H__
 #define __HARDWARE_SERIAL_H__
-//#include <stdint.h>
 
 #include "Arduino-types.h"
 #include "Stream.h"
@@ -29,7 +28,13 @@ class HardwareSerial : public Stream
     using Print::write; // pull in write(str) and write(buf, size) from Print
     operator bool() { return true; }
 };
-extern HardwareSerial Serial;
+
+// Replace all instances of the global "Serial" object with a function call
+// that returns a singleton.  That way, if "Serial" is not used at all, the
+// HardwareSerial object will get optimized away.
+HardwareSerial *serialWrapper(void);
+#define Serial (*(serialWrapper()))
+
 #endif /* defined(__cplusplus) */
 
 #endif /* __HARDWARE_SERIAL_H__ */
