@@ -1,36 +1,20 @@
+/*
+ * Chibi Palette template
+ *
+ * This program is the master template program used for the Chibi Chip Palette,
+ * used to provide artists with an easy-to-use effects "palette".
+ *
+ * There are up to six effects, each if which is defined by a 5-byte struct.
+ * In order to allow Javascript to simply search through the binary to assign
+ * palette effects, we pre-populate this struct with magic numbers.
+ */
 #include "Arduino.h"
 #include "ChibiOS.h"
-void setup() {}
-#if 0
-#define PIN0_EFFECT FADE
-#define PIN0_SPEED 5
-#define PIN0_RANDOMNESS 0
-#define PIN0_BRIGHTNESS 100
 
-#define PIN1_EFFECT FADE
-#define PIN1_SPEED 4
-#define PIN1_RANDOMNESS 0
-#define PIN1_BRIGHTNESS 100
-
-#define PIN2_EFFECT FADE
-#define PIN2_SPEED 3
-#define PIN2_RANDOMNESS 0
-#define PIN2_BRIGHTNESS 100
-
-#define PIN3_EFFECT HEARTBEAT
-#define PIN3_SPEED 8
-#define PIN3_RANDOMNESS 0
-#define PIN3_BRIGHTNESS 100
-
-#define PIN4_EFFECT HEARTBEAT
-#define PIN4_SPEED 5
-#define PIN4_RANDOMNESS 0
-#define PIN4_BRIGHTNESS 100
-
-#define PIN5_EFFECT TWINKLE
-#define PIN5_SPEED 5
-#define PIN5_RANDOMNESS 0
-#define PIN5_BRIGHTNESS 100
+#define PIN_MAGIC_NUMBER         \
+  {                              \
+    0x95, 0x32, 0xf3, 0x99, 0x2d \
+  }
 
 // Love to Code
 // Effects Template
@@ -60,55 +44,17 @@ struct effects_thread_arg
 };
 
 static const effects_thread_arg pin[6] = {
-    {
-        0,
-        PIN0_EFFECT,
-        PIN0_SPEED,
-        PIN0_RANDOMNESS,
-        PIN0_BRIGHTNESS,
-    },
-    {
-        1,
-        PIN1_EFFECT,
-        PIN1_SPEED,
-        PIN1_RANDOMNESS,
-        PIN1_BRIGHTNESS,
-    },
-    {
-        2,
-        PIN2_EFFECT,
-        PIN2_SPEED,
-        PIN2_RANDOMNESS,
-        PIN2_BRIGHTNESS,
-    },
-    {
-        3,
-        PIN3_EFFECT,
-        PIN3_SPEED,
-        PIN3_RANDOMNESS,
-        PIN3_BRIGHTNESS,
-    },
-    {
-        4,
-        PIN4_EFFECT,
-        PIN4_SPEED,
-        PIN4_RANDOMNESS,
-        PIN4_BRIGHTNESS,
-    },
-    {
-        5,
-        PIN5_EFFECT,
-        PIN5_SPEED,
-        PIN5_RANDOMNESS,
-        PIN5_BRIGHTNESS,
-    },
+    PIN_MAGIC_NUMBER,
+    PIN_MAGIC_NUMBER,
+    PIN_MAGIC_NUMBER,
+    PIN_MAGIC_NUMBER,
+    PIN_MAGIC_NUMBER,
+    PIN_MAGIC_NUMBER,
 };
 
 /////////////
 ///////////// implementation below
 /////////////
-
-static thread_t *light_threads[6];
 
 // Stack working area for each thread.
 static stkalign_t thread_areas[6][96 / sizeof(stkalign_t)];
@@ -218,14 +164,14 @@ void setup(void)
     }
 
     delay(random(1, pin[i].randomness * 5) + 1);
-    light_threads[i] = createThread(thread_areas[i], sizeof(thread_areas[i]),
-                                    20,
-                                    effects_thread,
-                                    (void *)&pin[i]);
+    createThread(thread_areas[i], sizeof(thread_areas[i]),
+                 20,
+                 effects_thread,
+                 (void *)&pin[i]);
   }
 }
-#endif
+
 void loop(void)
 {
-//  exitThread(0);
+  exitThread(0);
 }
