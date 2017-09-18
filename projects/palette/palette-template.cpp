@@ -20,10 +20,11 @@
 // Effects Template
 enum effects
 {
-  CONSTANT,
-  FADE,
-  HEARTBEAT,
-  TWINKLE,
+  CONSTANT = 0,
+  FADE = 1,
+  HEARTBEAT = 2,
+  TWINKLE = 3,
+  NO_EFFECT = 255,
 };
 
 struct effects_thread_arg
@@ -41,7 +42,7 @@ struct effects_thread_arg
 
   // Brightness from 0 to 100 (100 is brighter)
   int8_t brightness;
-};
+} __attribute__((packed));
 
 static const effects_thread_arg pin[6] = {
     PIN_MAGIC_NUMBER,
@@ -57,7 +58,20 @@ static const effects_thread_arg pin[6] = {
 /////////////
 
 // Stack working area for each thread.
-static stkalign_t thread_areas[6][96 / sizeof(stkalign_t)];
+static THD_WORKING_AREA(effects_area_0, 64);
+static THD_WORKING_AREA(effects_area_1, 64);
+static THD_WORKING_AREA(effects_area_2, 64);
+static THD_WORKING_AREA(effects_area_3, 64);
+static THD_WORKING_AREA(effects_area_4, 64);
+static THD_WORKING_AREA(effects_area_5, 64);
+static stkalign_t *thread_areas[6] = {
+	effects_area_0,
+	effects_area_1,
+	effects_area_2,
+	effects_area_3,
+	effects_area_4,
+	effects_area_5,
+};
 
 static int fade_to(int current, int target, int rate, int pin, int pause, int randomness, int brightness)
 {
@@ -89,12 +103,14 @@ static int fade_to(int current, int target, int rate, int pin, int pause, int ra
   return current;
 }
 
+__attribute__((used))
 static void blink_effect(struct effects_thread_arg *cfg)
 {
   fade_to(0, 255, cfg->speed, cfg->pin, 7, cfg->randomness, map(cfg->brightness, 0, 100, 0, 255));
   fade_to(255, 0, cfg->speed, cfg->pin, 7, cfg->randomness, map(cfg->brightness, 0, 100, 0, 255));
 }
 
+__attribute__((used))
 static void twinkle_effect(struct effects_thread_arg *cfg)
 {
   int current = 128;
@@ -104,6 +120,7 @@ static void twinkle_effect(struct effects_thread_arg *cfg)
   }
 }
 
+__attribute__((used))
 static void heartbeat_effect(struct effects_thread_arg *cfg)
 {
   int current = 0;
@@ -112,27 +129,21 @@ static void heartbeat_effect(struct effects_thread_arg *cfg)
 
   current = fade_to(current, 192, 2, cfg->pin, 1, cfg->randomness, map(cfg->brightness, 0, 100, 0, 255));
   current = fade_to(current, 4, 2, cfg->pin, 1, cfg->randomness, map(cfg->brightness, 0, 100, 0, 255));
-  delay(40); // fastest rate
-  delay((25 - cfg->speed) * 13 + 1);
-  //delay(180);
+  delay(40 /* fastest rate */ + ((25 - cfg->speed) * 13 + 1));
   current = fade_to(current, 255, 2, cfg->pin, 1, cfg->randomness, map(cfg->brightness, 0, 100, 0, 255));
   current = fade_to(current, 0, 2, cfg->pin, 1, cfg->randomness, map(cfg->brightness, 0, 100, 0, 255));
   digitalWrite(cfg->pin, 0);
-  delay(107); // fastest rate
-  delay((25 - cfg->speed) * 37 + 1);
-  //delay(420);
+  delay(107 /* fastest rate */ + ((25 - cfg->speed) * 37 + 1));
 }
 
-static void effects_thread(void *arg)
+static THD_FUNCTION(effects_thread, arg)
 {
   struct effects_thread_arg *cfg = (struct effects_thread_arg *)arg;
+
   while (1)
   {
     switch (cfg->effect)
     {
-    case CONSTANT:
-      exitThread(0);
-      return;
     case FADE:
       blink_effect(cfg);
       break;
@@ -142,6 +153,7 @@ static void effects_thread(void *arg)
     case TWINKLE:
       twinkle_effect(cfg);
       break;
+    case CONSTANT:
     default:
       exitThread(0);
       return;
@@ -164,7 +176,7 @@ void setup(void)
     }
 
     delay(random(1, pin[i].randomness * 5) + 1);
-    createThread(thread_areas[i], sizeof(thread_areas[i]),
+    createThread(thread_areas[i], sizeof(effects_area_0),
                  20,
                  effects_thread,
                  (void *)&pin[i]);
