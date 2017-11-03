@@ -36,7 +36,7 @@ RUN true \
  && mv /work/builder/boards.txt /opt/codebender/codebender-arduino-core-files/v167/hardware/chibitronics/hardware/esplanade/1.6.0/boards.txt \
  && mv /work/builder/programmers.txt /opt/codebender/codebender-arduino-core-files/v167/hardware/chibitronics/hardware/esplanade/1.6.0/programmers.txt \
  && mv /work/builder/app.php /var/www/html/index.php \
- && mv /work/builder/apache2-cors-rewrite /usr/local/bin \
+ && mv /work/builder/apache2-app-config /usr/local/bin \
  && mv /work/support/Arduino.h //opt/codebender/codebender-arduino-core-files/v167/hardware/chibitronics/hardware/esplanade/1.6.0/cores/chibitronics-arduino/ \
  && mv /work/support/Arduino-types.h /opt/codebender/codebender-arduino-core-files/v167/hardware/chibitronics/hardware/esplanade/1.6.0/cores/chibitronics-arduino/ \
  && mv /work/support/syscalls-app.cpp /opt/codebender/codebender-arduino-core-files/v167/hardware/chibitronics/hardware/esplanade/1.6.0/cores/chibitronics-arduino/ \
@@ -45,4 +45,4 @@ RUN true \
  && rm -rf /unpack \
  && true
 
- CMD ["apache2-cors-rewrite"]
+CMD ["apache2-app-config"]
