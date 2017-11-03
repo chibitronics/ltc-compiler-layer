@@ -1,18 +1,25 @@
-FROM php:7.1-apache
-#FROM php:7.1-apache # arch=amd64
-#FROM arm32v7/php:7.1-apache # arch=armhf
+FROM php:7.1.11-apache
 
-MAINTAINER Sean Cross <xobs@kosagi.com>
+LABEL maintainer="Sean Cross <xobs@kosagi.com>"
 
 COPY . /work
 
-ENV ARDUINO_URL=http://arduino.cc/download.php?f=/arduino-1.6.13-linux64.tar.xz ARDUINO_SHA256=492b28d72b347227346592ceb0373af55558aab67acda343a8a15cc11ade154a TOOLCHAIN_URL=http://arduino.cc/download.php?f=/gcc-arm-none-eabi-4.8.3-2014q1-linux64.tar.gz TOOLCHAIN_SHA256=d23f6626148396d6ec42a5b4d928955a703e0757829195fa71a939e5b86eecf6
-#ENV ARDUINO_URL=http://arduino.cc/download.php?f=/arduino-1.6.13-linuxarm.tar.xz ARDUINO_SHA256=36819d57f86d817605729a38f07702b187701e4415ab115dc659d5cc9c4691bc TOOLCHAIN_URL=https://github.com/PaulStoffregen/ARM_Toolchain_2014q1_Source/raw/master/pkg/gcc-arm-none-eabi-4_8-2014q1-20160201-linux.tar.bz2 TOOLCHAIN_SHA256=ebe96b34c4f434667cab0187b881ed585e7c7eb990fe6b69be3c81ec7e11e845 # arch=armhf
+# The suffix (x86_64, armv7l, etc.) should match machine type returned by "uname -m"
+ENV ARDUINO_URL_x86_64=http://arduino.cc/download.php?f=/arduino-1.6.13-linux64.tar.xz \
+    ARDUINO_SHA256_x86_64=492b28d72b347227346592ceb0373af55558aab67acda343a8a15cc11ade154a \
+    TOOLCHAIN_URL_x86_64=http://arduino.cc/download.php?f=/gcc-arm-none-eabi-4.8.3-2014q1-linux64.tar.gz \
+    TOOLCHAIN_SHA256_x86_64=d23f6626148396d6ec42a5b4d928955a703e0757829195fa71a939e5b86eecf6 \
+    ARDUINO_URL_armv7l=http://arduino.cc/download.php?f=/arduino-1.6.13-linuxarm.tar.xz \
+    ARDUINO_SHA256_armv7l=36819d57f86d817605729a38f07702b187701e4415ab115dc659d5cc9c4691bc \
+    TOOLCHAIN_URL_armv7l=https://github.com/PaulStoffregen/ARM_Toolchain_2014q1_Source/raw/master/pkg/gcc-arm-none-eabi-4_8-2014q1-20160201-linux.tar.bz2 \
+    TOOLCHAIN_SHA256_armv7l=ebe96b34c4f434667cab0187b881ed585e7c7eb990fe6b69be3c81ec7e11e845
 
 RUN true \
- && apt-get update \
- && apt-get install -y \
-        curl bzip2 unzip \
+ && export ARCH=$(uname -m) \
+ && export ARDUINO_URL=$(eval echo \$ARDUINO_URL_${ARCH}) \
+ && export ARDUINO_SHA256=$(eval echo \$ARDUINO_SHA256_${ARCH}) \
+ && export TOOLCHAIN_URL=$(eval echo \$TOOLCHAIN_URL_${ARCH}) \
+ && export TOOLCHAIN_SHA256=$(eval echo \$TOOLCHAIN_SHA256_${ARCH}) \
  && mkdir -p /opt/codebender/ /var/cache/filebkp \
  && curl -sSL -o /arduino.tar.xz "${ARDUINO_URL}" \
  && [ $(sha256sum /arduino.tar.xz | awk '{print $1}') = "${ARDUINO_SHA256}" ] \
@@ -36,7 +43,7 @@ RUN true \
  && mv /work/builder/boards.txt /opt/codebender/codebender-arduino-core-files/v167/hardware/chibitronics/hardware/esplanade/1.6.0/boards.txt \
  && mv /work/builder/programmers.txt /opt/codebender/codebender-arduino-core-files/v167/hardware/chibitronics/hardware/esplanade/1.6.0/programmers.txt \
  && mv /work/builder/app.php /var/www/html/index.php \
- && mv /work/builder/apache2-cors-rewrite /usr/local/bin \
+ && mv /work/builder/apache2-app-config /usr/local/bin \
  && mv /work/support/Arduino.h //opt/codebender/codebender-arduino-core-files/v167/hardware/chibitronics/hardware/esplanade/1.6.0/cores/chibitronics-arduino/ \
  && mv /work/support/Arduino-types.h /opt/codebender/codebender-arduino-core-files/v167/hardware/chibitronics/hardware/esplanade/1.6.0/cores/chibitronics-arduino/ \
  && mv /work/support/syscalls-app.cpp /opt/codebender/codebender-arduino-core-files/v167/hardware/chibitronics/hardware/esplanade/1.6.0/cores/chibitronics-arduino/ \
@@ -45,4 +52,4 @@ RUN true \
  && rm -rf /unpack \
  && true
 
- CMD ["apache2-cors-rewrite"]
+CMD ["apache2-app-config"]
