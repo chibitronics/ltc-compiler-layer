@@ -4,7 +4,7 @@
 cat > /etc/apache2/conf-enabled/rewrite-uri.conf <<EOF
 <Directory "/var/www/html">
         RewriteEngine On
-        RewriteBase "/var/www/htdocs"
+        RewriteBase "/var/www/html"
         RewriteCond %{REQUEST_URI} !^/index.php$
         RewriteRule ^(.+)$ /index.php?$1 [NC,L]
 </Directory>
@@ -12,7 +12,7 @@ EOF
 
 # Add configuration variables for compile timeouts
 # Run with "-e COMPILE_TIMEOUT=8 -e COMPILE_TIMEOUT_COLD=23"
-settingsfile=/var/www/htdocs/settings.php
+settingsfile=/var/www/html/settings.php
 echo "<?php" > ${settingsfile}
 
 if [ ! -z "${COMPILE_TIMEOUT}" ]
