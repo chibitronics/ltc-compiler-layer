@@ -1002,6 +1002,49 @@ function makeRequest()
     return $data;
 }
 
+function unit_to_mult($unit) {
+	if ($unit == "kB")
+		return 1;
+	else if ($unit == "MB")
+		return 1024;
+	else if ($unit == "GB")
+		return 1024 * 1024;
+	else
+		return 1/1024.0;
+}
+
+function health_check() {
+	if ($_SERVER['QUERY_STRING'] != 'healthcheck') {
+		return;
+	}
+
+	// Read /proc/meminfo into a useful array
+	$fh = fopen('/proc/meminfo','r');
+	$meminfo = array();
+	while ($line = fgets($fh)) {
+		if (preg_match('/(\S+):\s+(\d+)\s(\S+)$/', $line, $pieces)) {
+			$meminfo[$pieces[1]] = (int)($pieces[2] * unit_to_mult($pieces[3]));
+		} else if (preg_match('/(\S+):\s+(\d+)$/', $line, $pieces)) {
+			$meminfo[$pieces[1]] = (int)$pieces[2];
+		}
+	}
+	fclose($fh);
+
+	$memusage = 100 * (1 - ($meminfo['MemFree'] / $meminfo['MemTotal']));
+	$status = "okay";
+	if ($memusage > 90) {
+		$status = "out of memory";
+	}
+
+	echo json_encode(array(
+		"result" => "Performing health check.",
+		"status" => $status,
+		"meminfo" => $meminfo,
+		"memusage" => $memusage
+	));
+	exit(0);
+}
+
 /**
  *  An example CORS-compliant method.  It will allow any GET, POST, or OPTIONS requests from any
  *  origin.
@@ -1044,6 +1087,8 @@ function cors() {
 // For now, allow anyone to use our compiler service.
 // We will need to limit this in the future.
 cors();
+
+health_check();
 
 $compiler = new CompilerV2Handler();
 
