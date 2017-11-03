@@ -631,10 +631,10 @@ class CompilerV2Handler
 
         $timeout_str = "";
         $timeout = 0;
-        if (file_exists($config['object_directory'])) {
+        if (!file_exists($config['object_directory'])) {
             $timeout = $config['cold_timeout'];
         } else {
-            $timeout = $config['timeout'];
+            $timeout = $config['warm_timeout'];
         }
         if ($timeout > 0) {
            $timeout_str = "timeout -k 5 " . ((int)$timeout) . " ";
@@ -1121,7 +1121,7 @@ $config = array(
     ,"logdir" => "codebender_log"
     ,"archive_dir" => "compiler_archives"
     ,"object_directory" => "/tmp/codebender_object_files"
-    ,"timeout" => get_setting('timeout', '20')
+    ,"warm_timeout" => get_setting('timeout', '20')
     ,"cold_timeout" => get_setting('cold_timeout', '30')
     ,"lowmem_threshold" => (int)get_setting('low_memory_threshold', '90')
 );
