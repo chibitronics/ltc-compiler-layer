@@ -1041,7 +1041,7 @@ function unit_to_mult($unit) {
 		return 1/1024.0;
 }
 
-function health_check() {
+function healthCheck() {
 	if (!startsWith($_SERVER['REQUEST_URI'], '/healthcheck')) {
 		return;
 	}
@@ -1060,7 +1060,7 @@ function health_check() {
 
 	$memusage = 100 * (1 - ($meminfo['MemFree'] / $meminfo['MemTotal']));
 	$status = "okay";
-	if ($memusage > 90) {
+	if ($memusage > $config["lowmem_threshold"]) {
 		$status = "out of memory";
 	}
 
@@ -1113,15 +1113,6 @@ function cors() {
     }
 }
 
-// For now, allow anyone to use our compiler service.
-// We will need to limit this in the future.
-cors();
-
-health_check();
-
-$compiler = new CompilerV2Handler();
-
-$request = makeRequest();
 $config = array(
     "archive_dir" => "compiler_archives"
     ,"temp_dir" => "/tmp"
@@ -1132,8 +1123,18 @@ $config = array(
     ,"object_directory" => "/tmp/codebender_object_files"
     ,"timeout" => get_setting('timeout', '20')
     ,"cold_timeout" => get_setting('cold_timeout', '30')
+    ,"lowmem_threshold" => (int)get_setting('low_memory_threshold', '90')
 );
 
+// For now, allow anyone to use our compiler service.
+// We will need to limit this in the future.
+cors();
+
+healthCheck();
+
+$compiler = new CompilerV2Handler();
+
+$request = makeRequest();
 // 15 === JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT
 echo json_encode($compiler->main($request, $config), 15);
 
