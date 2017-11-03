@@ -1,19 +1,34 @@
 #!/bin/sh
-# Wrapper around apache2-foreground
-# This checks for the "CORS_DOMAINS" variable and enables/disables
-# the Access-Control-Allow-Origin header depending on its presence.
-#
-# Launch the Docker image with:
-#     -e 'CORS_DOMAINS=*'
-if [ ! -z "${CORS_DOMAINS}" ]
+
+# Redirect all accesses to /index.php
+cat > /etc/apache2/conf-enabled/rewrite-uri.conf <<EOF
+<Directory "/var/www/html">
+        RewriteEngine On
+        RewriteBase "/var/www/htdocs"
+        RewriteCond %{REQUEST_URI} !^/index.php$
+        RewriteRule ^(.+)$ /index.php?$1 [NC,L]
+</Directory>
+EOF
+
+# Add configuration variables for compile timeouts
+# Run with "-e COMPILE_TIMEOUT=8 -e COMPILE_TIMEOUT_COLD=23"
+settingsfile=/var/www/htdocs/settings.php
+echo "<?php" > ${settingsfile}
+
+if [ ! -z "${COMPILE_TIMEOUT}" ]
 then
-    conffile=/etc/apache2/conf-enabled/cors.conf
-    echo "<IfModule mod_headers.c>" > ${conffile}
-    echo "    Header set Access-Control-Allow-Origin \"${CORS_DOMAINS}\"" >> ${conffile}
-    echo "    Header set Access-Control-Allow-Methods \"GET, OPTIONS\"" >> ${conffile}
-    echo "    Header set Access-Control-Allow-Headers \"origin, authorization, accept\"" >> ${conffile}
-    echo "</IfModule>" >> ${conffile}
-    a2enmod headers
+    echo -n "const timeout = '" >> ${settingsfile}
+    echo ${COMPILE_TIMEOUT} | tr -d -c '[0-9]' >> ${settingsfile}
+    echo "';" >> ${settingsfile}
 fi
+
+if [ ! -z "${COMPILE_TIMEOUT_COLD}" ]
+then
+    echo -n "const cold_timeout = '" >> ${settingsfile}
+    echo ${COMPILE_TIMEOUT_COLD} | tr -d -c '[0-9]' >> ${settingsfile}
+    echo "';" >> ${settingsfile}
+fi
+
+echo "?>" >> ${settingsfile}
 
 exec apache2-foreground "$@"
