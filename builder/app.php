@@ -144,7 +144,7 @@ class CompilerV2Handler
     {
 
         if (is_file($src)) {
-            if (!file_exists($dst) && is_dir($dst))
+            if (file_exists($dst) && is_dir($dst))
                 return "Destination exists already, and is a directory.";
 
             if (!copy($src, $dst))
