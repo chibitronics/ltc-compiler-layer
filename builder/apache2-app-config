@@ -14,7 +14,7 @@ EOF
 # Run with "-e COMPILE_TIMEOUT=8 -e COMPILE_TIMEOUT_COLD=23"
 settingsfile=/var/www/html/settings.php
 echo "<?php" > ${settingsfile}
-echo 'class Settings {' > ${settingsfile}
+echo 'class Settings {' >> ${settingsfile}
 
 if [ ! -z "${COMPILE_TIMEOUT}" ]
 then
