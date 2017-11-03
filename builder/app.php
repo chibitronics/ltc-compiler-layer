@@ -1024,6 +1024,12 @@ function get_setting($name, $default) {
 		return $default;
 }
 
+function startsWith($haystack, $needle)
+{
+     $length = strlen($needle);
+     return (substr($haystack, 0, $length) === $needle);
+}
+
 function unit_to_mult($unit) {
 	if ($unit == "kB")
 		return 1;
@@ -1036,7 +1042,7 @@ function unit_to_mult($unit) {
 }
 
 function health_check() {
-	if ($_SERVER['QUERY_STRING'] != 'healthcheck') {
+	if (!startsWith($_SERVER['REQUEST_URI'], '/healthcheck')) {
 		return;
 	}
 
