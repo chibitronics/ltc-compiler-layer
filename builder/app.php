@@ -1,6 +1,10 @@
 <?php
 
+// Turn off all error reporting.  Disable this when debugging.
+error_reporting(0);
+
 require_once 'System.php';
+include 'settings.php';
 
 class CompilerV2Handler
 {
@@ -625,7 +629,18 @@ class CompilerV2Handler
         foreach ($libraries as $lib)
             $lib_str .= " -libraries=\"" . $lib . "\"";
 
-        $cmd = $base_dir . "/arduino-builder"
+        $timeout_str = "";
+        $timeout = 0;
+        if (file_exists($config['object_directory'])) {
+            $timeout = $config['cold_timeout'];
+        } else {
+            $timeout = $config['timeout'];
+        }
+        if ($timeout > 0) {
+           $timeout_str = "timeout -k 5 " . ((int)$timeout) . " ";
+        }
+
+        $cmd = $timeout_str . $base_dir . "/arduino-builder"
             . " -logger=human"
             . " -compile"
             . $verbose_compile
@@ -1002,6 +1017,13 @@ function makeRequest()
     return $data;
 }
 
+function get_setting($name, $default) {
+	if (defined('Settings::' . $name))
+		return constant('Settings::' . $name);
+	else
+		return $default;
+}
+
 function unit_to_mult($unit) {
 	if ($unit == "kB")
 		return 1;
@@ -1038,6 +1060,7 @@ function health_check() {
 
 	echo json_encode(array(
 		"result" => "Performing health check.",
+		"url" => get_setting('URL', 'def'),
 		"status" => $status,
 		"meminfo" => $meminfo,
 		"memusage" => $memusage
@@ -1098,14 +1121,12 @@ $config = array(
     ,"temp_dir" => "/tmp"
     ,"arduino_cores_dir" => "/opt/codebender/codebender-arduino-core-files"
     ,"external_core_files" => "/opt/codebender/external-core-files"
-    ,"objdir" => "codebender_object_files"
     ,"logdir" => "codebender_log"
     ,"archive_dir" => "compiler_archives"
     ,"object_directory" => "/tmp/codebender_object_files"
+    ,"timeout" => get_setting('timeout', '20')
+    ,"cold_timeout" => get_setting('cold_timeout', '30')
 );
-
-// Turn off all error reporting.  Disable this when debugging.
-error_reporting(0);
 
 // 15 === JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT
 echo json_encode($compiler->main($request, $config), 15);
