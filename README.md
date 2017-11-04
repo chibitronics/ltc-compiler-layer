@@ -82,22 +82,31 @@ To build the Docker image, simply use "docker build":
 
     docker build -t ltc-compiler .
 
-The Dockerfile is set up to be multiarch-compatible, however there is no Makefile
-wrapped around it to do actual multiarch builds.  Additionally, you need a special
-multiarch-enabled builder, or you need to run it on multiple platforms.
+The Dockerfile is set up to be multiarch-compatible, however due to a bug
+in the current version of Docker you need to manually update the FROM image
+on ARM, otherwise you'll end up with an armel environment instead of an armeb
+one.  To do this, you can run:
 
-The Dockerfile contains annotations for armhf, in the form of comments.  A Makefile
-defined at https://eyskens.me/multiarch-docker-images/ (stored in Github at
-https://github.com/multiarch/dockerfile/tree/master/method-g) provides a shell
-script/Makefile that can be used to build on various architectures.
+ sed -i "s!^FROM !FROM arm32v7/!g" Dockerfile
 
 Deploying the Docker Image
 --------------------------
 
 The image exposes port 80.  If you want SSL, you will need to set up a reverse proxy.
 
-If you need to set CORS headers, you can do so with an environment variable.
+The application supports some tuning, via the use of environment variables:
 
-An example invocation to start the server listening on port 3457 might be:
+    COMPILE_TIMEOUT: The maximum number of seconds a compile can run for.  Defaults to 20.
+    COMPILE_TIMEOUT_COLD: The maximum number of seconds the first compile can run for when the cache is missing (i.e. the first time.)
+    MEMORY_LIMIT_PCT: The limit at which /healthcheck will report "out of memory"
 
-    docker run --rm --name ltc-compile-node -it -p 3457:80 -e 'CORS_DOMAINS=*' ltc-compiler
+An example invocation to start the server listening on port 3457 with a compile timeout of 5 seconds might be:
+
+    docker run --rm --name ltc-compile-node -it -p 3457:80 -e COMPILE_TIMEOUT=5 ltc-compiler
+
+Health Check
+------------
+
+The web server exposes a health check, accessible by going to /healthcheck.
+Currently this prints out memory usage, and includes a "status" field that is
+either "okay" or lists an error indicating what is not okay.
