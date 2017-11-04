@@ -1041,35 +1041,38 @@ function unit_to_mult($unit) {
 		return 1/1024.0;
 }
 
-function healthCheck() {
+function healthCheck($config) {
 	if (!startsWith($_SERVER['REQUEST_URI'], '/healthcheck')) {
 		return;
 	}
 
 	// Read /proc/meminfo into a useful array
 	$fh = fopen('/proc/meminfo','r');
-	$meminfo = array();
+	$mi = array();
 	while ($line = fgets($fh)) {
 		if (preg_match('/(\S+):\s+(\d+)\s(\S+)$/', $line, $pieces)) {
-			$meminfo[$pieces[1]] = (int)($pieces[2] * unit_to_mult($pieces[3]));
+			$mi[$pieces[1]] = (int)($pieces[2] * unit_to_mult($pieces[3]));
 		} else if (preg_match('/(\S+):\s+(\d+)$/', $line, $pieces)) {
-			$meminfo[$pieces[1]] = (int)$pieces[2];
+			$mi[$pieces[1]] = (int)$pieces[2];
 		}
 	}
 	fclose($fh);
 
-	$memusage = 100 * (1 - ($meminfo['MemFree'] / $meminfo['MemTotal']));
+	$memusage = 100 * ((($mi['MemTotal'] - $mi['MemFree']) - $mi['Buffers'] - $mi['Cached']) / $mi['MemTotal']);
 	$status = "okay";
+
 	if ($memusage > $config["lowmem_threshold"]) {
 		$status = "out of memory";
 	}
 
 	echo json_encode(array(
 		"result" => "Performing health check.",
-		"url" => get_setting('URL', 'def'),
 		"status" => $status,
-		"meminfo" => $meminfo,
-		"memusage" => $memusage
+		"memory" => array(
+			"meminfo" => $mi,
+			"threshold" => $config["lowmem_threshold"],
+			"memusage" => $memusage
+		)
 	));
 	exit(0);
 }
@@ -1130,7 +1133,7 @@ $config = array(
 // We will need to limit this in the future.
 cors();
 
-healthCheck();
+healthCheck($config);
 
 $compiler = new CompilerV2Handler();
 
