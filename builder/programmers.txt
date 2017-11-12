@@ -1,0 +1,6 @@
+ltc-modulate.name=Chibitronics Love-to-Code (audio)
+ltc-modulate.communication=audio
+ltc-modulate.protocol=love-to-code
+ltc-modulate.program.protocol=love-to-code
+ltc-modulate.program.tool=ltc-modulate
+ltc-modulate.program.extra_params=
