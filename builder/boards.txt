@@ -1,7 +1,7 @@
 
 code.name=Chibitronics Love-to-Code (audio)
-code.upload.tool=bossac
-code.upload.protocol=sam-ba
+code.upload.tool=ltc-modulate
+code.upload.protocol=love-to-code
 code.upload.maximum_size=9936
 code.build.mcu=cortex-m0plus
 code.build.f_cpu=48000000L

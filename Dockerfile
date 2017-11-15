@@ -50,6 +50,7 @@ RUN true \
  && mv /work/support/* /opt/codebender/codebender-arduino-core-files/v167/hardware/chibitronics/hardware/esplanade/1.6.0/variants/code \
  && rm -rf /work \
  && rm -rf /unpack \
+ && a2enmod rewrite \
  && true
 
 CMD ["apache2-app-config"]

@@ -1,6 +1,10 @@
 <?php
 
+// Turn off all error reporting.  Disable this when debugging.
+error_reporting(0);
+
 require_once 'System.php';
+include 'settings.php';
 
 class CompilerV2Handler
 {
@@ -625,7 +629,18 @@ class CompilerV2Handler
         foreach ($libraries as $lib)
             $lib_str .= " -libraries=\"" . $lib . "\"";
 
-        $cmd = $base_dir . "/arduino-builder"
+        $timeout_str = "";
+        $timeout = 0;
+        if (!file_exists($config['object_directory'])) {
+            $timeout = $config['cold_timeout'];
+        } else {
+            $timeout = $config['warm_timeout'];
+        }
+        if ($timeout > 0) {
+           $timeout_str = "timeout -k 5 " . ((int)$timeout) . " ";
+        }
+
+        $cmd = $timeout_str . $base_dir . "/arduino-builder"
             . " -logger=human"
             . " -compile"
             . $verbose_compile
@@ -1002,6 +1017,66 @@ function makeRequest()
     return $data;
 }
 
+function get_setting($name, $default) {
+	if (defined('Settings::' . $name))
+		return constant('Settings::' . $name);
+	else
+		return $default;
+}
+
+function startsWith($haystack, $needle)
+{
+     $length = strlen($needle);
+     return (substr($haystack, 0, $length) === $needle);
+}
+
+function unit_to_mult($unit) {
+	if ($unit == "kB")
+		return 1;
+	else if ($unit == "MB")
+		return 1024;
+	else if ($unit == "GB")
+		return 1024 * 1024;
+	else
+		return 1/1024.0;
+}
+
+function healthCheck($config) {
+	if (!startsWith($_SERVER['REQUEST_URI'], '/healthcheck')) {
+		return;
+	}
+
+	// Read /proc/meminfo into a useful array
+	$fh = fopen('/proc/meminfo','r');
+	$mi = array();
+	while ($line = fgets($fh)) {
+		if (preg_match('/(\S+):\s+(\d+)\s(\S+)$/', $line, $pieces)) {
+			$mi[$pieces[1]] = (int)($pieces[2] * unit_to_mult($pieces[3]));
+		} else if (preg_match('/(\S+):\s+(\d+)$/', $line, $pieces)) {
+			$mi[$pieces[1]] = (int)$pieces[2];
+		}
+	}
+	fclose($fh);
+
+	$memusage = 100 * ((($mi['MemTotal'] - $mi['MemFree']) - $mi['Buffers'] - $mi['Cached']) / $mi['MemTotal']);
+	$status = "okay";
+
+	if ($memusage > $config["lowmem_threshold"]) {
+		$status = "out of memory";
+	}
+
+	echo json_encode(array(
+		"result" => "Performing health check.",
+		"status" => $status,
+		"memory" => array(
+			"meminfo" => $mi,
+			"threshold" => $config["lowmem_threshold"],
+			"memusage" => $memusage
+		)
+	));
+	exit(0);
+}
+
 /**
  *  An example CORS-compliant method.  It will allow any GET, POST, or OPTIONS requests from any
  *  origin.
@@ -1041,27 +1116,28 @@ function cors() {
     }
 }
 
-// For now, allow anyone to use our compiler service.
-// We will need to limit this in the future.
-cors();
-
-$compiler = new CompilerV2Handler();
-
-$request = makeRequest();
 $config = array(
     "archive_dir" => "compiler_archives"
     ,"temp_dir" => "/tmp"
     ,"arduino_cores_dir" => "/opt/codebender/codebender-arduino-core-files"
     ,"external_core_files" => "/opt/codebender/external-core-files"
-    ,"objdir" => "codebender_object_files"
     ,"logdir" => "codebender_log"
     ,"archive_dir" => "compiler_archives"
     ,"object_directory" => "/tmp/codebender_object_files"
+    ,"warm_timeout" => get_setting('timeout', '20')
+    ,"cold_timeout" => get_setting('cold_timeout', '30')
+    ,"lowmem_threshold" => (int)get_setting('low_memory_threshold', '90')
 );
 
-// Turn off all error reporting.  Disable this when debugging.
-error_reporting(0);
+// For now, allow anyone to use our compiler service.
+// We will need to limit this in the future.
+cors();
 
+healthCheck($config);
+
+$compiler = new CompilerV2Handler();
+
+$request = makeRequest();
 // 15 === JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT
 echo json_encode($compiler->main($request, $config), 15);
 
