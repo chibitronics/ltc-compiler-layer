@@ -43,4 +43,5 @@ void loop(void) {
     delay(500);
     blink[j] = 1;
   }
+  delay(1000); // prevent effects from overlapping
 }
