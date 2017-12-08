@@ -1059,12 +1059,15 @@ function healthCheck($config) {
 	fclose($fh);
 
 	$memusage = 100 * ((($mi['MemTotal'] - $mi['MemFree']) - $mi['Buffers'] - $mi['Cached']) / $mi['MemTotal']);
-	$status = "okay";
+    $status = "okay";
+    $http_status = 200;
 
 	if ($memusage > $config["lowmem_threshold"]) {
-		$status = "out of memory";
+        $status = "out of memory";
+        $http_status = 503;
 	}
 
+    http_response_code($http_status);
 	echo json_encode(array(
 		"result" => "Performing health check.",
 		"status" => $status,

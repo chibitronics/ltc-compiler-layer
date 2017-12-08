@@ -1,19 +1,35 @@
 #!/bin/sh
-# Wrapper around apache2-foreground
-# This checks for the "CORS_DOMAINS" variable and enables/disables
-# the Access-Control-Allow-Origin header depending on its presence.
-#
-# Launch the Docker image with:
-#     -e 'CORS_DOMAINS=*'
-if [ ! -z "${CORS_DOMAINS}" ]
+
+config_file=/var/www/html/settings.php
+
+echo "<?php" > ${config_file}
+echo "class Settings {" >> ${config_file}
+
+# COMPILE_TIMEOUT: The maximum number of seconds a compile can run for.  Defaults to 20.
+if [ ! -z "${COMPILE_TIMEOUT}"]
 then
-    conffile=/etc/apache2/conf-enabled/cors.conf
-    echo "<IfModule mod_headers.c>" > ${conffile}
-    echo "    Header set Access-Control-Allow-Origin \"${CORS_DOMAINS}\"" >> ${conffile}
-    echo "    Header set Access-Control-Allow-Methods \"GET, OPTIONS\"" >> ${conffile}
-    echo "    Header set Access-Control-Allow-Headers \"origin, authorization, accept\"" >> ${conffile}
-    echo "</IfModule>" >> ${conffile}
-    a2enmod headers
+    echo "    timeout = ${COMPILE_TIMEOUT};" >> ${config_file}
 fi
+
+# COMPILE_TIMEOUT_COLD: The maximum number of seconds the first compile can run for when the cache is missing (i.e. the first time.)
+if [ ! -z "${COMPILE_TIMEOUT_COLD}"]
+then
+    echo "    cold_timeout = ${COMPILE_TIMEOUT_COLD};" >> ${config_file}
+fi
+
+# MEMORY_LIMIT_PCT: The limit at which /healthcheck will report "out of memory"
+if [ ! -z "${MEMORY_LIMIT_PCT}"]
+then
+    echo "    low_memory_threshold = ${MEMORY_LIMIT_PCT};" >> ${config_file}
+fi
+
+echo "}" >> ${config_file}
+echo "?>" >> ${config_file}
+
+
+echo 'RewriteEngine on' > /etc/apache2/mods-enabled/rewrite.conf
+echo '<Directory "/var/www/html">' >> /etc/apache2/mods-enabled/rewrite.conf
+echo '  FallbackResource "index.php"' >> /etc/apache2/mods-enabled/rewrite.conf
+echo '</Directory>' >> /etc/apache2/mods-enabled/rewrite.conf
 
 exec apache2-foreground "$@"
