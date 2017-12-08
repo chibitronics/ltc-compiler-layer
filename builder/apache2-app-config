@@ -8,19 +8,19 @@ echo "class Settings {" >> ${config_file}
 # COMPILE_TIMEOUT: The maximum number of seconds a compile can run for.  Defaults to 20.
 if [ ! -z "${COMPILE_TIMEOUT}" ]
 then
-    echo "    timeout = ${COMPILE_TIMEOUT};" >> ${config_file}
+    echo "    const timeout = ${COMPILE_TIMEOUT};" >> ${config_file}
 fi
 
 # COMPILE_TIMEOUT_COLD: The maximum number of seconds the first compile can run for when the cache is missing (i.e. the first time.)
 if [ ! -z "${COMPILE_TIMEOUT_COLD}" ]
 then
-    echo "    cold_timeout = ${COMPILE_TIMEOUT_COLD};" >> ${config_file}
+    echo "    const cold_timeout = ${COMPILE_TIMEOUT_COLD};" >> ${config_file}
 fi
 
 # MEMORY_LIMIT_PCT: The limit at which /healthcheck will report "out of memory"
 if [ ! -z "${MEMORY_LIMIT_PCT}" ]
 then
-    echo "    low_memory_threshold = ${MEMORY_LIMIT_PCT};" >> ${config_file}
+    echo "    const low_memory_threshold = ${MEMORY_LIMIT_PCT};" >> ${config_file}
 fi
 
 echo "}" >> ${config_file}
