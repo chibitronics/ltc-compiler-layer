@@ -104,6 +104,10 @@ An example invocation to start the server listening on port 3457 with a compile 
 
     docker run --rm --name ltc-compile-node -it -p 3457:80 -e COMPILE_TIMEOUT=5 ltc-compiler
 
+If you need to specify the full registry path, specify it as:
+
+      registry.hub.docker.com/chibitronics/ltc-compiler-amd64:latest
+
 Health Check
 ------------
 
