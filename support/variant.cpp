@@ -36,7 +36,7 @@ extern uint32_t __init_array_end;
 extern uint32_t __heap_base__;
 extern uint32_t __heap_end__;
 
-__attribute__((naked, noreturn))
+__attribute__((noreturn))
 void Esplanade_Main(void) {
 
   setup();
