@@ -14,5 +14,6 @@ void raise(void) {
   while(1);
 }
 
-/* handle for C++ destructors, which we don't use. */
-uint32_t __dso_handle = 0;
+// handle for C++ destructors, which we don't use.
+// Taken from https://lists.debian.org/debian-gcc/2003/07/msg00070.html
+void*   __dso_handle = (void*) &__dso_handle;
