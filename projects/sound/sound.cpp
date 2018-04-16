@@ -152,11 +152,11 @@ v->adsr_phase = p; \
 // The system is running off of a 32.768 kHz crystal going through
 // a 1464x FLL multiplier, giving a system frequency of
 // 47.972352 MHz.
-// We set the PWM counter to 256, which gives a PWM period of 187.392 kHz.
+// We set the PWM counter to 1024, which gives a PWM period of 46.848 kHz.
 // Happily, 185.939 is evenly divisible by 24, giving us an actual sample
 // rate of 7808 Hz, assuming we delay 24 times.
-#define PWM_DELAY_LOOPS 24
-#define SAMPLE_RATE (187392/12)
+#define PWM_DELAY_LOOPS 5
+#define SAMPLE_RATE 46848
 
 // The number of ticks that the sound system has gone through.
 // Overflows after about three days, at 14 kHz.
@@ -180,6 +180,12 @@ struct ltc_voice
 {
     /// The current note's frequency.
     uint32_t frequency;
+
+    /// The position for the last sample
+    uint32_t old_sample;
+
+    /// If nonzero, this frequency will be swapped in during zero-crossing
+    uint32_t new_frequency;
 
     /// A pointer to the currently-selected instrument.
     const struct ltc_instrument *instrument;
@@ -205,6 +211,9 @@ struct ltc_voice
     // Keeps track of the phase in the instrument at the
     // given frequency.
     uint32_t phase_accumulator;
+
+    // How much to advance the pointer by, each loop
+    uint32_t period;
 
     /// How far into the current phase are we
     uint32_t phase_timer;
@@ -234,12 +243,12 @@ struct ltc_voice
 
 static const uint16_t voice0_setup[] = {
     NGT(200),
-    NE(SET_INSTRUMENT, 3),
 
-    NAT(40),
+    NE(SET_INSTRUMENT, 3),
+    NAT(100),
     NE(SET_ATTACK_LEVEL, 20),
     NDT(50),
-    NE(SET_DECAY_LEVEL, 70),
+    NE(SET_DECAY_LEVEL, 40),
     NE(SET_SUSTAIN_LEVEL, 30),
     NRT(20),
 
@@ -247,15 +256,16 @@ static const uint16_t voice0_setup[] = {
 };
 
 static const uint16_t voice1_setup[] = {
+
     NE(SET_INSTRUMENT, 3),
-    NAT(70),
-    NE(SET_ATTACK_LEVEL, 60),
-    NDT(50),
-    NE(SET_DECAY_LEVEL, 30),
-    NE(SET_SUSTAIN_LEVEL, 60),
+    NAT(50),
+    NE(SET_ATTACK_LEVEL, 70),
+    NDT(30),
+    NE(SET_DECAY_LEVEL, 10),
+    NE(SET_SUSTAIN_LEVEL, 20),
     NRT(100),
 
-    NE(DELAY_TICKS, 1),
+    NE(DELAY_TICKS, 3),
     NE(PATTERN_JUMP_ABS, 2),
 };
 
@@ -426,6 +436,8 @@ void setSong(struct ltc_sound_engine *engine, const struct ltc_song *song) {
         ADSR_PHASE(voice, PHASE_OFF);
         voice->instrument = 0;
         voice->note_offset = 40;
+        voice->frequency = 0;
+        voice->new_frequency = 0;
     }
 }
 
@@ -516,11 +528,12 @@ panic("Percentage is > 100");
 
 int32_t get_sample(struct ltc_voice *voice)
 {
-    uint32_t period;
     int32_t output;
     int32_t v1, v2, v1_weight, v2_weight;
 
     if (!voice->instrument)
+        return 0;
+    if (voice->adsr_phase == PHASE_OFF)
         return 0;
 
     // calculate the phase accumulator distance
@@ -528,10 +541,16 @@ int32_t get_sample(struct ltc_voice *voice)
     // between successive samples... assuming a frequency range of 20Hz-20kHz this would
     // be on the order of 0.0004 to 0.4, so we multiply it to give us a meaningful range
 
-    period = (voice->frequency * PHASEACC_MAX) / SAMPLE_RATE;
+
+    // If there's a new frequency queued, recalculate the period length.
+    if ((voice->new_frequency != 0)) {
+        voice->frequency = voice->new_frequency;
+        voice->new_frequency = 0;
+        voice->period = (voice->frequency * PHASEACC_MAX) / SAMPLE_RATE;
+    }
 
     // add this to the phase accumulator
-    voice->phase_accumulator += period;
+    voice->phase_accumulator += voice->period;
 
     // wrap the phase accumulator around
     voice->phase_accumulator &= (PHASEACC_MAX - 1);
@@ -576,8 +595,10 @@ int32_t get_sample(struct ltc_voice *voice)
 
 static void note_on(struct ltc_voice *voice, uint32_t freq)
 {
-    voice->frequency = freq;
-    voice->phase_accumulator = 0;
+//    if (!voice->frequency)
+//        voice->frequency = freq;
+//    else
+        voice->new_frequency = freq;
     ADSR_PHASE(voice, PHASE_ATTACK);
 }
 
@@ -646,6 +667,44 @@ static void play_routine_step(struct ltc_sound_engine *engine) {
 #include "kl02.h"
 #include "memio.h"
 
+struct RgbColor {
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+};
+
+#define HUE_DEGREE    512 // hue is 0 ... (360*HUE_DEGREE - 1)
+void hsv2rgb(int h, int s, int v, RgbColor *c) {
+  static uint8_t r, g, b;
+
+  if(s == 0) {
+    r = g = b = v;
+  } else {
+    int i = h / (60*HUE_DEGREE);
+    int p = (256*v - s*v) / 256;
+
+    if (i & 1) {
+      int q = (256*60*HUE_DEGREE*v - h*s*v + 60*HUE_DEGREE*s*v*i) / (256*60*HUE_DEGREE);
+      switch (i) {
+      case 1:   r = q; g = v; b = p; break;
+      case 3:   r = p; g = q; b = v; break;
+      case 5:   r = v; g = p; b = q; break;
+      }
+    } else {
+      int t = (256*60*HUE_DEGREE*v + h*s*v - 60*HUE_DEGREE*s*v*(i+1)) / (256*60*HUE_DEGREE);
+      switch (i) {
+      case 0:   r = v; g = t; b = p; break;
+      case 2:   r = p; g = v; b = t; break;
+      case 4:   r = t; g = p; b = v; break;
+      }
+    }
+  }
+
+  c->r = r;
+  c->g = g;
+  c->b = b;
+}
+
 static int pwm0_loops = 0;
 static int other_loops;
 static int pwm0_stable_timer(void)
@@ -698,7 +757,7 @@ static void prepare_pwm()
     writel(readl(SIM_SOPT2) | (1 << 24), SIM_SOPT2);
 
     // We've picked pin 0, which is on TPM0_CH1
-    writel(255, TPM0_MOD);
+    writel(1025, TPM0_MOD);
     writel(0, TPM0_CNT);
 
     writel(TPM0_C0SC_MSB | TPM0_C0SC_ELSB, TPM0_C0SC);
@@ -755,7 +814,7 @@ void loop(void)
             scaled_sample = 1;
 #ifdef WRITE_TO_FILE
         fputc(scaled_sample, outfile);
-        if (global_tick_counter >= 524288) {
+        if (global_tick_counter >= 131072) {
             fflush(outfile);
             exit(0);
         }
@@ -765,7 +824,29 @@ void loop(void)
 #endif
         sample_queued = 0;
     }
-#endif
+#endif /* DESKTOP */
+
+#ifdef ARDUINO_APP
+    RgbColor color;
+    static struct {
+        uint16_t h;
+        uint8_t s;
+        uint8_t v;
+    } hsv;
+    if (global_tick_counter > 11500) {
+        if (!(global_tick_counter & 0x1f)) {
+            if (hsv.v == 0) {
+                static uint32_t color_offset = 0;
+                color_offset += 0x4d20;
+                hsv.v = 100;
+                hsv.h = color_offset & 0xffff;
+                hsv.s = 100;
+            }
+            hsv2rgb(hsv.h, hsv.s, hsv.v--, &color);
+            ledShow(LED_BUILTIN_RGB, &color, 1);
+        }
+    }
+#endif /* ARDUINO_APP */
 }
 
 #ifdef DESKTOP
