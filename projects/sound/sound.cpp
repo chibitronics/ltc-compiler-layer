@@ -3,6 +3,9 @@
 #include "wave-table.h"
 #include "note-table.h"
 
+//#define WRITE_TO_FILE
+#define VOICE_COUNT 2
+
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(*x))
 #endif
@@ -16,11 +19,15 @@
 #ifdef DESKTOP
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #define panic(x) do {                         \
     fprintf(stderr, "PANIC: %s\n", x);        \
     exit(1);                                  \
 } while(0)
 #endif
+
 
 // Format:
 // ____ ____ ____ ____
@@ -64,7 +71,7 @@ enum ltc_pattern_effect {
     DELAY_TICKS = 1,
 
     // Jump to a new pattern
-    PATTERN_JUMP = 2,
+    PATTERN_JUMP_ABS = 2,
 
     // Set the current voice's instrument
     SET_INSTRUMENT = 3,
@@ -72,13 +79,22 @@ enum ltc_pattern_effect {
     // Set the current voice's attack level
     SET_ATTACK_LEVEL = 4,
 
+    // Set the current voice's attack level
+    SET_DECAY_LEVEL = 5,
+
     // Set the current voice's sustain level
-    SET_SUSTAIN_LEVEL = 5,
+    SET_SUSTAIN_LEVEL = 6,
 
-    /// Sets 'middle C' (i.e. note 0)
-    SET_MIDDLE_C = 6,
+    /// Sets note 0's offset
+    SET_NOTE_OFFSET = 7,
 
-    FINAL_EFFECT = 7,
+    /// Jump a relative number of patterns forward or backwards
+    PATTERN_JUMP_REL = 8,
+
+    /// Repeat the current pattern this many times
+    PATTERN_REPEAT_COUNT = 9,
+
+    FINAL_EFFECT = 10,
 };
 
 enum adsr_phase {
@@ -88,6 +104,32 @@ enum adsr_phase {
     PHASE_SUSTAIN,
     PHASE_RELEASE,
 };
+
+#ifdef DEBUG_ADSR
+static void print_phase(int i) {
+    if (i == PHASE_ATTACK) fprintf(stderr, "PHASE_ATTACK");
+    else if (i == PHASE_DECAY) fprintf(stderr, "PHASE_DECAY");
+    else if (i == PHASE_SUSTAIN) fprintf(stderr, "PHASE_SUSTAIN");
+    else if (i == PHASE_RELEASE) fprintf(stderr, "PHASE_RELEASE");
+    else if (i == PHASE_OFF) fprintf(stderr, "PHASE_OFF");
+    else fprintf(stderr, "UNKNOWN (%d)", i);
+}
+
+#define ADSR_PHASE(v, p) do { \
+v->phase_timer = 0; \
+print_phase(v->adsr_phase); \
+fprintf(stderr, " -> "); \
+v->adsr_phase = p; \
+print_phase(v->adsr_phase); \
+fprintf(stderr, "\n"); \
+} while(0)
+#else /* !DEBUG_PHASE */
+#define ADSR_PHASE(v, p) do { \
+v->phase_timer = 0; \
+v->adsr_phase = p; \
+} while(0)
+#endif /* DEBUG_PHASE */
+
 
 #define NN(note, duration, pause) (((((note)+16) & 0x1f)) \
                                 | (((duration) << 10) & (0x1f << 10)) \
@@ -130,6 +172,7 @@ static const struct ltc_instrument *instruments[] = {
     &triangle_instrument,
     &sawtooth_instrument,
     &sine_instrument,
+    &square_instrument,
 };
 
 // An ltc voice
@@ -144,14 +187,17 @@ struct ltc_voice
     /// How long the Attack phase is
     uint32_t attack_time;
 
-    /// How strong the Attack phase ends
-    uint32_t attack_level;
+    /// How strong the Attack phase starts
+    uint8_t attack_level;
+
+    /// How strong the Decay phase starts (and the Attack phase ends)
+    uint8_t decay_level;
 
     /// How long the Decay time is
     uint32_t decay_time;
 
-    /// When the Decay finishes, what is the Sustain level?
-    uint32_t sustain_level;
+    /// How strong the Sustain phase is (after the Decay phase ends)
+    uint8_t sustain_level;
 
     /// How long the Release phase is (i.e. after the note has ended)
     uint32_t release_time;
@@ -165,7 +211,9 @@ struct ltc_voice
 
     // A pointer to the currently-operating pattern
     const uint16_t *pattern;
+    uint16_t pattern_num;
     uint16_t pattern_offset;
+    uint8_t pattern_repeat_count;
 
     /// The number of ticks left until we issue a Release.
     uint32_t note_duration;
@@ -174,7 +222,7 @@ struct ltc_voice
     uint32_t rest_duration;
 
     /// All notes are relative to this note.
-    uint8_t middle_c;
+    uint8_t note_offset;
 
     /// 0: off
     /// 1: attack
@@ -184,51 +232,53 @@ struct ltc_voice
     uint8_t adsr_phase;
 };
 
-static const uint16_t pattern0_voice0[] = {
+static const uint16_t voice0_setup[] = {
     NGT(200),
-    NE(SET_INSTRUMENT, 0),
-    NAT(30),
-    NE(SET_ATTACK_LEVEL, 50),
-    NDT(50),
-    NE(SET_SUSTAIN_LEVEL, 40),
-    NRT(200),
-    NE(SET_MIDDLE_C, 71-12),
-    NE(PATTERN_JUMP, 2),
-};
+    NE(SET_INSTRUMENT, 3),
 
-static const uint16_t pattern1_voice0[] = {
-    #include "song.h"
-    NE(PATTERN_JUMP, 2),
-};
-
-static const uint16_t pattern0_voice1[] = {
-    NE(SET_INSTRUMENT, 2),
-    NAT(30),
+    NAT(40),
     NE(SET_ATTACK_LEVEL, 20),
     NDT(50),
-    NE(SET_SUSTAIN_LEVEL, 10),
-    NRT(200),
-    NE(SET_MIDDLE_C, 71-12),
-    NE(DELAY_TICKS, 3),
-    NE(PATTERN_JUMP, 2),
+    NE(SET_DECAY_LEVEL, 70),
+    NE(SET_SUSTAIN_LEVEL, 30),
+    NRT(20),
+
+    NE(PATTERN_JUMP_ABS, 2),
 };
 
+static const uint16_t voice1_setup[] = {
+    NE(SET_INSTRUMENT, 3),
+    NAT(70),
+    NE(SET_ATTACK_LEVEL, 60),
+    NDT(50),
+    NE(SET_DECAY_LEVEL, 30),
+    NE(SET_SUSTAIN_LEVEL, 60),
+    NRT(100),
+
+    NE(DELAY_TICKS, 1),
+    NE(PATTERN_JUMP_ABS, 2),
+};
+
+#include "nyan.h"
+
 static const uint16_t *sample_song_patterns[] = {
-    pattern0_voice0,
-    pattern0_voice1,
-    pattern1_voice0,
+    voice0_setup,
+    voice1_setup,
+    SONG_PATTERNS
 };
 
 struct ltc_song {
     const uint16_t **patterns;
+    const uint8_t pattern_count;
 };
 
 static const struct ltc_song sample_song = {
     .patterns = sample_song_patterns,
+    .pattern_count = ARRAY_SIZE(sample_song_patterns),
 };
 
 struct ltc_sound_engine {
-    struct ltc_voice voices[2];
+    struct ltc_voice voices[VOICE_COUNT];
 
     // Global counter
     uint32_t tick_counter;
@@ -242,21 +292,41 @@ struct ltc_sound_engine {
 
 static struct ltc_sound_engine engine;
 
-#define TIME_OFFSET(sec, msec) ((SAMPLE_RATE * sec) + ((msec * SAMPLE_RATE) / 1000))
-
 static void patternDelay(struct ltc_sound_engine *engine, uint8_t channel, uint8_t arg)
 {
     engine->voices[channel].rest_duration = arg * engine->loops_per_tick;
 }
 
-static void jumpToPattern(struct ltc_sound_engine *engine, uint8_t channel, uint8_t arg)
+static void patternJumpAbs(struct ltc_sound_engine *engine, uint8_t channel, uint8_t arg)
 {
+    if (arg >= engine->song->pattern_count) {
+        panic("attempt to abs jump to nonexistent pattern");
+    }
     engine->voices[channel].pattern = engine->song->patterns[arg];
+    engine->voices[channel].pattern_num = arg;
     engine->voices[channel].pattern_offset = 0;
+    engine->voices[channel].pattern_repeat_count = 0;
+}
+
+static void patternJumpRel(struct ltc_sound_engine *engine, uint8_t channel, uint8_t arg)
+{
+    int8_t target_num = (int8_t)engine->voices[channel].pattern_num + (int8_t)arg;
+    if (target_num >= engine->song->pattern_count) {
+        panic("attempt to rel jump to nonexistent pattern");
+    }
+    if (target_num < 0) {
+        panic("attempt to jump to nonexistent pattern < 0");
+    }
+    engine->voices[channel].pattern = engine->song->patterns[target_num];
+    engine->voices[channel].pattern_num = target_num;
+    engine->voices[channel].pattern_offset = 0;
+    engine->voices[channel].pattern_repeat_count = 0;
 }
 
 static void setInstrument(struct ltc_sound_engine *engine, uint8_t channel, uint8_t arg)
 {
+    if (arg >= ARRAY_SIZE(instruments))
+        panic("instrument is out of range");
     engine->voices[channel].instrument = instruments[arg];
 }
 
@@ -268,6 +338,11 @@ static void setAttackTime(struct ltc_sound_engine *engine, uint8_t channel, uint
 static void setAttackLevel(struct ltc_sound_engine *engine, uint8_t channel, uint8_t arg)
 {
     engine->voices[channel].attack_level = arg;
+}
+
+static void setDecayLevel(struct ltc_sound_engine *engine, uint8_t channel, uint8_t arg)
+{
+    engine->voices[channel].decay_level = arg;
 }
 
 static void setDecayTime(struct ltc_sound_engine *engine, uint8_t channel, uint16_t arg)
@@ -291,8 +366,33 @@ static void setGlobalSpeed(struct ltc_sound_engine *engine, uint8_t channel, uin
     engine->loops_per_tick = arg;
 }
 
-static void setMiddleC(struct ltc_sound_engine *engine, uint8_t channel, uint8_t arg) {
-    engine->voices[channel].middle_c = arg;
+static void setNoteOffset(struct ltc_sound_engine *engine, uint8_t channel, uint8_t arg) {
+    engine->voices[channel].note_offset = arg;
+}
+
+static void patternRepeatCount(struct ltc_sound_engine *engine, uint8_t channel, uint8_t arg) {
+    struct ltc_voice *voice = &engine->voices[channel];
+    int new_count = voice->pattern_repeat_count - 1;
+
+    // If pattern_repeat_count is nonzero, then we're in the middle of repeating.
+    switch (voice->pattern_repeat_count) {
+    // If it's 1, then it's a NOP, since we've already processed it
+    // during this iteration of a pattern.  Must jump to a new pattern
+    // first.
+    case 1:
+        break;
+    case 0:
+        new_count = arg - 1;
+        /* Fall through */
+    default:
+        // Repeat the pattern
+        patternJumpRel(engine, channel, 0);
+
+        // Update pattern_repeat_count, which is cleared as part of the jump.
+        voice->pattern_repeat_count = new_count;
+
+        break;
+    }
 }
 
 typedef void (*effect_t)(struct ltc_sound_engine *engine, uint8_t channel, uint8_t arg);
@@ -300,28 +400,32 @@ typedef void (*effect_t)(struct ltc_sound_engine *engine, uint8_t channel, uint8
 static const effect_t effect_lut[] = {
     0,
     patternDelay,
-    jumpToPattern,
+    patternJumpAbs,
     setInstrument,
     setAttackLevel,
+    setDecayLevel,
     setSustainLevel,
-    setMiddleC,
+    setNoteOffset,
+    patternJumpRel,
+    patternRepeatCount,
 };
 
 void setSong(struct ltc_sound_engine *engine, const struct ltc_song *song) {
     int voice_num;
     engine->song = song;
 
-    for (voice_num = 0; voice_num < 2; voice_num++) {
+    for (voice_num = 0; voice_num < VOICE_COUNT; voice_num++) {
         struct ltc_voice *voice = &engine->voices[voice_num];
         voice->pattern = song->patterns[voice_num];
+        voice->pattern_num = voice_num;
         voice->pattern_offset = 0;
+        voice->pattern_repeat_count = 0;
         voice->note_duration = 0;
         voice->rest_duration = 0;
         voice->sustain_level = 100;
-        voice->phase_timer = 0;
-        voice->adsr_phase = PHASE_OFF;
+        ADSR_PHASE(voice, PHASE_OFF);
         voice->instrument = 0;
-        voice->middle_c = 40;
+        voice->note_offset = 40;
     }
 }
 
@@ -345,32 +449,43 @@ static int32_t processADSR(struct ltc_voice *voice, int32_t output)
 
     voice->phase_timer++;
     switch (voice->adsr_phase) {
+        /* For the ATTACK phase, the level starts at at voice->attack_level
+         * and ends at voice->decay_level, during the course of voice->attack_time.
+         */
         case PHASE_ATTACK:
             if (voice->attack_time) {
+                /* Function progress:
+                 *     t = 0             pct = voice->attack_level
+                 *     t = attack_time   pct = voice->decay_level
+                 */
                 /* Determine what percentage we'll adjust the note to */
-                pct = voice->phase_timer * voice->attack_level / voice->attack_time;
+                pct = ((int32_t)voice->phase_timer * ((int32_t)voice->decay_level - (int32_t)voice->attack_level) / (int32_t)voice->attack_time) + (int32_t)voice->attack_level;
+if (pct > 100)
+panic("Percentage is > 100");
+//fprintf(stderr, "attack_level: %d  decay_level: %d  phase_timer: %d  attack_time: %d  pct: %d\n",
+//voice->attack_level, voice->decay_level, voice->phase_timer, voice->attack_time, pct);
 
                 if (voice->phase_timer >= voice->attack_time) {
-                    voice->phase_timer = 0;
-                    voice->adsr_phase = PHASE_DECAY;
+                    ADSR_PHASE(voice, PHASE_DECAY);
                 }
                 break;
             }
             /* Fall through if attack_time is 0 */
-            voice->adsr_phase = PHASE_DECAY;
+            ADSR_PHASE(voice, PHASE_DECAY);
 
         case PHASE_DECAY:
             if (voice->decay_time) {
                 /* Determine what percentage we'll adjust the note to */
-                pct = voice->sustain_level + voice->phase_timer * (voice->attack_level - voice->sustain_level) / voice->decay_time;
+                pct = ((int32_t)voice->phase_timer * ((int32_t)voice->sustain_level - (int32_t)voice->decay_level) / (int32_t)voice->decay_time) + voice->decay_level;
+//fprintf(stderr, "decay_level: %d  sustain_level: %d  phase_timer: %d  decay_time: %d  pct: %d\n",
+//voice->decay_level, voice->sustain_level, voice->phase_timer, voice->decay_time, pct);
                 if (voice->phase_timer >= voice->decay_time) {
-                    voice->phase_timer = 0;
-                    voice->adsr_phase = PHASE_SUSTAIN;
+                    ADSR_PHASE(voice, PHASE_SUSTAIN);
                 }
                 break;
             }
             /* Fall through if decay_time is 0 */
-            voice->adsr_phase = PHASE_SUSTAIN;
+            ADSR_PHASE(voice, PHASE_SUSTAIN);
 
         case PHASE_SUSTAIN:
             pct = voice->sustain_level;
@@ -379,15 +494,14 @@ static int32_t processADSR(struct ltc_voice *voice, int32_t output)
         case PHASE_RELEASE:
             if (voice->release_time) {
                 /* Determine what percentage we'll adjust the note to */
-                pct = (voice->release_time - voice->phase_timer) * voice->sustain_level / voice->release_time;
+                pct = ((int32_t)voice->release_time - (int32_t)voice->phase_timer) * (int32_t)voice->sustain_level / (int32_t)voice->release_time;
                 if (voice->phase_timer >= voice->release_time) {
-                    voice->phase_timer = 0;
-                    voice->adsr_phase = PHASE_OFF;
+                     ADSR_PHASE(voice, PHASE_OFF);
                 }
                 break;
             }
             /* Fall through if release_time is 0 */
-            voice->adsr_phase = PHASE_OFF;
+            ADSR_PHASE(voice, PHASE_OFF);
 
         case PHASE_OFF:
         default:
@@ -463,19 +577,20 @@ int32_t get_sample(struct ltc_voice *voice)
 static void note_on(struct ltc_voice *voice, uint32_t freq)
 {
     voice->frequency = freq;
-    voice->phase_timer = 0;
-    voice->adsr_phase = PHASE_ATTACK;
+    voice->phase_accumulator = 0;
+    ADSR_PHASE(voice, PHASE_ATTACK);
 }
 
 static void note_off(struct ltc_voice *voice)
 {
     voice->phase_timer = 0;
-    voice->adsr_phase = PHASE_RELEASE;
+    if (voice->adsr_phase != PHASE_OFF)
+        ADSR_PHASE(voice, PHASE_RELEASE);
 }
 
 static void play_routine_step(struct ltc_sound_engine *engine) {
     int voice_num;
-    for (voice_num = 0; voice_num < 2; voice_num++) {
+    for (voice_num = 0; voice_num < VOICE_COUNT; voice_num++) {
         struct ltc_voice *voice = &engine->voices[voice_num];
         if ((voice->note_duration == 0) && (voice->rest_duration == 0)) {
             uint16_t op = voice->pattern[voice->pattern_offset++];
@@ -502,7 +617,8 @@ static void play_routine_step(struct ltc_sound_engine *engine) {
                 uint32_t note_duration = (op >> 10) & 0x1f;
                 uint32_t rest_duration = (op >> 5) & 0x1f;
                 uint32_t note_index = ((op >> 0) & 0x1f) - 16;
-                note_index = voice->middle_c + note_index;
+                note_index = voice->note_offset + note_index;
+                voice->note_offset = note_index;
 
                 if (note_index > ARRAY_SIZE(note_lut))
                     panic("note_index out of range");
@@ -530,12 +646,13 @@ static void play_routine_step(struct ltc_sound_engine *engine) {
 #include "kl02.h"
 #include "memio.h"
 
+static int pwm0_loops = 0;
+static int other_loops;
 static int pwm0_stable_timer(void)
 {
-    static int loops = 0;
 
-    loops++;
-    if (loops > PWM_DELAY_LOOPS)
+    pwm0_loops++;
+    if (pwm0_loops > PWM_DELAY_LOOPS)
     {
         int32_t scaled_sample = next_sample + 129;
         if (scaled_sample > 255)
@@ -545,12 +662,11 @@ static int pwm0_stable_timer(void)
         writel(scaled_sample, TPM0_C1V);
         writel(scaled_sample, TPM0_C0V);
 
-        loops = 0;
+        pwm0_loops = 0;
         sample_queued = 0;
         //global_tick_counter++;
     }
 
-    static int other_loops;
     if (other_loops++ > 12) {
         global_tick_counter++;
         other_loops = 0;
@@ -613,6 +729,7 @@ void setup(void)
 
 void loop(void)
 {
+    uint32_t voice_num;
     // If a sample is still in the buffer, don't do anything.
     if (sample_queued)
         return;
@@ -620,19 +737,32 @@ void loop(void)
     play_routine_step(&engine);
 
     next_sample = 0;
-    next_sample += get_sample(&engine.voices[0]);
-    next_sample += get_sample(&engine.voices[1]);
+    for (voice_num = 0; voice_num < VOICE_COUNT; voice_num++)
+        next_sample += get_sample(&engine.voices[voice_num]);
     sample_queued = 1;
 
 #ifdef DESKTOP
     {
+#ifdef WRITE_TO_FILE
+        static FILE *outfile;
+        if (!outfile)
+            outfile = fopen("song.raw", "wb");
+#endif
         int32_t scaled_sample = next_sample + 129;
         if (scaled_sample > 255)
             scaled_sample = 255;
         if (scaled_sample < 1)
             scaled_sample = 1;
+#ifdef WRITE_TO_FILE
+        fputc(scaled_sample, outfile);
+        if (global_tick_counter >= 524288) {
+            fflush(outfile);
+            exit(0);
+        }
+#else
         fputc(scaled_sample, stdout);
         fflush(stdout);
+#endif
         sample_queued = 0;
     }
 #endif
