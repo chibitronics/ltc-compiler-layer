@@ -4,7 +4,7 @@
 #include "note-table.h"
 
 //#define WRITE_TO_FILE
-#define VOICE_COUNT 2
+#define VOICE_COUNT 3
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(*x))
@@ -94,7 +94,10 @@ enum ltc_pattern_effect {
     /// Repeat the current pattern this many times
     PATTERN_REPEAT_COUNT = 9,
 
-    FINAL_EFFECT = 10,
+    /// Shift all voice notes up/down by this amount
+    SET_NOTE_SHIFT = 10,
+
+    FINAL_EFFECT = 11,
 };
 
 enum adsr_phase {
@@ -233,6 +236,9 @@ struct ltc_voice
     /// All notes are relative to this note.
     uint8_t note_offset;
 
+    /// Allow a global note shift.
+    int8_t note_shift;
+
     /// 0: off
     /// 1: attack
     /// 2: decay
@@ -244,29 +250,49 @@ struct ltc_voice
 static const uint16_t voice0_setup[] = {
     NGT(200),
 
-    NE(SET_INSTRUMENT, 3),
+    NE(SET_INSTRUMENT, 0),
+    NE(SET_ATTACK_LEVEL, 70),
     NAT(100),
-    NE(SET_ATTACK_LEVEL, 20),
+    NE(SET_DECAY_LEVEL, 50),
     NDT(50),
-    NE(SET_DECAY_LEVEL, 40),
-    NE(SET_SUSTAIN_LEVEL, 30),
+    NE(SET_SUSTAIN_LEVEL, 60),
     NRT(20),
 
-    NE(PATTERN_JUMP_ABS, 2),
+    NE(SET_NOTE_SHIFT, -5),
+
+    NE(PATTERN_JUMP_ABS, 3),
 };
 
 static const uint16_t voice1_setup[] = {
 
     NE(SET_INSTRUMENT, 3),
-    NAT(50),
     NE(SET_ATTACK_LEVEL, 70),
-    NDT(30),
+    NAT(50),
     NE(SET_DECAY_LEVEL, 10),
+    NDT(30),
     NE(SET_SUSTAIN_LEVEL, 20),
     NRT(100),
 
+    NE(SET_NOTE_SHIFT, 12),
+
     NE(DELAY_TICKS, 3),
-    NE(PATTERN_JUMP_ABS, 2),
+    NE(PATTERN_JUMP_ABS, 3),
+};
+
+static const uint16_t voice2_setup[] = {
+
+    NE(SET_INSTRUMENT, 3),
+    NE(SET_ATTACK_LEVEL, 30),
+    NAT(50),
+    NE(SET_DECAY_LEVEL, 10),
+    NDT(30),
+    NE(SET_SUSTAIN_LEVEL, 30),
+    NRT(100),
+
+    NE(SET_NOTE_SHIFT, 7),
+
+    NE(DELAY_TICKS, 2),
+    NE(PATTERN_JUMP_ABS, 3),
 };
 
 #include "nyan.h"
@@ -274,6 +300,7 @@ static const uint16_t voice1_setup[] = {
 static const uint16_t *sample_song_patterns[] = {
     voice0_setup,
     voice1_setup,
+    voice2_setup,
     SONG_PATTERNS
 };
 
@@ -405,6 +432,10 @@ static void patternRepeatCount(struct ltc_sound_engine *engine, uint8_t channel,
     }
 }
 
+static void setNoteShift(struct ltc_sound_engine *engine, uint8_t channel, uint8_t arg) {
+    engine->voices[channel].note_shift = (int8_t)arg;
+}
+
 typedef void (*effect_t)(struct ltc_sound_engine *engine, uint8_t channel, uint8_t arg);
 
 static const effect_t effect_lut[] = {
@@ -418,6 +449,7 @@ static const effect_t effect_lut[] = {
     setNoteOffset,
     patternJumpRel,
     patternRepeatCount,
+    setNoteShift,
 };
 
 void setSong(struct ltc_sound_engine *engine, const struct ltc_song *song) {
@@ -640,6 +672,7 @@ static void play_routine_step(struct ltc_sound_engine *engine) {
                 uint32_t note_index = ((op >> 0) & 0x1f) - 16;
                 note_index = voice->note_offset + note_index;
                 voice->note_offset = note_index;
+                note_index += voice->note_shift;
 
                 if (note_index > ARRAY_SIZE(note_lut))
                     panic("note_index out of range");
@@ -797,7 +830,7 @@ void loop(void)
 
     next_sample = 0;
     for (voice_num = 0; voice_num < VOICE_COUNT; voice_num++)
-        next_sample += get_sample(&engine.voices[voice_num]);
+        next_sample += get_sample(&engine.voices[voice_num]) / VOICE_COUNT;
     sample_queued = 1;
 
 #ifdef DESKTOP
