@@ -57,7 +57,7 @@ load_next_pixel:
 	ldrb curpix, [fbptr]    // load the word at the pointer location to r4
 	lsl curpix, curpix, #24 // shift left by 24 so the carry pops out
 	add fbptr, fbptr, #1    // Move to the next pixel
-	b pixloop_fromtop // 10 total
+	b pixloop_fromtop       // 9 total
 
 	// While processing the same pixel, send the next bit
 send_next_bit:
@@ -69,8 +69,6 @@ send_next_bit:
 // Both new pixels and new bits (i.e. load_next_pixel and send_next_bit)
 // should now be synchronized.
 pixloop_fromtop:
-	// 62 cycles remaining
-	bl wait_5_cycles
 	lsl curpix, #1
 	bcs oneBranch
 
@@ -79,12 +77,11 @@ zeroBranch:
 
 oneBranch:
 
-	bl wait_15_cycles
-	bl wait_15_cycles
-	bl wait_15_cycles
+	bl wait_14_cycles
+	bl wait_14_cycles
 	str bitmask, [eclr]
 
-	bl wait_15_cycles
+	bl wait_11_cycles
 	sub bit, bit, #1
 	bne send_next_bit
 
@@ -96,11 +93,11 @@ oneBranch:
 exit:
 	pop {r4-r7,pc}
 
-wait_15_cycles:
-	b wait_12_cycles
-wait_12_cycles:
-	b wait_9_cycles
-wait_9_cycles:
+wait_14_cycles:
+	b wait_11_cycles
+wait_11_cycles:
+	b wait_8_cycles
+wait_8_cycles:
 	b wait_5_cycles
 wait_5_cycles:
 	bx lr
