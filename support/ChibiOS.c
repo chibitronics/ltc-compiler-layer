@@ -1,3 +1,4 @@
+#include "Arduino.h"
 #include "ChibiOS.h"
 
 thread_t *createThreadFromHeap(size_t size,
