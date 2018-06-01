@@ -6,10 +6,19 @@ ADD_CFLAGS =
 ADD_LFLAGS =
 EXTRA_DIST =
 
-TRGT      ?=
+TRGT      ?= arm-none-eabi-
 CC         = $(TRGT)gcc
 CXX        = $(TRGT)g++
 OBJCOPY    = $(TRGT)objcopy
+RM         = rm -rf
+COPY       = cp -a
+PATH_SEP   = /
+
+ifeq ($(OS),Windows_NT)
+COPY       = copy
+RM         = del
+PATH_SEP   = \\
+endif
 
 DESTDIR ?= /usr
 PREFIX ?= $(DESTDIR)
@@ -48,15 +57,21 @@ ALL        = all
 TARGET     = $(PACKAGE).elf
 CLEAN      = clean
 
-$(ALL): $(TARGET)
+$(ALL): $(TARGET) $(PACKAGE).bin $(PACKAGE).ihex
 
 $(OBJECTS): | $(OBJ_DIR)
 
 $(TARGET): $(OBJECTS) $(LDSCRIPT)
 	$(QUIET) echo "  LD       $@"
 	$(QUIET) $(CXX) $(OBJECTS) $(LFLAGS) -o $@
-	$(QUIET) echo "  OBJCOPY  $(PACKAGE).bin"
-	$(QUIET) $(OBJCOPY) -O binary $@ $(PACKAGE).bin
+
+$(PACKAGE).bin: $(TARGET)
+	$(QUIET) echo "  OBJCOPY  $@"
+	$(QUIET) $(OBJCOPY) -O binary $(TARGET) $@
+
+$(PACKAGE).ihex: $(TARGET)
+	$(QUIET) echo "  IHEX     $(PACKAGE).ihex"
+	$(QUIET) $(OBJCOPY) -O ihex $(TARGET) $@
 
 $(DEBUG): CFLAGS += $(DBG_CFLAGS)
 $(DEBUG): LFLAGS += $(DBG_LFLAGS)
@@ -79,14 +94,16 @@ $(OBJ_DIR)/%.o: %.S
 	$(QUIET) echo "  AS       $<	$(notdir $@)"
 	$(QUIET) $(CC) -x assembler-with-cpp -c $< $(CFLAGS) -o $@ -MMD
 
-.PHONY: $(CLEAN) check
+.PHONY: clean check
 
 check:
 	@echo Dirname: $(DIRNAME)
 
-$(CLEAN):
-	$(QUIET) rm -f $(wildcard $(OBJ_DIR)/*.d)
-	$(QUIET) rm -f $(wildcard $(OBJ_DIR)/*.o)
-	$(QUIET) rm -f $(TARGET) $(PACKAGE).bin $(PACKAGE).symbol
+clean:
+	$(QUIET) echo "  RM      $(subst /,$(PATH_SEP),$(wildcard $(OBJ_DIR)/*.d))"
+	-$(QUIET) $(RM) $(subst /,$(PATH_SEP),$(wildcard $(OBJ_DIR)/*.d))
+	$(QUIET) echo "  RM      $(subst /,$(PATH_SEP),$(wildcard $(OBJ_DIR)/*.d))"
+	-$(QUIET) $(RM) $(subst /,$(PATH_SEP),$(wildcard $(OBJ_DIR)/*.o))
+	$(QUIET) echo "  RM      $(TARGET)
 
 include $(wildcard $(OBJ_DIR)/*.d)
