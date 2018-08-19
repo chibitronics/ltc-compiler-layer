@@ -104,6 +104,7 @@ clean:
 	-$(QUIET) $(RM) $(subst /,$(PATH_SEP),$(wildcard $(OBJ_DIR)/*.d))
 	$(QUIET) echo "  RM      $(subst /,$(PATH_SEP),$(wildcard $(OBJ_DIR)/*.d))"
 	-$(QUIET) $(RM) $(subst /,$(PATH_SEP),$(wildcard $(OBJ_DIR)/*.o))
-	$(QUIET) echo "  RM      $(TARGET)
+	$(QUIET) echo "  RM      $(TARGET)"
+	-$(QUIET) $(RM) "$(TARGET)"
 
 include $(wildcard $(OBJ_DIR)/*.d)
